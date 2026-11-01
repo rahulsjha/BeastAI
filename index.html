@@ -8,6 +8,12 @@
 
   <body style="background-color: transparent !important">
     <div id="root"></div>
+    <script>
+      /* web-test mode: load the Tauri shim synchronously before the app module */
+      if (location.search.indexOf("webtest") !== -1) {
+        document.write('<script src="/webtest-shim.js"><\/script>');
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -7,7 +7,6 @@ import {
   CardTitle,
   Header,
   Empty,
-  GetLicense,
 } from "@/components";
 import {
   CheckCircle2,
@@ -252,9 +251,6 @@ export const PluelyPrompts = () => {
             )}
           </div>
         </div>
-        {!hasActiveLicense && (
-          <GetLicense buttonText="Unlock" buttonClassName="shrink-0" />
-        )}
       </div>
 
       <div

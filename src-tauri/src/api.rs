@@ -885,9 +885,13 @@ async fn report_api_error(
 // Models API Command
 #[tauri::command]
 pub async fn fetch_models(app: AppHandle) -> Result<Vec<Model>, String> {
-    // Get environment variables
-    let app_endpoint = get_app_endpoint()?;
-    let api_access_key = get_api_access_key()?;
+    // Hosted Pluely cloud feature. Not configured in bring-your-own builds
+    // (no APP_ENDPOINT), so return an empty list gracefully instead of erroring.
+    let app_endpoint = match get_app_endpoint() {
+        Ok(e) if !e.is_empty() => e,
+        _ => return Ok(Vec::new()),
+    };
+    let api_access_key = get_api_access_key().unwrap_or_default();
 
     let (license_key, instance_id) = match get_stored_credentials(&app).await {
         Ok((lk, id, _)) => (lk, id),
@@ -961,8 +965,19 @@ pub async fn fetch_models(app: AppHandle) -> Result<Vec<Model>, String> {
 // Fetch Pluely Prompts API
 #[tauri::command]
 pub async fn fetch_prompts() -> Result<PluelyPromptsResponse, String> {
-    let app_endpoint = get_app_endpoint()?;
-    let api_access_key = get_api_access_key()?;
+    // Hosted Pluely cloud feature. Not configured in bring-your-own builds
+    // (no APP_ENDPOINT), so return an empty set gracefully instead of erroring.
+    let app_endpoint = match get_app_endpoint() {
+        Ok(e) if !e.is_empty() => e,
+        _ => {
+            return Ok(PluelyPromptsResponse {
+                prompts: Vec::new(),
+                total: 0,
+                last_updated: None,
+            })
+        }
+    };
+    let api_access_key = get_api_access_key().unwrap_or_default();
 
     let client = reqwest::Client::new();
     let url = format!("{}/api/prompts", app_endpoint);

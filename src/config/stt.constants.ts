@@ -1,5 +1,18 @@
 export const SPEECH_TO_TEXT_PROVIDERS = [
   {
+    // Cloudflare Workers AI — Whisper large-v3-turbo. JSON body with base64
+    // audio; fill API_KEY (Workers AI token) in settings. Account id is in the
+    // URL (an identifier, not a secret) so it isn't URL-encoded by the parser.
+    id: "cloudflare-whisper",
+    name: "Cloudflare Whisper (Workers AI)",
+    curl: `curl -X POST "https://api.cloudflare.com/client/v4/accounts/d27053e91cdcc6f2e55d2157e09cf132/ai/run/@cf/openai/whisper-large-v3-turbo" \\
+      -H "Authorization: Bearer {{API_KEY}}" \\
+      -H "Content-Type: application/json" \\
+      -d '{"audio":"{{AUDIO}}","task":"transcribe","language":"en","vad_filter":true,"condition_on_previous_text":false}'`,
+    responseContentPath: "result.text",
+    streaming: false,
+  },
+  {
     id: "openai-whisper",
     name: "OpenAI Whisper",
     curl: `curl -X POST "https://api.openai.com/v1/audio/transcriptions" \\

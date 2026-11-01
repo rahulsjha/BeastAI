@@ -1,5 +1,28 @@
 export const AI_PROVIDERS = [
   {
+    // Claude CLI (subscription) — answers via the local `claude` command using
+    // your own Claude login, no API key. Routing is handled by provider id in
+    // fetchAIResponse (CLAUDE_CLI_PROVIDER_ID); the curl below is a placeholder
+    // only so the picker can list it and expose an optional MODEL field.
+    id: "claude-cli",
+    curl: `curl http://localhost/ -d '{"model":"{{MODEL}}"}'`,
+    responseContentPath: "",
+    streaming: false,
+  },
+  {
+    // Groq (OpenAI-compatible) for fast interview answers. Text-only message
+    // shape (gpt-oss models reject image parts); User-Agent set because Groq's
+    // edge 403s default library agents. Used by System Design / Conceptual modes.
+    id: "groq-interview",
+    curl: `curl https://api.groq.com/openai/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "User-Agent: Mozilla/5.0" \\
+  -H "Authorization: Bearer {{API_KEY}}" \\
+  -d '{"model":"{{MODEL}}","messages":[{"role":"system","content":"{{SYSTEM_PROMPT}}"},{"role":"user","content":[{"type":"text","text":"{{TEXT}}"}]}]}'`,
+    responseContentPath: "choices[0].message.content",
+    streaming: false,
+  },
+  {
     id: "openai",
     curl: `curl https://api.openai.com/v1/chat/completions \\
   -H "Content-Type: application/json" \\

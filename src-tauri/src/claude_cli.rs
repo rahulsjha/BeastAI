@@ -128,6 +128,11 @@ pub async fn claude_cli_response(
     let mut cmd = base_command(&bin);
     cmd.arg("-p").arg(&prompt).arg("--model").arg(&model);
 
+    // Coding/debug routing: Opus runs at high effort for correctness.
+    if model == "opus" || model == "claude-opus-5-5" {
+        cmd.arg("--effort").arg("high");
+    }
+
     if let Some(sid) = session_id.as_ref() {
         if resume.unwrap_or(false) {
             cmd.arg("--resume").arg(sid);
