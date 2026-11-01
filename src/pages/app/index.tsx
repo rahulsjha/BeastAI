@@ -4,6 +4,7 @@ import {
   Completion,
   AudioVisualizer,
   StatusIndicator,
+  ModeSelector,
 } from "./components";
 import { useApp } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
@@ -67,6 +68,7 @@ const App = () => {
                 : "w-full flex flex-row gap-2 items-center"
             }`}
           >
+            <ModeSelector />
             <Completion isHidden={isHidden} />
             <Button
               size={"icon"}

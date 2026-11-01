@@ -1,8 +1,11 @@
 import { Dispatch, SetStateAction } from "react";
 import { ScreenshotConfig, TYPE_PROVIDER } from "@/types";
 import { CursorType, CustomizableState } from "@/lib/storage";
+import type { ModeKey } from "@/config/modes";
 
 export type IContextType = {
+  currentMode: ModeKey;
+  applyMode: (mode: ModeKey) => void;
   systemPrompt: string;
   setSystemPrompt: Dispatch<SetStateAction<string>>;
   allAiProviders: TYPE_PROVIDER[];

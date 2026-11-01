@@ -4,6 +4,7 @@ import {
   SPEECH_TO_TEXT_PROVIDERS,
   STORAGE_KEYS,
 } from "@/config";
+import { MODES, DEFAULT_MODE, type ModeKey } from "@/config/modes";
 import { getPlatform, safeLocalStorage, trackAppStart } from "@/lib";
 import { getShortcutsConfig } from "@/lib/storage";
 import {
@@ -75,6 +76,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       DEFAULT_SYSTEM_PROMPT
   );
 
+  // Interview mode: the single control that configures AI model, voice, and
+  // prompt. The user only picks a mode; everything else is applied for them.
+  const [currentMode, setCurrentMode] = useState<ModeKey>(
+    (safeLocalStorage.getItem(STORAGE_KEYS.INTERVIEW_MODE) as ModeKey) ||
+      DEFAULT_MODE
+  );
+
   const [selectedAudioDevices, setSelectedAudioDevices] = useState<{
     input: { id: string; name: string };
     output: { id: string; name: string };
@@ -131,7 +139,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [customizable, setCustomizable] = useState<CustomizableState>(
     DEFAULT_CUSTOMIZABLE_STATE
   );
-  const [hasActiveLicense, setHasActiveLicense] = useState<boolean>(false);
+  // All features are unlocked in this build; no license is required.
+  const [hasActiveLicense, setHasActiveLicense] = useState<boolean>(true);
   const [supportsImages, setSupportsImagesState] = useState<boolean>(() => {
     const stored = safeLocalStorage.getItem(STORAGE_KEYS.SUPPORTS_IMAGES);
     return stored === null ? true : stored === "true";
@@ -144,28 +153,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Pluely API State
-  const [pluelyApiEnabled, setPluelyApiEnabledState] = useState<boolean>(
-    safeLocalStorage.getItem(STORAGE_KEYS.PLUELY_API_ENABLED) === "true"
-  );
+  // The hosted Pluely API is not used in this build; bring-your-own providers only.
+  const [pluelyApiEnabled, setPluelyApiEnabledState] = useState<boolean>(false);
 
+  // No remote license validation: just apply the default auto-screenshot config once.
   const getActiveLicenseStatus = async () => {
-    const response: { is_active: boolean; is_dev_license: boolean } =
-      await invoke("validate_license_api");
-    setHasActiveLicense(response.is_active);
+    setHasActiveLicense(true);
 
-    if (response?.is_dev_license) {
-      setPluelyApiEnabled(false);
-    }
-
-    // Check if the auto configs are enabled
     const autoConfigsEnabled = localStorage.getItem("auto-configs-enabled");
-    if (response.is_active && !autoConfigsEnabled) {
+    if (!autoConfigsEnabled) {
       setScreenshotConfiguration({
         mode: "auto",
         autoPrompt: "Analyze the screenshot and provide insights",
         enabled: false,
       });
-      // Set the flag to true so that we don't change the mode again
       localStorage.setItem("auto-configs-enabled", "true");
     }
   };
@@ -274,14 +275,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.debug("Failed to check customizable state schema:", error);
       }
-    }
-
-    // Load Pluely API enabled state
-    const savedPluelyApiEnabled = safeLocalStorage.getItem(
-      STORAGE_KEYS.PLUELY_API_ENABLED
-    );
-    if (savedPluelyApiEnabled !== null) {
-      setPluelyApiEnabledState(savedPluelyApiEnabled === "true");
     }
 
     // Load selected audio devices
@@ -567,6 +560,37 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setSelectedSttProvider((prev) => ({ ...prev, provider, variables }));
   };
 
+  // Apply an interview mode: configures the AI model, voice provider, and system
+  // prompt in one step, and persists them — so the user never touches Dev Space.
+  const applyMode = (mode: ModeKey) => {
+    const def = MODES[mode];
+    if (!def) return;
+
+    setCurrentMode(mode);
+    safeLocalStorage.setItem(STORAGE_KEYS.INTERVIEW_MODE, mode);
+
+    // AI model + key
+    onSetSelectedAIProvider({
+      provider: def.aiProvider,
+      variables: def.aiVariables,
+    });
+    // Voice / STT
+    onSetSelectedSttProvider({
+      provider: def.sttProvider,
+      variables: def.sttVariables,
+    });
+    // Prompt (no write effect exists for systemPrompt, so persist directly)
+    setSystemPrompt(def.systemPrompt);
+    safeLocalStorage.setItem(STORAGE_KEYS.SYSTEM_PROMPT, def.systemPrompt);
+  };
+
+  // On first load, apply the saved (or default) mode so the app is ready to use
+  // immediately, with no manual provider/key setup.
+  useEffect(() => {
+    applyMode(currentMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Toggle handlers
   const toggleAppIconVisibility = async (isVisible: boolean) => {
     const newState = updateAppIconVisibility(isVisible);
@@ -654,6 +678,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Create the context value (extend IContextType accordingly)
   const value: IContextType = {
+    currentMode,
+    applyMode,
     systemPrompt,
     setSystemPrompt,
     allAiProviders,

@@ -266,7 +266,7 @@ export async function* fetchAIResponse(params: {
         systemPrompt: enhancedSystemPrompt,
         userMessage,
         history,
-        model: selectedProvider.variables?.MODEL,
+        model: selectedProvider.variables?.model || selectedProvider.variables?.MODEL,
         signal,
       });
       return;
