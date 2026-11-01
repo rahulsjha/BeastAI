@@ -2,6 +2,7 @@
 mod activate;
 mod api;
 mod capture;
+mod claude_cli;
 mod db;
 mod shortcuts;
 mod window;
@@ -104,6 +105,8 @@ pub fn run() {
             api::create_system_prompt,
             api::check_license_status,
             api::get_activity,
+            claude_cli::claude_cli_response,
+            claude_cli::claude_cli_status,
             speaker::start_system_audio_capture,
             speaker::stop_system_audio_capture,
             speaker::manual_stop_continuous,

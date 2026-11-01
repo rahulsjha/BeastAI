@@ -161,6 +161,75 @@ async function* fetchPluelyAIResponse(params: {
   }
 }
 
+// Reserved provider id that routes answers through the local `claude` CLI
+// (Claude Code) using the user's own subscription login — no API key.
+export const CLAUDE_CLI_PROVIDER_ID = "claude-cli";
+
+// Per-conversation Claude CLI session. Reset whenever a fresh conversation
+// starts (empty history) so context does not leak between chats.
+let claudeCliSessionId: string | null = null;
+let claudeCliTurns = 0;
+
+export function resetClaudeCliSession(): void {
+  claudeCliSessionId = null;
+  claudeCliTurns = 0;
+}
+
+// Claude CLI streaming function. The CLI returns the whole answer at once
+// (typically 5-8s on haiku), so we yield it as a single chunk.
+async function* fetchClaudeCliResponse(params: {
+  systemPrompt?: string;
+  userMessage: string;
+  history?: Message[];
+  model?: string;
+  signal?: AbortSignal;
+}): AsyncIterable<string> {
+  const { systemPrompt, userMessage, history = [], model, signal } = params;
+
+  if (signal?.aborted) return;
+
+  // Start a new session on the first turn of a conversation.
+  const freshConversation = history.length === 0;
+  if (freshConversation || !claudeCliSessionId) {
+    claudeCliSessionId =
+      globalThis.crypto?.randomUUID?.() ??
+      `pluely-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    claudeCliTurns = 0;
+  }
+
+  const resume = claudeCliTurns > 0;
+  // Include the system prompt only when opening the session; on resume the
+  // session already holds it, which keeps each follow-up small and fast.
+  const prompt = resume
+    ? userMessage
+    : [systemPrompt?.trim(), userMessage].filter(Boolean).join("\n\n");
+
+  try {
+    const result = await invoke<{
+      success: boolean;
+      text?: string;
+      error?: string;
+    }>("claude_cli_response", {
+      prompt,
+      model: model ?? "haiku",
+      sessionId: claudeCliSessionId,
+      resume,
+    });
+
+    if (signal?.aborted) return;
+
+    if (result.success && result.text) {
+      claudeCliTurns += 1;
+      yield result.text;
+    } else {
+      yield `Claude CLI error: ${result.error ?? "no response"}`;
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    yield `Claude CLI error: ${msg}`;
+  }
+}
+
 export async function* fetchAIResponse(params: {
   provider: TYPE_PROVIDER | undefined;
   selectedProvider: {
@@ -190,6 +259,18 @@ export async function* fetchAIResponse(params: {
     }
 
     const enhancedSystemPrompt = buildEnhancedSystemPrompt(systemPrompt);
+
+    // Route through the local claude CLI when that provider is selected.
+    if (selectedProvider?.provider === CLAUDE_CLI_PROVIDER_ID) {
+      yield* fetchClaudeCliResponse({
+        systemPrompt: enhancedSystemPrompt,
+        userMessage,
+        history,
+        model: selectedProvider.variables?.MODEL,
+        signal,
+      });
+      return;
+    }
 
     // Check if we should use Pluely API instead
     const usePluelyAPI = await shouldUsePluelyAPI();
