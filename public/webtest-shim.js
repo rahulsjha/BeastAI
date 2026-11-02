@@ -88,13 +88,24 @@
   window.fetch = function (input, init) {
     try {
       var url = typeof input === "string" ? input : (input && input.url);
-      if (url && (url.indexOf("api.cloudflare.com") !== -1 || url.indexOf("api.groq.com") !== -1)) {
+      var isCF = url && url.indexOf("api.cloudflare.com") !== -1;
+      var isGroq = url && url.indexOf("api.groq.com") !== -1;
+      if (isCF || isGroq) {
         var headers = {};
         if (init && init.headers) {
           if (init.headers.forEach) init.headers.forEach(function (v, k) { headers[k] = v; });
           else headers = init.headers;
         }
         var body = init && init.body ? JSON.parse(init.body) : {};
+        // Groq with stream:true -> relay the SSE stream so the browser gets tokens live.
+        if (isGroq && body && body.stream) {
+          return _fetch(BRIDGE + "/stream-proxy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: url, headers: headers, body: body }),
+          });
+        }
+        // Otherwise buffer (Cloudflare STT, non-streaming Groq).
         return post("/cf-proxy", { url: url, headers: headers, body: body })
           .then(function (j) {
             return new Response(JSON.stringify(j), {

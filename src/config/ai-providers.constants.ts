@@ -20,7 +20,7 @@ export const AI_PROVIDERS = [
   -H "Authorization: Bearer {{API_KEY}}" \\
   -d '{"model":"{{MODEL}}","messages":[{"role":"system","content":"{{SYSTEM_PROMPT}}"},{"role":"user","content":[{"type":"text","text":"{{TEXT}}"}]}]}'`,
     responseContentPath: "choices[0].message.content",
-    streaming: false,
+    streaming: true,
   },
   {
     id: "openai",
