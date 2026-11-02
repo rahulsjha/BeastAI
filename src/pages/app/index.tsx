@@ -5,6 +5,7 @@ import {
   AudioVisualizer,
   StatusIndicator,
   ModeSelector,
+  DebugWatcher,
 } from "./components";
 import { useApp } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
@@ -69,6 +70,7 @@ const App = () => {
             }`}
           >
             <ModeSelector />
+            <DebugWatcher />
             <Completion isHidden={isHidden} />
             <Button
               size={"icon"}

@@ -28,6 +28,9 @@
     if (cmd === "claude_cli_status") {
       return Promise.resolve({ available: true, path: "bridge", version: "web" });
     }
+    if (cmd === "debug_analyze_screen") {
+      return post("/debug", {});
+    }
     // ----- startup/app stubs (shapes the frontend reads) -----
     switch (cmd) {
       case "get_app_version": return Promise.resolve("0.1.9-webtest");
