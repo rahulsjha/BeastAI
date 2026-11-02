@@ -13,7 +13,7 @@ import {
 import { UseCompletionReturn } from "@/types";
 import { MessageHistory } from "./MessageHistory";
 
-const MAX_INPUT_HEIGHT = 84; // px (~3 lines) before the box scrolls internally — keeps the thin overlay bar intact
+const MAX_INPUT_HEIGHT = 140; // px (~6 lines); the input sits in its own row below the header, so it can grow downward
 
 export const Input = ({
   isPopoverOpen,

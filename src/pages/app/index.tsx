@@ -1,13 +1,16 @@
 import { Card, Updater, DragButton, CustomCursor, Button } from "@/components";
 import {
   SystemAudio,
-  Completion,
   AudioVisualizer,
   StatusIndicator,
   ModeSelector,
   DebugWatcher,
 } from "./components";
-import { useApp } from "@/hooks";
+import { Audio } from "./components/completion/Audio";
+import { Input } from "./components/completion/Input";
+import { Screenshot } from "./components/completion/Screenshot";
+import { Files } from "./components/completion/Files";
+import { useApp, useCompletion } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
 import { SparklesIcon } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
@@ -18,7 +21,9 @@ import { getPlatform } from "@/lib";
 const App = () => {
   const { isHidden, systemAudio } = useApp();
   const { customizable } = useAppContext();
+  const completion = useCompletion();
   const platform = getPlatform();
+  const capturing = systemAudio?.capturing;
 
   const openDashboard = async () => {
     try {
@@ -43,14 +48,16 @@ const App = () => {
           isHidden ? "hidden pointer-events-none" : ""
         }`}
       >
-        <Card className="w-full flex flex-row items-center gap-2 p-2">
-          <SystemAudio {...systemAudio} />
-          {systemAudio?.capturing ? (
-            <div className="flex flex-row items-center gap-2 justify-between w-full">
-              <div className="flex flex-1 items-center gap-2">
-                <AudioVisualizer isRecording={systemAudio?.capturing} />
-              </div>
-              <div className="flex !w-fit items-center gap-2">
+        <Card className="w-full flex flex-col gap-1.5 p-2">
+          {/* Header row — fixed height, never grows with the input */}
+          <div className="flex flex-row items-center gap-2 w-full">
+            <SystemAudio {...systemAudio} />
+
+            {capturing ? (
+              <div className="flex flex-1 items-center gap-2 justify-between">
+                <div className="flex flex-1 items-center gap-2">
+                  <AudioVisualizer isRecording={capturing} />
+                </div>
                 <StatusIndicator
                   setupRequired={systemAudio.setupRequired}
                   error={systemAudio.error}
@@ -59,32 +66,37 @@ const App = () => {
                   capturing={systemAudio.capturing}
                 />
               </div>
-            </div>
-          ) : null}
+            ) : (
+              <>
+                <ModeSelector />
+                <DebugWatcher />
+                <Audio {...completion} />
+                <Screenshot {...completion} />
+                <Files {...completion} />
+                <div className="flex-1" />
+                <Button
+                  size={"icon"}
+                  className="cursor-pointer"
+                  title="Open Dev Space"
+                  onClick={openDashboard}
+                >
+                  <SparklesIcon className="h-4 w-4" />
+                </Button>
+              </>
+            )}
 
-          <div
-            className={`${
-              systemAudio?.capturing
-                ? "hidden w-full fade-out transition-all duration-300"
-                : "w-full flex flex-row gap-2 items-center"
-            }`}
-          >
-            <ModeSelector />
-            <DebugWatcher />
-            <Completion isHidden={isHidden} />
-            <Button
-              size={"icon"}
-              className="cursor-pointer"
-              title="Open Dev Space"
-              onClick={openDashboard}
-            >
-              <SparklesIcon className="h-4 w-4" />
-            </Button>
+            <Updater />
+            <DragButton />
           </div>
 
-          <Updater />
-          <DragButton />
+          {/* Input row — below the divider, expands downward as you type */}
+          {!capturing && (
+            <div className="w-full border-t border-input/30 pt-1.5">
+              <Input {...completion} isHidden={isHidden} />
+            </div>
+          )}
         </Card>
+
         {customizable.cursor.type === "invisible" && platform !== "linux" ? (
           <CustomCursor />
         ) : null}
