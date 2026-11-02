@@ -1,27 +1,41 @@
 import { useApp } from "@/contexts";
-import { MODES, MODE_ORDER, type ModeKey } from "@/config/modes";
+import { MODES, MODE_ORDER } from "@/config/modes";
+import { cn } from "@/lib/utils";
 
 /**
- * Compact mode picker for the overlay. A small dropdown (keeps the horizontal
- * bar from overflowing on narrow windows). Picking a mode reconfigures the
- * model, voice, and system prompt in one step — no Dev Space needed.
+ * Segmented mode picker in the overlay header — four clickable pills. The input
+ * now lives in its own row below, so the header has room for these. Picking a
+ * mode reconfigures the model, voice, and system prompt in one tap.
  */
 export const ModeSelector = () => {
   const { currentMode, applyMode } = useApp();
 
   return (
-    <select
+    <div
+      className="flex items-center gap-0.5 rounded-full border border-input/60 bg-background/50 p-0.5 shrink-0"
+      role="tablist"
       aria-label="Interview mode"
-      title="Interview mode"
-      value={currentMode}
-      onChange={(e) => applyMode(e.target.value as ModeKey)}
-      className="h-9 shrink-0 rounded-xl border border-input/60 bg-transparent px-2 text-xs font-medium outline-none focus-visible:ring-[2px] focus-visible:ring-ring/60 cursor-pointer"
     >
-      {MODE_ORDER.map((key) => (
-        <option key={key} value={key}>
-          {MODES[key].label}
-        </option>
-      ))}
-    </select>
+      {MODE_ORDER.map((key) => {
+        const active = key === currentMode;
+        return (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={active}
+            title={MODES[key].label}
+            onClick={() => applyMode(key)}
+            className={cn(
+              "px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap",
+              active
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            )}
+          >
+            {MODES[key].short}
+          </button>
+        );
+      })}
+    </div>
   );
 };
