@@ -3,15 +3,16 @@ import { MODES, MODE_ORDER } from "@/config/modes";
 import { cn } from "@/lib/utils";
 
 /**
- * Compact segmented control in the overlay. Picking a mode reconfigures the
- * model, voice provider, and system prompt in one tap — no Dev Space needed.
+ * Segmented mode picker in the overlay header — four clickable pills. The input
+ * now lives in its own row below, so the header has room for these. Picking a
+ * mode reconfigures the model, voice, and system prompt in one tap.
  */
 export const ModeSelector = () => {
   const { currentMode, applyMode } = useApp();
 
   return (
     <div
-      className="flex items-center gap-0.5 rounded-full border border-input/50 bg-background/60 p-0.5 shrink-0"
+      className="flex items-center gap-0.5 rounded-full border border-input/60 bg-background/50 p-0.5 shrink-0"
       role="tablist"
       aria-label="Interview mode"
     >
@@ -25,7 +26,7 @@ export const ModeSelector = () => {
             title={MODES[key].label}
             onClick={() => applyMode(key)}
             className={cn(
-              "px-2.5 py-1 text-[11px] font-medium rounded-full transition-colors whitespace-nowrap",
+              "px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap",
               active
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60"

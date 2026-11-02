@@ -1,17 +1,19 @@
 import { Loader2, XIcon } from "lucide-react";
+import { useEffect } from "react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
   Button,
   ScrollArea,
-  Input as InputComponent,
   Markdown,
   Switch,
   CopyButton,
 } from "@/components";
 import { UseCompletionReturn } from "@/types";
 import { MessageHistory } from "./MessageHistory";
+
+const MAX_INPUT_HEIGHT = 140; // px (~6 lines); the input sits in its own row below the header, so it can grow downward
 
 export const Input = ({
   isPopoverOpen,
@@ -35,6 +37,14 @@ export const Input = ({
   keepEngaged,
   setKeepEngaged,
 }: UseCompletionReturn & { isHidden: boolean }) => {
+  // Auto-grow the textarea with its content (and shrink back when cleared).
+  useEffect(() => {
+    const el = inputRef?.current as unknown as HTMLTextAreaElement | null;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT) + "px";
+  }, [input, inputRef]);
+
   return (
     <div className="relative flex-1">
       <Popover
@@ -47,15 +57,20 @@ export const Input = ({
       >
         <PopoverTrigger asChild className="!border-none !bg-transparent">
           <div className="relative select-none">
-            <InputComponent
-              ref={inputRef}
-              placeholder="Ask me anything..."
+            <textarea
+              ref={inputRef as unknown as React.Ref<HTMLTextAreaElement>}
+              placeholder="Ask me anything…  (Enter to send, Shift+Enter for a new line)"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               onPaste={handlePaste}
               disabled={isLoading || isHidden}
-              className={`${
+              rows={1}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              className={`placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/50 dark:border-input/80 flex min-h-9 w-full min-w-0 resize-none overflow-y-auto rounded-xl border bg-transparent px-3 py-2 text-base leading-snug shadow-xs outline-none transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring/60 focus-visible:ring-ring dark:focus-visible:ring-ring/60 focus-visible:ring-[2px] ${
                 currentConversationId && conversationHistory.length > 0
                   ? "pr-14"
                   : "pr-2"
