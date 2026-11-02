@@ -11,6 +11,7 @@
 // read, copied, or stored by this code.
 
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -158,6 +159,79 @@ pub async fn claude_cli_response(
             success: false,
             text: None,
             error: Some(if err.is_empty() { out } else { err }),
+        })
+    }
+}
+
+/// Debug mode: capture the screen, compare it with the previous frame via Opus
+/// vision, and return a concise "what changed / what's the issue / fix" note.
+/// Requires macOS Screen Recording permission for the app.
+#[tauri::command]
+pub async fn debug_analyze_screen() -> Result<ClaudeCliResult, String> {
+    let bin = match resolve_claude_bin() {
+        Some(b) => b,
+        None => {
+            return Ok(ClaudeCliResult {
+                success: false,
+                text: None,
+                error: Some("claude CLI not found.".to_string()),
+            })
+        }
+    };
+    let tmp = std::env::var("TMPDIR").unwrap_or_else(|_| "/tmp".to_string());
+    let tmp = tmp.trim_end_matches('/');
+    let cur = format!("{tmp}/pluely_debug_cur.png");
+    let prev = format!("{tmp}/pluely_debug_prev.png");
+
+    let cap = Command::new("screencapture").arg("-x").arg(&cur).status();
+    if cap.map(|s| !s.success()).unwrap_or(true) {
+        return Ok(ClaudeCliResult {
+            success: false,
+            text: None,
+            error: Some(
+                "Screen capture failed. Grant Screen Recording permission to the app.".to_string(),
+            ),
+        });
+    }
+
+    let prompt = if Path::new(&prev).exists() {
+        format!(
+            "You are a DEBUG assistant watching a developer's screen. Compare the \
+PREVIOUS screen @{prev} and the CURRENT screen @{cur}. Reply in at most 3 short lines:\n\
+Changed: <what changed since last frame, or 'no change'>\n\
+Issue: <the error or bug visible, 1-2 lines, or 'none visible'>\n\
+Fix: <one-line suggestion, or '-'>"
+        )
+    } else {
+        format!(
+            "You are a DEBUG assistant. Look at the screen @{cur}. Reply in at most 3 short lines:\n\
+Changed: first frame\n\
+Issue: <the error or bug visible, 1-2 lines, or 'none visible'>\n\
+Fix: <one-line suggestion, or '-'>"
+        )
+    };
+
+    let output = base_command(&bin)
+        .arg("-p")
+        .arg(&prompt)
+        .arg("--model")
+        .arg("opus")
+        .output()
+        .map_err(|e| format!("Failed to run claude CLI: {e}"))?;
+
+    let _ = std::fs::rename(&cur, &prev);
+
+    if output.status.success() {
+        Ok(ClaudeCliResult {
+            success: true,
+            text: Some(String::from_utf8_lossy(&output.stdout).trim().to_string()),
+            error: None,
+        })
+    } else {
+        Ok(ClaudeCliResult {
+            success: false,
+            text: None,
+            error: Some(String::from_utf8_lossy(&output.stderr).trim().to_string()),
         })
     }
 }
