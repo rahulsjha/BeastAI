@@ -25,7 +25,16 @@ interface AttachedFile {
   type: string;
   base64: string;
   size: number;
+  text?: string;
 }
+
+// Documents we can parse to text (no image/vision needed).
+const isTextDocument = (file: File): boolean => {
+  if (file.type.startsWith("text/")) return true;
+  return /\.(txt|md|markdown|csv|tsv|json|ya?ml|log|py|js|ts|tsx|jsx|java|go|rs|rb|php|c|cpp|h|cs|sql|sh|html?|css)$/i.test(
+    file.name
+  );
+};
 
 interface ChatMessage {
   id: string;
@@ -104,13 +113,16 @@ export const useCompletion = () => {
 
   const addFile = useCallback(async (file: File) => {
     try {
-      const base64 = await fileToBase64(file);
+      const parseAsText = isTextDocument(file);
+      const base64 = parseAsText ? "" : await fileToBase64(file);
+      const text = parseAsText ? await file.text() : undefined;
       const attachedFile: AttachedFile = {
         id: Date.now().toString(),
         name: file.name,
-        type: file.type,
+        type: file.type || (parseAsText ? "text/plain" : ""),
         base64,
         size: file.size,
+        text,
       };
 
       setState((prev) => ({
@@ -167,15 +179,24 @@ export const useCompletion = () => {
           content: msg.content,
         }));
 
-        // Handle image attachments
+        // Handle image attachments + parsed documents
         const imagesBase64: string[] = [];
+        const docSections: string[] = [];
         if (state.attachedFiles.length > 0) {
           state.attachedFiles.forEach((file) => {
             if (file.type.startsWith("image/")) {
               imagesBase64.push(file.base64);
+            } else if (file.text) {
+              docSections.push(
+                `--- Document: ${file.name} ---\n${file.text}`
+              );
             }
           });
         }
+        // Prepend parsed document text to the question so the model can use it.
+        const userMessageWithDocs = docSections.length
+          ? `${docSections.join("\n\n")}\n\n---\n\n${input}`
+          : input;
 
         let fullResponse = "";
 
@@ -215,7 +236,7 @@ export const useCompletion = () => {
             selectedProvider: selectedAIProvider,
             systemPrompt: systemPrompt || undefined,
             history: messageHistory,
-            userMessage: input,
+            userMessage: userMessageWithDocs,
             imagesBase64,
             signal,
           })) {

@@ -5,6 +5,8 @@ export interface AttachedFile {
   type: string;
   base64: string;
   size: number;
+  /** Extracted text for parsed documents (txt/md/csv/code). Images leave this unset. */
+  text?: string;
 }
 
 export interface ChatMessage {

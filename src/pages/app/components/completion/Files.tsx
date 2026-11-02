@@ -43,12 +43,12 @@ export const Files = ({
                 setIsFilesPopoverOpen(true);
               }
             }}
-            disabled={isLoading || !supportsImages}
+            disabled={isLoading}
             className="cursor-pointer"
             title={
               supportsImages
-                ? "Attach images"
-                : "Image upload not supported by current AI provider"
+                ? "Attach a document or image"
+                : "Attach a document (images need a vision model)"
             }
           >
             <PaperclipIcon className="h-4 w-4" />
@@ -155,7 +155,7 @@ export const Files = ({
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*"
+        accept="image/*,text/*,.txt,.md,.markdown,.csv,.tsv,.json,.yaml,.yml,.log,.py,.js,.ts,.tsx,.jsx,.java,.go,.rs,.rb,.php,.c,.cpp,.h,.cs,.sql,.sh,.html,.htm,.css"
         onChange={handleFileSelect}
         className="hidden"
       />
