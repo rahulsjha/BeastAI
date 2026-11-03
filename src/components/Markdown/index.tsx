@@ -1,7 +1,8 @@
 import React from "react";
-import { Streamdown } from "streamdown";
+import { Streamdown, defaultRehypePlugins } from "streamdown";
 import "katex/dist/katex.min.css";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { fixMermaidBlocks } from "@/lib/markdown/mermaid-sanitize";
 
 interface MarkdownRendererProps {
   children: string;
@@ -17,6 +18,7 @@ export function Markdown({
       isAnimating={isStreaming}
       shikiTheme={["github-light", "github-dark"]}
       components={COMPONENTS as any}
+      rehypePlugins={REHYPE_PLUGINS as any}
       controls={{
         table: true,
         code: true,
@@ -28,10 +30,20 @@ export function Markdown({
         },
       }}
     >
-      {children}
+      {fixMermaidBlocks(children ?? "")}
     </Streamdown>
   );
 }
+
+// Streamdown's default order is raw → sanitize → katex → harden, and harden
+// strips KaTeX's class names, so math showed three times ("≈4\\approx 4≈4").
+// Run KaTeX last so its markup and classes survive.
+const REHYPE_PLUGINS = [
+  defaultRehypePlugins.raw,
+  defaultRehypePlugins.sanitize,
+  defaultRehypePlugins.harden,
+  defaultRehypePlugins.katex,
+];
 
 const COMPONENTS = {
   a: ({ children, href, ...props }: any) => {

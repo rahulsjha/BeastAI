@@ -470,7 +470,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           (p) => p.id === selectedAIProvider.provider
         );
         if (provider) {
-          const hasImageSupport = provider.curl?.includes("{{IMAGE}}") ?? false;
+          const hasImageSupport = provider.curl !== undefined /* every provider can take screenshots: CLI natively, text-only ones fall back to Claude vision */;
           setSupportsImages(hasImageSupport);
         } else {
           setSupportsImages(true);
@@ -530,7 +530,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const selectedProvider = allAiProviders.find((p) => p.id === provider);
       if (selectedProvider) {
         const hasImageSupport =
-          selectedProvider.curl?.includes("{{IMAGE}}") ?? false;
+          selectedProvider.curl !== undefined /* every provider can take screenshots: CLI natively, text-only ones fall back to Claude vision */;
         setSupportsImages(hasImageSupport);
       } else {
         setSupportsImages(true);
@@ -666,7 +666,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         (p) => p.id === selectedAIProvider.provider
       );
       if (provider) {
-        const hasImageSupport = provider.curl?.includes("{{IMAGE}}") ?? false;
+        const hasImageSupport = provider.curl !== undefined /* every provider can take screenshots: CLI natively, text-only ones fall back to Claude vision */;
         setSupportsImages(hasImageSupport);
       } else {
         setSupportsImages(true);

@@ -26,10 +26,17 @@
       return post("/claude", {
         prompt: args.prompt, model: args.model,
         session_id: args.sessionId, resume: args.resume,
+        images: args.images || [],
       });
     }
     if (cmd === "claude_cli_status") {
       return Promise.resolve({ available: true, path: "bridge", version: "web" });
+    }
+    if (cmd.startsWith("plugin:macos-permissions|")) {
+      return Promise.resolve(true); // the bridge's screencapture has permission
+    }
+    if (cmd === "capture_to_base64") {
+      return post("/screenshot", {}).then((r) => r.image);
     }
     if (cmd === "debug_analyze_screen") {
       return post("/debug", {});
