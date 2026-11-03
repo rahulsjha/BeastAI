@@ -185,7 +185,8 @@ export async function fetchSTT(params: STTParams): Promise<string> {
       body = JSON.stringify(deepVariableReplacer(dataObj, allVariables));
     }
 
-    const fetchFunction = url?.includes("http") ? fetch : tauriFetch;
+    // Native app: Tauri Rust HTTP (no CORS). Web-test: browser fetch (shim-proxied).
+    const fetchFunction = (window as any).__PLUELY_WEBTEST__ ? fetch : tauriFetch;
 
     // Send request
     let response: Response;

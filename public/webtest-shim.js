@@ -4,6 +4,9 @@
  * invoke() to live backends (local bridge for the claude CLI; Cloudflare via
  * the bridge to avoid CORS). Never shipped in the native app. */
 (function () {
+  // Marks web-test mode so the app uses the browser fetch (which this shim
+  // proxies) instead of Tauri's Rust HTTP client.
+  window.__PLUELY_WEBTEST__ = true;
   var BRIDGE = "http://localhost:8787";
   var cbs = {};
   var cbId = 1;
