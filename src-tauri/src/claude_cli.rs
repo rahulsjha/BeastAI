@@ -13,6 +13,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::process::Command;
+use base64::{engine::general_purpose, Engine as _};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ClaudeCliResult {
@@ -164,19 +165,28 @@ pub async fn claude_cli_response(
 }
 
 /// Debug mode: capture the screen, compare it with the previous frame via Opus
-/// vision, and return a concise "what changed / what's the issue / fix" note.
+/// vision, and return a concise "what changed / what's the issue / fix" note
+/// plus the captured frame (base64 PNG) so the UI can show exactly what was sent.
 /// Requires macOS Screen Recording permission for the app.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DebugAnalyzeResult {
+    pub success: bool,
+    pub text: Option<String>,
+    pub error: Option<String>,
+    pub image: Option<String>,
+}
+
 #[tauri::command]
-pub async fn debug_analyze_screen() -> Result<ClaudeCliResult, String> {
+pub async fn debug_analyze_screen() -> Result<DebugAnalyzeResult, String> {
+    let fail = |msg: &str| DebugAnalyzeResult {
+        success: false,
+        text: None,
+        error: Some(msg.to_string()),
+        image: None,
+    };
     let bin = match resolve_claude_bin() {
         Some(b) => b,
-        None => {
-            return Ok(ClaudeCliResult {
-                success: false,
-                text: None,
-                error: Some("claude CLI not found.".to_string()),
-            })
-        }
+        None => return Ok(fail("claude CLI not found.")),
     };
     let tmp = std::env::var("TMPDIR").unwrap_or_else(|_| "/tmp".to_string());
     let tmp = tmp.trim_end_matches('/');
@@ -185,14 +195,10 @@ pub async fn debug_analyze_screen() -> Result<ClaudeCliResult, String> {
 
     let cap = Command::new("screencapture").arg("-x").arg(&cur).status();
     if cap.map(|s| !s.success()).unwrap_or(true) {
-        return Ok(ClaudeCliResult {
-            success: false,
-            text: None,
-            error: Some(
-                "Screen capture failed. Grant Screen Recording permission to the app.".to_string(),
-            ),
-        });
+        return Ok(fail("Screen capture failed. Grant Screen Recording permission to the app."));
     }
+    // Keep a copy of what we are about to send so the UI can display it.
+    let image = std::fs::read(&cur).ok().map(|b| general_purpose::STANDARD.encode(&b));
 
     let prompt = if Path::new(&prev).exists() {
         format!(
@@ -222,16 +228,18 @@ Fix: <one-line suggestion, or '-'>"
     let _ = std::fs::rename(&cur, &prev);
 
     if output.status.success() {
-        Ok(ClaudeCliResult {
+        Ok(DebugAnalyzeResult {
             success: true,
             text: Some(String::from_utf8_lossy(&output.stdout).trim().to_string()),
             error: None,
+            image,
         })
     } else {
-        Ok(ClaudeCliResult {
+        Ok(DebugAnalyzeResult {
             success: false,
             text: None,
             error: Some(String::from_utf8_lossy(&output.stderr).trim().to_string()),
+            image,
         })
     }
 }

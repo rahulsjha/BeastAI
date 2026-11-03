@@ -20,6 +20,7 @@ export const Input = ({
   isLoading,
   reset,
   input,
+  lastQuestion,
   setInput,
   handleKeyPress,
   handlePaste,
@@ -174,6 +175,12 @@ export const Input = ({
                 <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
                   <strong>Error:</strong> {error}
                 </div>
+              )}
+              {/* What was asked (typed, or transcribed from the mic) */}
+              {(isLoading || response) && lastQuestion && (
+                <p className="text-[11px] text-muted-foreground mb-2 whitespace-pre-wrap">
+                  <span className="font-semibold">Asked:</span> {lastQuestion}
+                </p>
               )}
               {isLoading && (
                 <div className="flex items-center gap-2 my-4 text-muted-foreground animate-pulse select-none">

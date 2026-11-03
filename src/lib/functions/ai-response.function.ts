@@ -372,7 +372,9 @@ export async function* fetchAIResponse(params: {
       }
     }
 
-    const fetchFunction = url?.includes("http") ? fetch : tauriFetch;
+    // Native app: use Tauri's Rust HTTP client (bypasses the webview's CORS,
+    // which Groq/Cloudflare block). Web-test: use the browser fetch the shim proxies.
+    const fetchFunction = (window as any).__PLUELY_WEBTEST__ ? fetch : tauriFetch;
 
     let response;
     try {

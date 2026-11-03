@@ -164,8 +164,9 @@ export const PermissionFlow = ({
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside pt-2 border-t border-border/50">
                   <li>Open System Settings</li>
                   <li>Go to Privacy & Security</li>
-                  <li>Select Screen & System Audio Recording</li>
+                  <li>Select Microphone</li>
                   <li>Enable Pluely</li>
+                  <li>To capture a call's audio, select BlackHole as the Listen input</li>
                 </ol>
               )}
             </div>

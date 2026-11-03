@@ -54,6 +54,7 @@ interface ChatConversation {
 interface CompletionState {
   input: string;
   response: string;
+  lastQuestion: string;
   isLoading: boolean;
   error: string | null;
   attachedFiles: AttachedFile[];
@@ -74,6 +75,7 @@ export const useCompletion = () => {
   const [state, setState] = useState<CompletionState>({
     input: "",
     response: "",
+    lastQuestion: "",
     isLoading: false,
     error: null,
     attachedFiles: [],
@@ -227,6 +229,7 @@ export const useCompletion = () => {
           isLoading: true,
           error: null,
           response: "",
+          lastQuestion: input,
         }));
 
         try {
@@ -549,8 +552,9 @@ export const useCompletion = () => {
     const MAX_FILES = 6;
 
     files.forEach((file) => {
+      // Accept images (for vision models) and parsable text documents.
       if (
-        file.type.startsWith("image/") &&
+        (file.type.startsWith("image/") || isTextDocument(file)) &&
         state.attachedFiles.length < MAX_FILES
       ) {
         addFile(file);
@@ -1026,6 +1030,7 @@ export const useCompletion = () => {
   ]);
 
   return {
+    lastQuestion: state.lastQuestion,
     input: state.input,
     setInput,
     response: state.response,

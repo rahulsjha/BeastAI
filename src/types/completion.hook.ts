@@ -28,6 +28,8 @@ export interface UseCompletionReturn {
   // Response management
   /** Current AI response text */
   response: string;
+  /** The question the current response answers (typed or transcribed) */
+  lastQuestion: string;
   /** Function to update the response text */
   setResponse: (value: string) => void;
 

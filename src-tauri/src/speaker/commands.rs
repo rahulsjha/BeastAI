@@ -518,7 +518,7 @@ pub async fn request_system_audio_access(app: AppHandle) -> Result<(), String> {
     {
         app.shell()
             .command("open")
-            .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_AudioCapture"])
+            .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"])
             .spawn()
             .map_err(|e| {
                 error!("Failed to open system preferences: {}", e);

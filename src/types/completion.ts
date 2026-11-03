@@ -28,6 +28,8 @@ export interface ChatConversation {
 export interface CompletionState {
   input: string;
   response: string;
+  /** The question the current response answers (typed or transcribed) */
+  lastQuestion: string;
   isLoading: boolean;
   error: string | null;
   attachedFiles: AttachedFile[];
