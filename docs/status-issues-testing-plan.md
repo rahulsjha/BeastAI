@@ -47,6 +47,9 @@ Last updated: 2026-11-03. Scope: the interview-assistant build on `rahulsjha/plu
 | B12 | **Groq false refusals** | Safety filter on words like "secret codeword" | Avoid such phrasing; use neutral prompts |
 | B13 | **gpt-oss-20b writes prose into code blocks** | Small model | Use `gpt-oss-120b` (or Opus) for code |
 | B14 | **Dev server stops when app window closes** | `tauri dev` child exits with the window | Relaunch; for web-test run `npm run dev` only |
+| B15 | **Text documents silently never attached** | `handleFileSelect` only forwarded `image/*` files, so docs never reached `addFile`; an earlier "success" was the model guessing common defaults | **Fixed**: accepts parsable text docs; verified with unguessable facts (Bluefin/quartz-release/Marigold) |
+| B16 | **Attachments panel assumed images** | rendered `<img>` for every file; labels said "Attached Images" | **Fixed**: documents show a 📄 card with char count; labels generalized to "Attachments" |
+| B17 | **Listen gate pointed at Screen Recording** | leftover from the ScreenCaptureKit flow; cpal only needs Microphone | **Fixed**: gate auto-passes with cpal; manual steps + Grant button now target Microphone (+ BlackHole hint) |
 
 ---
 

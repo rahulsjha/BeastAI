@@ -71,7 +71,7 @@ export const Files = ({
           >
             <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
               <h3 className="font-semibold text-sm select-none">
-                Attached Images ({attachedFiles.length}/{MAX_FILES})
+                Attachments ({attachedFiles.length}/{MAX_FILES})
               </h3>
               <Button
                 size="icon"
@@ -98,11 +98,20 @@ export const Files = ({
                     key={file.id}
                     className="relative group border rounded-lg overflow-hidden bg-muted/20"
                   >
-                    <img
-                      src={`data:${file.type};base64,${file.base64}`}
-                      alt={file.name}
-                      className={`w-full object-cover h-full`}
-                    />
+                    {file.type.startsWith("image/") ? (
+                      <img
+                        src={`data:${file.type};base64,${file.base64}`}
+                        alt={file.name}
+                        className={`w-full object-cover h-full`}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-2 p-6 min-h-[120px] text-muted-foreground">
+                        <span className="text-3xl">📄</span>
+                        <span className="text-xs">
+                          Document · {(file.text?.length ?? 0).toLocaleString()} chars
+                        </span>
+                      </div>
+                    )}
 
                     {/* File info overlay */}
                     <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-2 text-xs">
@@ -118,7 +127,7 @@ export const Files = ({
                       variant="default"
                       className="absolute top-2 right-2 h-6 w-6 cursor-pointer"
                       onClick={() => removeFile(file.id)}
-                      title="Remove image"
+                      title="Remove"
                     >
                       <XIcon className="h-3 w-3" />
                     </Button>
@@ -136,7 +145,7 @@ export const Files = ({
                 variant="outline"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
-                Add More Images {!canAddMore && `(${MAX_FILES} max)`}
+                Add More {!canAddMore && `(${MAX_FILES} max)`}
               </Button>
               <Button
                 className="w-2/4"
@@ -144,7 +153,7 @@ export const Files = ({
                 onClick={onRemoveAllFiles}
               >
                 <TrashIcon className="h-4 w-4 mr-2" />
-                Remove All Images
+                Remove All
               </Button>
             </div>
           </PopoverContent>

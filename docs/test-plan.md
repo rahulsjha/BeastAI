@@ -157,7 +157,8 @@ say -v Alex -o q2.wav --file-format=WAVE --data-format=LEI16@16000 "Write a func
 |----|-------|---------|
 | I1 | Type a 3-line question | input **expands downward** below the divider; header unchanged |
 | I2 | Shift+Enter | new line (no send); Enter sends | both behave |
-| I3 | Attach `notes.txt` containing "Our DB is PostgreSQL 16 with Citus." then ask "Which database do the notes mention?" | answer says PostgreSQL 16 / Citus (doc text injected) |
+| I3 | **Document attach process:** (1) click the paperclip → pick a `.txt/.md/.csv/code` file; (2) a **count badge** appears on the paperclip; (3) click the paperclip again → "Attachments" panel lists the doc (📄 + char count) with Remove; (4) ask a question; (5) attachments clear after send | each step visible; badge shows `1` |
+| I3b | **Prove injection (critical):** the doc must contain facts the model can't guess, e.g. `The team mascot is a purple heron named Bluefin. Deploys come from branch quartz-release. Staging is nicknamed Marigold.` Ask: "From the attached notes: mascot name, deploy branch, staging nickname?" | answer contains **Bluefin / quartz-release / Marigold**. ⚠️ Never use guessable facts (PostgreSQL/Redis/weekly) — the model will "answer" them without the doc |
 | I4 | Attach an image in Concept mode | clear message that images need a vision model (no crash) |
 | I5 | Attach 2 docs | both referenced; counter shows 2 |
 | I6 | After send | attachments cleared; input shrinks back to 1 line |

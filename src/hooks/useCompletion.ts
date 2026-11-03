@@ -549,8 +549,9 @@ export const useCompletion = () => {
     const MAX_FILES = 6;
 
     files.forEach((file) => {
+      // Accept images (for vision models) and parsable text documents.
       if (
-        file.type.startsWith("image/") &&
+        (file.type.startsWith("image/") || isTextDocument(file)) &&
         state.attachedFiles.length < MAX_FILES
       ) {
         addFile(file);
