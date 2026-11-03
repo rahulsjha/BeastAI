@@ -225,3 +225,23 @@ Logs: tauri dev log line / console line
 - **Speaker labels** — after Deepgram wiring; retest A8 for `Speaker 1/2/You`.
 - **Opus streaming** — after stream-json wiring; retest K1 for progressive text.
 - **Mermaid** — retest C2/C4/D2 after any prompt/validator change.
+
+## Audio capture probe (no UI needed) — verified 2026-11-03
+
+`src-tauri/examples/audio_probe.rs` records from any input device through the same cpal path the app uses.
+
+```bash
+cd src-tauri && cargo build --example audio_probe
+./target/debug/examples/audio_probe list                                   # devices (* = default)
+./target/debug/examples/audio_probe record "MacBook Air Microphone" 8 mic.wav   # prints rms/peak, writes WAV
+```
+
+**Important:** the default `say` voice on this Mac produces *silent* audio (0.005 s). Always use `say -v Samantha`.
+Target a device directly with `-a`: `say -v Samantha -a "BlackHole 2ch" "..."` (`say -a '?'` lists ids).
+
+Results (Whisper transcript of the captured WAV):
+| Source | Captured | Transcript |
+|---|---|---|
+| MacBook Air Microphone ← speakers | rms 0.047, peak 0.40 | exact |
+| BlackHole 2ch ← audio routed to BlackHole | rms 0.117, peak 0.73 | exact |
+| Teams Audio / RemotePC* / Utell* / AlteredVirtualAudio | silent (no app feeding them) | — |
