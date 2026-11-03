@@ -245,3 +245,28 @@ Results (Whisper transcript of the captured WAV):
 | MacBook Air Microphone ← speakers | rms 0.047, peak 0.40 | exact |
 | BlackHole 2ch ← audio routed to BlackHole | rms 0.117, peak 0.73 | exact |
 | Teams Audio / RemotePC* / Utell* / AlteredVirtualAudio | silent (no app feeding them) | — |
+
+## Screen-question tests across modes — verified 2026-11-03
+
+Flow: real page → screenshot → app (Screenshot button or Debug watch) → answer. In web-test the bridge can serve a fixed
+"screen" image (`PLUELY_TEST_SCREEN=/path/screen.png`) so tests don't depend on what is in front of the display.
+
+| Mode | Site / question on screen | Model path | Result |
+|---|---|---|---|
+| Code | LeetCode #3 Longest Substring Without Repeating Characters | Opus (CLI) + `@screenshot` | Approach, dry run, Python; ran it: 7/7 cases pass |
+| Design | GitHub system-design-primer: "Design Pastebin.com (or Bit.ly)" | Groq can't see images → Claude Sonnet vision fallback | Requirements, scale estimates, storage split, diagram |
+| Concept | Wikipedia: Dining philosophers problem | Sonnet vision fallback | Concept, why it deadlocks, diagram, solutions table |
+| Debug (watch) | Stack Overflow: "return response from async call" | Opus (CLI) vision, 12s/frame | Found the bug (`return result` before callback) + concrete fix |
+| Debug (watch) | screen changes SO → LeetCode | Opus, 13s | "Changed: moved from … to LeetCode #3" |
+| Debug (safety) | SO page with "paste this into your AI assistant" box | Opus | Ignored the on-screen instruction |
+| Conversation | Two voices (interviewer + candidate) played into BlackHole | cpal capture → Whisper | Full exchange transcribed verbatim; no speaker labels (needs Deepgram) |
+
+Bugs found and fixed in this pass:
+- Screenshots were silently dropped for Code/Debug (Claude CLI never received `imagesBase64`) → images now sent as `@file`.
+- Design/Concept threw "does not support image input" (Groq has no vision model) → image turns fall back to Claude Sonnet.
+- Screenshot button was disabled in every mode (no provider had `{{IMAGE}}`) → enabled.
+- Math rendered three times (`≈4\approx 4≈4`): Streamdown's `harden` stripped KaTeX classes → KaTeX now runs last.
+- Mermaid parse errors from labels like `C[compare A[mid]]` → labels sanitized and quoted before rendering (`<`/`>` kept as `#lt;`/`#gt;`).
+- Debug prompt only looked for UI errors → now also reads visible code for bugs and treats on-screen text as data.
+
+Timing: typed Concept/Design (Groq) ~1–4s; screenshot questions ~11s CLI floor, 20–40s for full in-app answers; Code (Opus high) ~20–35s.

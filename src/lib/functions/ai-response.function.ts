@@ -183,8 +183,16 @@ async function* fetchClaudeCliResponse(params: {
   history?: Message[];
   model?: string;
   signal?: AbortSignal;
+  imagesBase64?: string[];
 }): AsyncIterable<string> {
-  const { systemPrompt, userMessage, history = [], model, signal } = params;
+  const {
+    systemPrompt,
+    userMessage,
+    history = [],
+    model,
+    signal,
+    imagesBase64 = [],
+  } = params;
 
   if (signal?.aborted) return;
 
@@ -214,6 +222,7 @@ async function* fetchClaudeCliResponse(params: {
       model: model ?? "haiku",
       sessionId: claudeCliSessionId,
       resume,
+      images: imagesBase64.length ? imagesBase64 : null,
     });
 
     if (signal?.aborted) return;
@@ -268,6 +277,26 @@ export async function* fetchAIResponse(params: {
         history,
         model: selectedProvider.variables?.model || selectedProvider.variables?.MODEL,
         signal,
+        imagesBase64,
+      });
+      return;
+    }
+
+    // Text-only providers (e.g. Groq) can't read screenshots. When an image is
+    // attached, answer that turn with Claude Sonnet (vision) via the CLI instead
+    // of failing; text-only questions keep using the fast provider.
+    if (
+      imagesBase64.length > 0 &&
+      provider &&
+      !provider.curl.includes("{{IMAGE}}")
+    ) {
+      yield* fetchClaudeCliResponse({
+        systemPrompt: enhancedSystemPrompt,
+        userMessage,
+        history: [],
+        model: "sonnet",
+        signal,
+        imagesBase64,
       });
       return;
     }

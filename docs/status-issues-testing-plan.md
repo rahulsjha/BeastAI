@@ -38,7 +38,7 @@ Last updated: 2026-11-03. Scope: the interview-assistant build on `rahulsjha/plu
 | B3 | **System audio needs a virtual device** | cpal captures *input* devices, not speaker output | Needs **BlackHole** + Multi-Output device (installed; routing pending) |
 | B4 | **No speaker labels** | Cloudflare Whisper doesn't diarize | Plan: wire **Deepgram** nova-3 (diarization) |
 | B5 | **Opus (Code/Debug) doesn't stream** | CLI returns full answer; no stream-json wiring | Open — plan below |
-| B6 | **Mermaid diagrams sometimes invalid** | Groq writes unparseable mermaid | Prompt-constrained; not 100% |
+| B6 | **Mermaid diagrams sometimes invalid** | Groq writes unparseable mermaid (brackets inside labels) | **Fixed**: labels sanitized + quoted before render |
 | B7 | **Input expansion broke the header** | Growing textarea inside the thin bar | Fixed (#5): input moved to its own row below a divider |
 | B8 | **Mode dropdown looked unprofessional** | Switched to dropdown to fit width | Fixed (#5): back to 4 pills (fit once input moved below) |
 | B9 | **`curl2Json` "Invalid URL" crash** | Placeholder provider curl had a non-URL | Fixed: valid placeholder URL |
@@ -53,6 +53,11 @@ Last updated: 2026-11-03. Scope: the interview-assistant build on `rahulsjha/plu
 | B19 | **Whisper sends "Thank you." on silence** | Whisper hallucinates filler on silence/noise | **Fixed**: short/filler transcriptions are dropped before submit |
 | B20 | **Debug mode showed only a truncated one-liner** | header-only output | **Fixed**: panel shows the captured screenshot + full analysis + earlier frames |
 | B21 | **Couldn't see what the mic heard** | answer panel showed only the response | **Fixed**: "Asked: …" line shows the typed/transcribed question |
+| B22 | **Screenshots dropped in Code/Debug** | Claude CLI path never received images | **Fixed**: sent as `@file` attachments |
+| B23 | **Screenshots failed in Design/Concept** | Groq has no vision model | **Fixed**: image turns fall back to Claude Sonnet |
+| B24 | **Screenshot button disabled** | no provider curl had `{{IMAGE}}` | **Fixed**: enabled for all modes |
+| B25 | **Math shown three times** | Streamdown `harden` stripped KaTeX classes | **Fixed**: KaTeX runs last |
+| B26 | **Debug missed bugs in visible code** | prompt only looked for UI errors | **Fixed**: reads code, ignores on-screen instructions |
 | B17 | **Listen gate pointed at Screen Recording** | leftover from the ScreenCaptureKit flow; cpal only needs Microphone | **Fixed**: gate auto-passes with cpal; manual steps + Grant button now target Microphone (+ BlackHole hint) |
 
 ---
