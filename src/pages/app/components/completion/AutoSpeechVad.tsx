@@ -30,6 +30,11 @@ const AutoSpeechVADInternal = ({
       : {};
 
   const vad = useMicVAD({
+    // Serve the VAD model, audio worklet, and onnxruntime WASM from the app
+    // bundle (public/vad/) instead of a CDN — the native webview can't rely on
+    // CDN fetches, which made the mic silently do nothing.
+    baseAssetPath: "/vad/",
+    onnxWASMBasePath: "/vad/",
     userSpeakingThreshold: 0.6,
     startOnLoad: true,
     additionalAudioConstraints: audioConstraints,
@@ -75,8 +80,15 @@ const AutoSpeechVADInternal = ({
           audio: audioBlob,
         });
 
-        if (transcription) {
-          submit(transcription);
+        // Whisper emits filler phrases on silence/noise; don't send those.
+        const clean = transcription?.trim() ?? "";
+        const isNoise =
+          clean.replace(/[^a-z]/gi, "").length < 3 ||
+          /^(thank(s| you)( for watching)?|you|bye|okay|uh|um)[.!]?$/i.test(clean);
+        if (clean && !isNoise) {
+          submit(clean);
+        } else if (clean) {
+          console.debug("[VAD] ignored noise transcription:", clean);
         }
       } catch (error) {
         console.error("Failed to transcribe audio:", error);

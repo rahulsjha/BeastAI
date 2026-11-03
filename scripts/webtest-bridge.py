@@ -108,6 +108,11 @@ class H(BaseHTTPRequestHandler):
                               "Changed: first frame\nIssue: <the error or bug visible, 1-2 lines, or 'none visible'>\n"
                               "Fix: <one-line suggestion, or '-'>")
                 res = self._run_claude([CLAUDE, "-p", prompt, "--model", "opus"], timeout=120)
+                try:  # include the frame we sent so the UI can show it
+                    import base64
+                    res["image"] = base64.b64encode(open(cur, "rb").read()).decode()
+                except Exception:
+                    pass
                 try:
                     os.replace(cur, prev)
                 except Exception:

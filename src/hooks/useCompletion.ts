@@ -54,6 +54,7 @@ interface ChatConversation {
 interface CompletionState {
   input: string;
   response: string;
+  lastQuestion: string;
   isLoading: boolean;
   error: string | null;
   attachedFiles: AttachedFile[];
@@ -74,6 +75,7 @@ export const useCompletion = () => {
   const [state, setState] = useState<CompletionState>({
     input: "",
     response: "",
+    lastQuestion: "",
     isLoading: false,
     error: null,
     attachedFiles: [],
@@ -227,6 +229,7 @@ export const useCompletion = () => {
           isLoading: true,
           error: null,
           response: "",
+          lastQuestion: input,
         }));
 
         try {
@@ -1027,6 +1030,7 @@ export const useCompletion = () => {
   ]);
 
   return {
+    lastQuestion: state.lastQuestion,
     input: state.input,
     setInput,
     response: state.response,
