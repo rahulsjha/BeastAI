@@ -49,6 +49,10 @@ Last updated: 2026-11-03. Scope: the interview-assistant build on `rahulsjha/plu
 | B14 | **Dev server stops when app window closes** | `tauri dev` child exits with the window | Relaunch; for web-test run `npm run dev` only |
 | B15 | **Text documents silently never attached** | `handleFileSelect` only forwarded `image/*` files, so docs never reached `addFile`; an earlier "success" was the model guessing common defaults | **Fixed**: accepts parsable text docs; verified with unguessable facts (Bluefin/quartz-release/Marigold) |
 | B16 | **Attachments panel assumed images** | rendered `<img>` for every file; labels said "Attached Images" | **Fixed**: documents show a 📄 card with char count; labels generalized to "Attachments" |
+| B18 | **Mic button did nothing** | `vad-web` fetched the Silero model / worklet / onnxruntime WASM from a CDN the app webview can't reach, so VAD never initialized | **Fixed**: assets bundled in `public/vad/`, `useMicVAD` uses `baseAssetPath`/`onnxWASMBasePath` = `/vad/` |
+| B19 | **Whisper sends "Thank you." on silence** | Whisper hallucinates filler on silence/noise | **Fixed**: short/filler transcriptions are dropped before submit |
+| B20 | **Debug mode showed only a truncated one-liner** | header-only output | **Fixed**: panel shows the captured screenshot + full analysis + earlier frames |
+| B21 | **Couldn't see what the mic heard** | answer panel showed only the response | **Fixed**: "Asked: …" line shows the typed/transcribed question |
 | B17 | **Listen gate pointed at Screen Recording** | leftover from the ScreenCaptureKit flow; cpal only needs Microphone | **Fixed**: gate auto-passes with cpal; manual steps + Grant button now target Microphone (+ BlackHole hint) |
 
 ---
@@ -65,7 +69,7 @@ Last updated: 2026-11-03. Scope: the interview-assistant build on `rahulsjha/plu
 
 ## 4. Audio — where it stands
 
-- **Mic (your voice):** works via the webview (`getUserMedia`); needs macOS Microphone permission.
+- **Mic (your voice):** works via the webview (`getUserMedia`) + local Silero VAD; needs macOS Microphone permission. Each pause ends a segment → Whisper → answer. Continuous background speech restarts the answer each segment (by design; mute the mic when not asking).
 - **Listen / system audio:** capture engine **enabled** (cpal). It records the **selected input device**:
   - Default input = your mic → hears only you.
   - To hear **all remote participants**, route system output into **BlackHole** (virtual input) and select it.
