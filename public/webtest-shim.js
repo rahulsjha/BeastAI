@@ -41,7 +41,7 @@
         return Promise.resolve({ is_active: true, is_dev_license: false });
       case "check_license_status": return Promise.resolve(true);
       case "secure_storage_get": return Promise.resolve({});
-      case "check_system_audio_access": return Promise.resolve(false);
+      case "check_system_audio_access": return Promise.resolve(true);
       case "get_input_devices":
       case "get_output_devices": return Promise.resolve([]);
       case "check_shortcuts_registered": return Promise.resolve(true);
