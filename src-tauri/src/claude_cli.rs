@@ -73,6 +73,19 @@ fn base_command(bin: &str) -> Command {
     cmd
 }
 
+/// Answer-only mode: deny action tools so the model replies in text instead of
+/// trying to write or run files (which in print mode gets denied and left the
+/// answer with empty code blocks).
+const DENIED_TOOLS: &str = "Bash Write Edit NotebookEdit WebFetch WebSearch Task Agent";
+const ANSWER_ONLY_PROMPT: &str = "You are answering inside a live-interview overlay. Never use tools or run code; write the full answer, including complete code, directly in your reply.";
+
+fn answer_only(cmd: &mut Command) {
+    cmd.arg("--disallowedTools")
+        .arg(DENIED_TOOLS)
+        .arg("--append-system-prompt")
+        .arg(ANSWER_ONLY_PROMPT);
+}
+
 #[tauri::command]
 pub async fn claude_cli_status() -> Result<ClaudeCliStatus, String> {
     let bin = match resolve_claude_bin() {
@@ -146,6 +159,7 @@ pub async fn claude_cli_response(
 
     let mut cmd = base_command(&bin);
     cmd.arg("-p").arg(&prompt).arg("--model").arg(&model);
+    answer_only(&mut cmd);
 
     // Coding/debug routing: Opus runs at high effort for correctness.
     if model == "opus" || model == "claude-opus-5-5" {
@@ -234,11 +248,10 @@ Fix: <concrete fix, e.g. the corrected line of code, or '-'>"
         )
     };
 
-    let output = base_command(&bin)
-        .arg("-p")
-        .arg(&prompt)
-        .arg("--model")
-        .arg("opus")
+    let mut cmd = base_command(&bin);
+    cmd.arg("-p").arg(&prompt).arg("--model").arg("opus");
+    answer_only(&mut cmd);
+    let output = cmd
         .output()
         .map_err(|e| format!("Failed to run claude CLI: {e}"))?;
 

@@ -81,8 +81,43 @@ function sanitizeLine(line: string): string {
   return out;
 }
 
+// Arrow tokens, optionally followed by an edge label: -->, ---, -.->, ==>, --o, --x
+const ARROW = /(\s*(?:<?[-=.]{2,}[->ox]?|<?-\.+->?)(?:\|[^|]*\|)?\s*)/;
+
+// Bare node names with spaces ("Thread A") are invalid IDs. Turn them into a
+// stable ID plus a quoted label: Thread_A["Thread A"].
+function fixBareNodes(line: string): string {
+  if (!ARROW.test(line) || line.includes("&")) return line;
+  const indent = line.match(/^\s*/)?.[0] ?? "";
+  const parts = line.trim().split(ARROW);
+  return (
+    indent +
+    parts
+      .map((part, idx) => {
+        if (idx % 2 === 1) return part; // arrow
+        const t = part.trim();
+        if (!t || /^[A-Za-z0-9_]+$/.test(t) || /^[A-Za-z0-9_]+\s*[[({]/.test(t)) return part;
+        if (/^[^[\](){}"]+$/.test(t)) {
+          const id = t.replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "") || "N";
+          return `${/^[0-9]/.test(id) ? "N" + id : id}["${cleanLabel(t)}"]`;
+        }
+        return part;
+      })
+      .join("")
+  );
+}
+
+const isFlowchart = (code: string) =>
+  /^\s*(flowchart|graph)\b/i.test(code.replace(/^\s*(%%.*\n)+/, ""));
+
 export function sanitizeMermaid(code: string): string {
-  return code.split("\n").map(sanitizeLine).join("\n");
+  // The label/ID rewrites below are flowchart syntax only; sequence, class,
+  // state, ER, gantt etc. diagrams use different grammars, so leave them as-is.
+  if (!isFlowchart(code)) return code;
+  return code
+    .split("\n")
+    .map((l) => sanitizeLine(fixBareNodes(l)))
+    .join("\n");
 }
 
 /** Sanitizes every ```mermaid block inside a markdown string. */

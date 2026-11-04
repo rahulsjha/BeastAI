@@ -3,6 +3,7 @@ import { useWindowResize } from "./useWindow";
 import { useGlobalShortcuts } from "@/hooks";
 import { MAX_FILES } from "@/config";
 import { useApp } from "@/contexts";
+import { MODES } from "@/config/modes";
 import {
   fetchAIResponse,
   saveConversation,
@@ -64,12 +65,22 @@ interface CompletionState {
 
 export const useCompletion = () => {
   const {
-    selectedAIProvider,
+    selectedAIProvider: storedAIProvider,
     allAiProviders,
-    systemPrompt,
+    systemPrompt: storedSystemPrompt,
     screenshotConfiguration,
     setScreenshotConfiguration,
+    currentMode,
   } = useApp();
+
+  // The selected interview mode is the source of truth for routing: every
+  // question uses that mode's model, keys and prompt at send time, so an async
+  // reload of saved settings can never send it to the previous mode's model.
+  const modeDef = MODES[currentMode as keyof typeof MODES];
+  const selectedAIProvider = modeDef
+    ? { provider: modeDef.aiProvider, variables: modeDef.aiVariables }
+    : storedAIProvider;
+  const systemPrompt = modeDef?.systemPrompt ?? storedSystemPrompt;
   const globalShortcuts = useGlobalShortcuts();
 
   const [state, setState] = useState<CompletionState>({
@@ -176,7 +187,10 @@ export const useCompletion = () => {
 
       try {
         // Prepare message history for the AI
-        const messageHistory = state.conversationHistory.map((msg) => ({
+        // Always send history oldest → newest (never rely on display order).
+        const messageHistory = [...state.conversationHistory]
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map((msg) => ({
           role: msg.role,
           content: msg.content,
         }));
@@ -311,9 +325,8 @@ export const useCompletion = () => {
     [
       state.input,
       state.attachedFiles,
-      selectedAIProvider,
+      currentMode,
       allAiProviders,
-      systemPrompt,
       state.conversationHistory,
     ]
   );
@@ -600,7 +613,10 @@ export const useCompletion = () => {
 
           try {
             // Prepare message history for the AI
-            const messageHistory = state.conversationHistory.map((msg) => ({
+            // Always send history oldest → newest (never rely on display order).
+        const messageHistory = [...state.conversationHistory]
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map((msg) => ({
               role: msg.role,
               content: msg.content,
             }));
@@ -726,9 +742,8 @@ export const useCompletion = () => {
     [
       state.attachedFiles.length,
       state.conversationHistory,
-      selectedAIProvider,
+      currentMode,
       allAiProviders,
-      systemPrompt,
       saveCurrentConversation,
       inputRef,
     ]

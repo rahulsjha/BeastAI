@@ -27,6 +27,11 @@ if not os.path.exists(CLAUDE):
     CLAUDE = shutil.which("claude") or CLAUDE
 
 
+# Same answer-only flags as the app (src-tauri/src/claude_cli.rs).
+ANSWER_ONLY = ["--disallowedTools", "Bash Write Edit NotebookEdit WebFetch WebSearch Task Agent",
+               "--append-system-prompt", "You are answering inside a live-interview overlay. Never use tools or run code; write the full answer, including complete code, directly in your reply."]
+
+
 def _child_env():
     env = os.environ.copy()
     env.pop("ANTHROPIC_API_KEY", None)   # force subscription auth, never an API key
@@ -65,7 +70,7 @@ class H(BaseHTTPRequestHandler):
         pass
 
     def _run_claude(self, cmd, timeout=300):
-        p = subprocess.run(cmd, env=_child_env(), cwd="/tmp",
+        p = subprocess.run(cmd + ANSWER_ONLY, env=_child_env(), cwd="/tmp",
                            capture_output=True, text=True, timeout=timeout)
         if p.returncode == 0:
             return {"success": True, "text": p.stdout.strip()}
@@ -99,6 +104,15 @@ class H(BaseHTTPRequestHandler):
                 if sid:
                     cmd += (["--resume", sid] if resume else ["--session-id", sid])
                 return self._send(200, self._run_claude(cmd))
+
+            if self.path == "/save":  # test-only: persist an answer for offline checking
+                out_dir = os.environ.get("PLUELY_TEST_OUT")
+                if not out_dir:
+                    return self._send(403, {"error": "PLUELY_TEST_OUT not set"})
+                name = os.path.basename(data.get("name", "answer.txt"))
+                with open(os.path.join(out_dir, name), "w") as f:
+                    f.write(data.get("text", ""))
+                return self._send(200, {"saved": name})
 
             if self.path == "/screenshot":
                 import base64

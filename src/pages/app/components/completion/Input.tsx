@@ -1,5 +1,4 @@
 import { Loader2, XIcon } from "lucide-react";
-import { useEffect } from "react";
 import {
   Popover,
   PopoverContent,
@@ -13,7 +12,9 @@ import {
 import { UseCompletionReturn } from "@/types";
 import { MessageHistory } from "./MessageHistory";
 
-const MAX_INPUT_HEIGHT = 140; // px (~6 lines); the input sits in its own row below the header, so it can grow downward
+// The question bar keeps one fixed height. Long or multi-line questions scroll
+// inside it instead of growing the bar; the full text shows as "Asked:" above
+// the answer.
 
 export const Input = ({
   isPopoverOpen,
@@ -39,13 +40,6 @@ export const Input = ({
   setKeepEngaged,
 }: UseCompletionReturn & { isHidden: boolean }) => {
   // Auto-grow the textarea with its content (and shrink back when cleared).
-  useEffect(() => {
-    const el = inputRef?.current as unknown as HTMLTextAreaElement | null;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT) + "px";
-  }, [input, inputRef]);
-
   return (
     <div className="relative flex-1">
       <Popover
@@ -71,7 +65,7 @@ export const Input = ({
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              className={`placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/50 dark:border-input/80 flex min-h-9 w-full min-w-0 resize-none overflow-y-auto rounded-xl border bg-transparent px-3 py-2 text-base leading-snug shadow-xs outline-none transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring/60 focus-visible:ring-ring dark:focus-visible:ring-ring/60 focus-visible:ring-[2px] ${
+              className={`placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/50 dark:border-input/80 flex h-9 max-h-9 w-full min-w-0 resize-none overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words rounded-xl border bg-transparent px-3 py-2 text-base leading-snug shadow-xs outline-none transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring/60 focus-visible:ring-ring dark:focus-visible:ring-ring/60 focus-visible:ring-[2px] ${
                 currentConversationId && conversationHistory.length > 0
                   ? "pr-14"
                   : "pr-2"
@@ -193,7 +187,7 @@ export const Input = ({
               {/* Conversation History - Separate scroll, no auto-scroll */}
               {keepEngaged && conversationHistory.length > 1 && (
                 <div className="space-y-3 pt-3">
-                  {conversationHistory
+                  {[...conversationHistory]
                     .sort((a, b) => b?.timestamp - a?.timestamp)
                     .map((message, index) => {
                       if (!isLoading && index === 0) {

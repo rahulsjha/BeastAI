@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Streamdown, defaultRehypePlugins } from "streamdown";
 import "katex/dist/katex.min.css";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { fixMermaidBlocks } from "@/lib/markdown/mermaid-sanitize";
+import { fixInlineMath } from "@/lib/markdown/inline-math";
+import { repairMermaidBlocks } from "@/lib/markdown/mermaid-repair";
 
 interface MarkdownRendererProps {
   children: string;
@@ -13,6 +15,28 @@ export function Markdown({
   children,
   isStreaming = false,
 }: MarkdownRendererProps) {
+  const prepared = fixInlineMath(children ?? "");
+
+  // Diagrams: show the quick sanitized version right away, then — once the
+  // text stops changing — swap in a version verified by Mermaid's parser
+  // (original → sanitized → up to 2 model repairs).
+  const [repaired, setRepaired] = useState<{ src: string; out: string } | null>(null);
+  useEffect(() => {
+    if (!prepared.includes("```mermaid")) return;
+    let cancelled = false;
+    const t = setTimeout(() => {
+      repairMermaidBlocks(prepared).then((out) => {
+        if (!cancelled) setRepaired({ src: prepared, out });
+      });
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [prepared]);
+  const content =
+    repaired?.src === prepared ? repaired.out : fixMermaidBlocks(prepared);
+
   return (
     <Streamdown
       isAnimating={isStreaming}
@@ -30,7 +54,7 @@ export function Markdown({
         },
       }}
     >
-      {fixMermaidBlocks(children ?? "")}
+      {content}
     </Streamdown>
   );
 }
