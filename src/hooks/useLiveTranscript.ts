@@ -265,7 +265,7 @@ export function useLiveTranscript(opts: {
               // Let the user pick a meeting tab OR the entire screen. With the
               // entire screen + "Share system audio", Chrome captures all
               // computer audio (Zoom/Teams/Meet apps) — no virtual audio device.
-              video: true,
+              video: { displaySurface: "browser" }, // opens on Tabs; Entire screen still selectable
               audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
               systemAudio: "include",
               selfBrowserSurface: "exclude",
