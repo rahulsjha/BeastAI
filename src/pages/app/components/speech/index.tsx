@@ -35,6 +35,7 @@ export const SystemAudio = (props: useSystemAudioType) => {
     lastTranscription,
     lastAIResponse,
     error,
+    clearError,
     setupRequired,
     startCapture,
     stopCapture,
@@ -179,6 +180,8 @@ export const SystemAudio = (props: useSystemAudioType) => {
         if (capturing && !open) {
           return;
         }
+        // Closing after a failed start clears the message and resets the bar.
+        if (!open && !capturing) clearError?.();
         setIsPopoverOpen(open);
       }}
     >

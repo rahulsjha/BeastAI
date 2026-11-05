@@ -600,6 +600,11 @@ export function useSystemAudio() {
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
+      // Starting failed: leave "listening" mode so the bar doesn't get stuck,
+      // and show why (closing the panel clears the message).
+      setCapturing(false);
+      setIsContinuousMode(false);
+      setIsRecordingInContinuousMode(false);
       setError(errorMessage);
       setIsPopoverOpen(true);
     }
@@ -879,6 +884,7 @@ export function useSystemAudio() {
   ]);
 
   return {
+    clearError: () => setError(""),
     capturing,
     isProcessing,
     isAIProcessing,
