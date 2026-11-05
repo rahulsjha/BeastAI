@@ -63,7 +63,7 @@ const AutoSpeechVADInternal = ({
   const audioConstraints: MediaTrackConstraints =
     microphoneDeviceId && microphoneDeviceId !== "default"
       ? { deviceId: { exact: microphoneDeviceId } }
-      : {};
+      : { deviceId: { exact: "default" } }; // system default mic, not the first (maybe virtual) device
 
   const vad = useMicVAD({
     // Serve the VAD model, audio worklet, and onnxruntime WASM from the app

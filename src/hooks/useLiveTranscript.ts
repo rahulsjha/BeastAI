@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MicVAD } from "@ricky0123/vad-web";
 import { useApp } from "@/contexts";
 import { fetchSTT } from "@/lib";
+import { getDefaultMic } from "@/lib/default-mic";
 import { floatArrayToWav } from "@/lib/utils";
 import {
   cleanTranscript,
@@ -183,9 +184,7 @@ export function useLiveTranscript(opts: {
     setError(null);
     setMic("starting");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
+      const stream = await getDefaultMic({ echoCancellation: true, noiseSuppression: true });
       await startSource("you", stream);
       setMic("on");
     } catch (e) {

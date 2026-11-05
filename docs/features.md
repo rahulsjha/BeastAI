@@ -39,7 +39,7 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 | **⌘⇧O** (Ctrl+Shift+O) | Start / stop **Solve screen** monitoring |
 | ⌘⇧A | Mic on/off · ⌘⇧M Listen · ⌘⇧I focus the question bar · ⌘\\ show/hide |
 
-No tab-sharing pop-ups anywhere: screens are captured with screenshots, and in the desktop app the meeting's audio (Listen / Interviewer) is captured automatically from the computer.
+No tab-sharing pop-ups anywhere: screens are captured with screenshots. **Listen** hears the meeting: in the desktop app straight from the computer's audio; in the browser through the system default microphone (it hears the meeting from your speakers).
 
 ## Solve screen (any website)
 
