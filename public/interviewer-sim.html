@@ -26,11 +26,25 @@
   let items = [];
   const audio = new Audio();
   window.simAudio = audio; // the test driver "unlocks" this element once with a user gesture
-  window.unlockAudio = async () => { audio.src = "/sim/e_stmt.m4a"; audio.volume = 0.01; await audio.play(); audio.pause(); audio.volume = 1; return "unlocked"; };
+  // Test mode: route the clip audio into a MediaStream only (never to the speakers),
+  // so the app's Interviewer source gets it and the mic can't hear it.
+  let simStream = null;
+  window.getSimStream = () => {
+    if (simStream) return simStream;
+    const ctx = new AudioContext();
+    const src = ctx.createMediaElementSource(audio);
+    const dest = ctx.createMediaStreamDestination();
+    src.connect(dest); // not connected to ctx.destination → silent locally
+    window.__simCtx = ctx;
+    simStream = dest.stream;
+    return simStream;
+  };
+  window.unlockAudio = async () => { audio.src = "/sim/silence.m4a"; audio.volume = 0.01; await audio.play(); audio.pause(); audio.volume = 1; return "unlocked"; };
   function play(id) {
     const it = items.find((x) => x.id === id);
     if (!it) return ch.postMessage({ type: "error", id, error: "unknown id" });
     document.querySelectorAll(".row").forEach((r) => r.classList.toggle("playing", r.dataset.id === id));
+    window.__simCtx?.resume?.();
     audio.src = "/sim/" + id + ".m4a";
     audio.onended = () => { ch.postMessage({ type: "ended", id, at: Date.now() }); log("ended " + id); };
     audio.play().then(() => { ch.postMessage({ type: "started", id, at: Date.now() }); log("playing " + id + ": " + it.text); })

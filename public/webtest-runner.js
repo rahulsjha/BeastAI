@@ -168,8 +168,17 @@
 })();
 
 // One-call setup for the live transcript test: open panel, auto-answer on, both sources on.
-window.__setupLive = async ({ autoAnswer = true } = {}) => {
+window.__setupLive = async ({ autoAnswer = true, you = true } = {}) => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // Test mode: run the interviewer simulator inside this tab (hidden frame).
+  if (!document.getElementById("pluely-sim-frame")) {
+    const f = document.createElement("iframe");
+    f.id = "pluely-sim-frame"; f.src = "/interviewer-sim.html";
+    f.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;right:0;border:0";
+    document.body.appendChild(f);
+    await new Promise((r) => f.addEventListener("load", r)); await sleep(500);
+    try { await f.contentWindow.unlockAudio(); } catch (e) { console.warn("sim unlock", e); }
+  }
   if (![...document.querySelectorAll("h3")].some((h) => h.textContent === "Live transcript")) {
     document.querySelector("svg.lucide-captions")?.closest("button")?.click(); await sleep(600);
   }
@@ -179,8 +188,58 @@ window.__setupLive = async ({ autoAnswer = true } = {}) => {
   window.__dot = dot;
   const sw = panel.querySelector("[role=switch]");
   if ((sw.getAttribute("aria-checked") === "true") !== autoAnswer) sw.click();
-  if (!dot("You")) { btn("You").click(); await sleep(2500); }
-  if (!dot("Interviewer")) { btn("Interviewer").click(); await sleep(4000); }
+  if (you && !dot("You")) { btn("You").click(); await sleep(2500); }
+  if (!you && dot("You")) { btn("You").click(); await sleep(500); }
+  for (let attempt = 0; attempt < 4 && !dot("Interviewer"); attempt++) {
+    btn("Interviewer").click(); await sleep(4000); // Chrome's auto-select occasionally misses; retry
+  }
   return { you: dot("You"), interviewer: dot("Interviewer"), autoAnswer: sw.getAttribute("aria-checked"),
     error: panel.parentElement.innerText.match(/Microphone unavailable.*|No audio.*|Couldn.t.*/)?.[0] || null };
 };
+
+// ---- Queue tests: play several interviewer lines back to back, then wait for all jobs ----
+(() => {
+  const ch = new BroadcastChannel("pluely-sim");
+  const T = window.__T;
+  const playAndWait = (id) => new Promise((res) => {
+    const h = (e) => { if (e.data?.id === id && (e.data.type === "ended" || e.data.type === "error")) { ch.removeEventListener("message", h); res(e.data); } };
+    ch.addEventListener("message", h); ch.postMessage({ type: "play", id });
+    setTimeout(() => res(null), 30000);
+  });
+  const jobs = () => (window.__queue?.jobs || []).map((j) => ({ id: j.id, text: j.text, mode: j.mode, source: j.source, status: j.status,
+    waitS: j.startedAt ? +((j.startedAt - j.queuedAt) / 1000).toFixed(1) : null,
+    answerS: j.doneAt && j.startedAt ? +((j.doneAt - j.startedAt) / 1000).toFixed(1) : null, error: j.error }));
+  window.__jobs = jobs;
+  // steps: [{play:id, mode?:'Code', gapMs?:500}, {manual:'text'}, {cancelAfterMs:n}, ...]
+  window.__queueRun = (steps, { finishTimeoutMs = 300000 } = {}) => {
+    window.__Q = { done: false, log: [] };
+    (async () => {
+      const t0 = Date.now(); const log = (m) => window.__Q.log.push(`${((Date.now() - t0) / 1000).toFixed(1)}s ${m}`);
+      for (const st of steps) {
+        if (st.mode) { T.mode(st.mode); await T.sleep(300); log("mode " + st.mode); }
+        if (st.play) { await playAndWait(st.play); log("played " + st.play); }
+        if (st.manual) { window.__queue.enqueue(st.manual, { mode: localStorage.getItem("interview_mode"), source: "manual" }); log("manual " + st.manual); }
+        if (st.removeWaitingIndex !== undefined) { const w = window.__queue.jobs.filter((j) => j.status === "waiting")[st.removeWaitingIndex]; if (w) { window.__queue.remove(w.id); log("removed " + w.text); } }
+        if (st.cancelCurrent) {
+          // Titles are stripped on purpose (stealth); the text lives in data-original-title.
+          // The answer panel's ✕ cancels while loading (titles are stripped for stealth).
+          const header = [...document.querySelectorAll("h3")].find((h) => /AI Response|Conversation Mode/.test(h.textContent))?.parentElement?.parentElement;
+          const b = header ? [...header.querySelectorAll("button")].find((x) => x.querySelector("svg.lucide-x")) : null;
+          b?.click(); log(b ? "cancel clicked" : "cancel button NOT FOUND");
+        }
+        if (st.waitMs) await T.sleep(st.waitMs);
+        await T.sleep(st.gapMs ?? 400);
+      }
+      log("all steps sent, waiting for queue to drain");
+      const tEnd = Date.now();
+      while (Date.now() - tEnd < finishTimeoutMs) {
+        await T.sleep(1000);
+        const js = window.__queue?.jobs || [];
+        const transcribing = /transcribing…/.test(document.body.innerText);
+        if (js.length && !transcribing && js.every((j) => !["waiting", "answering"].includes(j.status)) && !T.loading()) break;
+      }
+      window.__Q.jobs = jobs(); window.__Q.totalS = +((Date.now() - t0) / 1000).toFixed(1); window.__Q.done = true;
+    })();
+    return "queue run started";
+  };
+})();

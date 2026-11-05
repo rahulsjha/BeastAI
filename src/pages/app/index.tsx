@@ -13,7 +13,8 @@ import { Files } from "./components/completion/Files";
 import { useApp, useCompletion } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
 import { CaptionsIcon, SparklesIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useAnswerQueue } from "@/hooks/useAnswerQueue";
 import { LiveTranscript } from "./components/transcript/LiveTranscript";
 import { invoke } from "@tauri-apps/api/core";
 import { ErrorBoundary } from "react-error-boundary";
@@ -28,26 +29,24 @@ const App = () => {
   const capturing = systemAudio?.capturing;
   const [transcriptOpen, setTranscriptOpen] = useState(false);
 
-  // Questions from the transcript are answered one at a time, in order.
-  // A new question never cancels the answer that is still streaming.
-  const [questionQueue, setQuestionQueue] = useState<string[]>([]);
-  const pendingRef = useRef(false);
-  const enqueueQuestion = (q: string) => setQuestionQueue((prev) => [...prev, q]);
-  useEffect(() => {
-    if (completion.isLoading) {
-      pendingRef.current = false; // our submit has started
-      return;
-    }
-    if (pendingRef.current || questionQueue.length === 0) return;
-    const [next, ...rest] = questionQueue;
-    setQuestionQueue(rest);
-    pendingRef.current = true;
-    completion.submit(next);
-    // Safety: if the submit never starts loading, don't block the queue.
-    const t = setTimeout(() => (pendingRef.current = false), 4000);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questionQueue, completion.isLoading]);
+  // Questions are answered one at a time, in order, each in the mode it was
+  // asked in; a new question never cancels the answer that is streaming.
+  const { currentMode, applyMode } = useAppContext();
+  const modeRef = useRef(currentMode);
+  modeRef.current = currentMode;
+  const queue = useAnswerQueue({
+    submit: completion.submit,
+    isLoading: completion.isLoading,
+    error: completion.error,
+    response: completion.response,
+    cancelCount: completion.cancelCount,
+    currentMode,
+    applyMode,
+  });
+  // Test hook (?simtest=1 only): expose the queue to the test runner.
+  if (typeof window !== "undefined" && window.location.search.includes("simtest")) {
+    (window as any).__queue = queue;
+  }
 
   const openDashboard = async () => {
     try {
@@ -132,9 +131,13 @@ const App = () => {
           {/* Live transcript — speaker-labelled You / Interviewer */}
           {transcriptOpen && !capturing && (
             <LiveTranscript
-              onAnswer={enqueueQuestion}
-              queued={questionQueue}
-              answering={completion.isLoading}
+              onAnswer={(text, entryId, source, mode) =>
+                queue.enqueue(text, { mode: (mode as typeof currentMode) || currentMode, source, entryId })
+              }
+              getMode={() => modeRef.current}
+              jobs={queue.jobs}
+              onRemoveJob={queue.remove}
+              onClearFinished={queue.clearFinished}
               onClose={() => setTranscriptOpen(false)}
             />
           )}

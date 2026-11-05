@@ -77,10 +77,12 @@ export const useCompletion = () => {
   // question uses that mode's model, keys and prompt at send time, so an async
   // reload of saved settings can never send it to the previous mode's model.
   const modeDef = MODES[currentMode as keyof typeof MODES];
-  const selectedAIProvider = modeDef
+  const modeProvider = modeDef
     ? { provider: modeDef.aiProvider, variables: modeDef.aiVariables }
     : storedAIProvider;
-  const systemPrompt = modeDef?.systemPrompt ?? storedSystemPrompt;
+  const modeSystemPrompt = modeDef?.systemPrompt ?? storedSystemPrompt;
+  const selectedAIProvider = modeProvider;
+  const systemPrompt = modeSystemPrompt;
   const globalShortcuts = useGlobalShortcuts();
 
   const [state, setState] = useState<CompletionState>({
@@ -113,6 +115,7 @@ export const useCompletion = () => {
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  const cancelCountRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentRequestIdRef = useRef<string | null>(null);
 
@@ -159,8 +162,14 @@ export const useCompletion = () => {
   }, []);
 
   const submit = useCallback(
-    async (speechText?: string) => {
+    async (speechText?: string, opts?: { mode?: string }) => {
       const input = speechText || state.input;
+      // A queued job can ask for its own mode without changing the UI mode.
+      const overrideDef = opts?.mode ? MODES[opts.mode as keyof typeof MODES] : undefined;
+      const selectedAIProvider = overrideDef
+        ? { provider: overrideDef.aiProvider, variables: overrideDef.aiVariables }
+        : modeProvider;
+      const systemPrompt = overrideDef?.systemPrompt ?? modeSystemPrompt;
 
       if (!input.trim()) {
         return;
@@ -337,6 +346,7 @@ export const useCompletion = () => {
       abortControllerRef.current = null;
     }
     currentRequestIdRef.current = null;
+    cancelCountRef.current += 1; // lets the answer queue tell "cancelled" from "done"
     setState((prev) => ({ ...prev, isLoading: false }));
   }, []);
 
@@ -1045,6 +1055,7 @@ export const useCompletion = () => {
   ]);
 
   return {
+    cancelCount: cancelCountRef,
     lastQuestion: state.lastQuestion,
     input: state.input,
     setInput,

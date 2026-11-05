@@ -1,7 +1,19 @@
 // Whisper invents filler phrases on silence/noise ("Thank you.", "you", …).
 // Returns true when a transcript is noise and should not be shown or sent.
+const FILLER_SENTENCE =
+  /^(tchau|merci|gracias|obrigad[oa]|vamos l[aá]|vamos|danke|ciao|adios|adeus|au revoir|thank(s| you)( (so much|very much))?( for watching)?|you|bye|okay|ok|uh+|um+|hmm+|yeah|so)[.!?…,]*$/i;
+
 export function isNoiseTranscript(text: string): boolean {
   const clean = (text || "").trim();
+  // Lines made only of filler sentences ("Obrigado. Obrigado. Vamos lá.").
+  const sentences = clean.split(/(?<=[.!?…])\s+/).map((x) => x.trim()).filter(Boolean);
+  if (sentences.length > 1 && sentences.every((x) => FILLER_SENTENCE.test(x))) return true;
+  // Placeholder our STT layer returns when nothing was recognised.
+  if (/no transcription found/i.test(clean)) return true;
+  // Whisper's well-known silence/noise hallucinations, incl. other languages
+  // (language auto-detect makes these appear on room noise).
+  if (/^(tchau|merci|gracias|obrigad[oa]|danke|ciao|adios|adeus|au revoir|sous-titres.*|subtítulos.*|продолжение следует.*|спасибо.*|ご視聴ありがとうございました.*|謝謝.*|谢谢.*|감사합니다.*|thank you for watching.*|please subscribe.*|like and subscribe.*)[.!…]*$/i.test(clean))
+    return true;
   if (clean.replace(/[^\p{L}]/gu, "").length < 3) return true;
   return /^(thank(s| you)( (so much|very much))?( for watching)?|you|bye|okay|ok|uh+|um+|hmm+|\.+)[.!?]?$/i.test(
     clean
@@ -17,4 +29,63 @@ export function looksLikeQuestion(text: string): boolean {
     return true;
   // Question phrases anywhere (long questions often lose their "?" in transcription).
   return /\b(how would you|how do you|how can you|what would you|what is|what are|why does|why is|can you|could you|would you|walk me through|tell me about|explain how|design (a|an|the)|implement (a|an|the)|write (a|an|the)|how would|what happens)\b/i.test(t);
+}
+
+/**
+ * Splits one transcript line into separate questions. Back-to-back questions
+ * often arrive as a single line ("Explain X. Write Y. What is Z?").
+ * Parts starting with "and / also / or / then / so" stay with the previous
+ * question ("What is caching? And when should you avoid it?" is one question).
+ */
+export function splitQuestions(text: string): string[] {
+  const sentences = text
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/(?<=[?.!।])\s+(?=\S)/u)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const groups: string[] = [];
+  for (const s of sentences) {
+    const prev = groups[groups.length - 1];
+    // "Let's say … . How would you design it?" — the question needs its setup.
+    const afterSetup =
+      !!prev &&
+      !/\?$/.test(prev) &&
+      /^(let'?s say|say you|suppose|imagine|assume|consider|given|we have|you have|there is|there are)\b/i.test(prev) &&
+      /\b(it|this|that|them|these|those|such)\b/i.test(s);
+    // "…re-renders after I added useEffect. What could cause that?" — a question
+    // pointing back at a preceding statement keeps that statement as context.
+    const backRef =
+      !!prev && !/\?$/.test(prev) && !looksLikeQuestion(prev) && /\b(it|this|that|them|these|those|such)\b/i.test(s);
+    const continues = afterSetup || backRef || /^(and|also|or|then|so|plus|but)\b/i.test(s);
+    if (groups.length && !continues && !looksLikeQuestion(s) && /\?$/.test(prev)) continue; // stray tail after a question
+    if (groups.length && (continues || !looksLikeQuestion(s))) groups[groups.length - 1] += " " + s;
+    else groups.push(s);
+  }
+  const questions = groups.filter((g) => looksLikeQuestion(g));
+  return questions.length ? questions : [text.trim()];
+}
+
+/**
+ * Cleans Whisper output: collapses sentences repeated back to back and drops
+ * sentences that loop ("It's a good repair. It's a good repair. …").
+ */
+export function cleanTranscript(text: string): string {
+  const parts = (text || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/(?<=[.!?।…])\s+/u)
+    .filter(Boolean);
+  const key = (x: string) => x.toLowerCase().replace(/[^\p{L}\p{N} ]/gu, "").trim();
+  const counts = new Map<string, number>();
+  parts.forEach((p) => counts.set(key(p), (counts.get(key(p)) ?? 0) + 1));
+  const out: string[] = [];
+  for (const p of parts) {
+    const k = key(p);
+    if (!k) continue;
+    if (out.length && key(out[out.length - 1]) === k) continue; // back-to-back repeat
+    if ((counts.get(k) ?? 0) >= 3 && out.some((o) => key(o) === k)) continue; // loop
+    out.push(p);
+  }
+  return out.join(" ");
 }

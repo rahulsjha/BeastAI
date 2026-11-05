@@ -51,7 +51,9 @@ export interface UseCompletionReturn {
 
   // Completion actions
   /** Function to submit the completion request, optionally with speech text */
-  submit: (speechText?: string) => Promise<void>;
+  submit: (speechText?: string, opts?: { mode?: string }) => Promise<void>;
+  /** Increments every time an answer is cancelled. */
+  cancelCount: { current: number };
   /** Function to cancel the current completion request */
   cancel: () => void;
   /** Function to reset the completion state (clears input, response, error, files) */

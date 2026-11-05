@@ -4,8 +4,10 @@ import { useApp } from "@/contexts";
 import { fetchSTT } from "@/lib";
 import { floatArrayToWav } from "@/lib/utils";
 import {
+  cleanTranscript,
   isNoiseTranscript,
   looksLikeQuestion,
+  splitQuestions,
 } from "@/lib/functions/transcript-filter";
 
 export type Speaker = "you" | "interviewer";
@@ -17,6 +19,7 @@ export interface TranscriptEntry {
   at: Date;
   status: "transcribing" | "done" | "error";
   isQuestion: boolean;
+  mode?: string; // interview mode active when the speech ended
 }
 
 export type SourceState = "off" | "starting" | "on" | "error";
@@ -42,7 +45,8 @@ const txlog = (event: string, data: Record<string, unknown> = {}) => {
  * transcribed and appended with its speaker and time.
  */
 export function useLiveTranscript(opts: {
-  onQuestion?: (text: string) => void;
+  onQuestion?: (text: string, entryId: number, mode?: string) => void;
+  getMode?: () => string;
 }) {
   const { selectedSttProvider, allSttProviders } = useApp();
   const [entries, setEntries] = useState<TranscriptEntry[]>([]);
@@ -62,6 +66,8 @@ export function useLiveTranscript(opts: {
   autoRef.current = autoAnswer;
   const onQuestionRef = useRef(opts.onQuestion);
   onQuestionRef.current = opts.onQuestion;
+  const getModeRef = useRef(opts.getMode);
+  getModeRef.current = opts.getMode;
   const sttRef = useRef({ selectedSttProvider, allSttProviders });
   sttRef.current = { selectedSttProvider, allSttProviders };
 
@@ -70,10 +76,11 @@ export function useLiveTranscript(opts: {
 
   const handleClip = useCallback(async (speaker: Speaker, audio: Float32Array) => {
     const id = nextId.current++;
-    txlog("speech_end", { id, speaker, seconds: +(audio.length / 16000).toFixed(2) });
+    const mode = getModeRef.current?.(); // the mode when the question was asked
+    txlog("speech_end", { id, speaker, mode, seconds: +(audio.length / 16000).toFixed(2) });
     setEntries((prev) => [
       ...prev,
-      { id, speaker, text: "", at: new Date(), status: "transcribing", isQuestion: false },
+      { id, speaker, text: "", at: new Date(), status: "transcribing", isQuestion: false, mode },
     ]);
     try {
       const { selectedSttProvider: sel, allSttProviders: all } = sttRef.current;
@@ -89,13 +96,16 @@ export function useLiveTranscript(opts: {
         setEntries((prev) => prev.filter((e) => e.id !== id));
         return;
       }
-      const clean = text.trim();
+      const clean = cleanTranscript(text);
       const isQuestion = speaker === "interviewer" && looksLikeQuestion(clean);
       update(id, { text: clean, status: "done", isQuestion });
       txlog("shown", { id, speaker, text: clean, isQuestion });
       if (isQuestion && autoRef.current) {
-        txlog("auto_answer", { id, text: clean });
-        onQuestionRef.current?.(clean);
+        // Several questions in one breath → one queued job each.
+        for (const q of splitQuestions(clean)) {
+          txlog("auto_answer", { id, text: q });
+          onQuestionRef.current?.(q, id, mode);
+        }
       }
     } catch (e) {
       update(id, {
@@ -177,23 +187,46 @@ export function useLiveTranscript(opts: {
       return;
     }
     setShare("starting");
+    // Test mode (?simtest=1): take the interviewer simulator's stream directly.
+    // It goes through the same detection → transcription → queue path; only
+    // Chrome's share picker is skipped (automated Chrome can't share real tab audio).
+    const simFrame = SIMTEST ? (document.getElementById("pluely-sim-frame") as any) : null;
+    const simStream: MediaStream | undefined = simFrame?.contentWindow?.getSimStream?.() ?? undefined;
+    if (simStream) {
+      try {
+        txlog("share_track", { surface: "simulator-stream" });
+        await startSource("interviewer", simStream);
+        setShare("on");
+      } catch (e) {
+        setShare("error");
+        setError("Simulator stream failed: " + (e instanceof Error ? e.message : String(e)));
+      }
+      return;
+    }
     try {
       // Chrome only shares audio together with video; we drop the video track.
       // Ask for a browser tab (the meeting tab): the picker opens on the tab
       // list, tab audio is supported, and no screen-recording permission is needed.
-      const display = await navigator.mediaDevices.getDisplayMedia({
-        video: { displaySurface: "browser" },
-        audio: SIMTEST ? ({ suppressLocalAudioPlayback: true } as any) : true,
-        selfBrowserSurface: "exclude",
-        preferCurrentTab: false,
-      } as any);
-      display.getVideoTracks().forEach((t) => t.stop());
+      const display = await navigator.mediaDevices.getDisplayMedia(
+        (SIMTEST
+          ? // Test mode: the interviewer simulator plays inside this tab, so share
+            // this tab and keep its sound off the speakers (mic won't hear it).
+            { video: { displaySurface: "browser" }, audio: { suppressLocalAudioPlayback: true }, preferCurrentTab: true, selfBrowserSurface: "include" }
+          : { video: { displaySurface: "browser" }, audio: true, selfBrowserSurface: "exclude", preferCurrentTab: false }) as any
+      );
       const audioTracks = display.getAudioTracks();
       if (!audioTracks.length) {
         setShare("error");
         setError('No audio was shared. Pick the meeting tab and turn on "Also share tab audio".');
         return;
       }
+      const vt = display.getVideoTracks()[0];
+      txlog("share_track", {
+        surface: (vt?.getSettings() as any)?.displaySurface,
+        videoLabel: vt?.label,
+        audioLabel: audioTracks[0]?.label,
+      });
+      display.getVideoTracks().forEach((t) => t.stop());
       const stream = new MediaStream(audioTracks);
       audioTracks[0].addEventListener("ended", () => {
         stopSource("interviewer");

@@ -107,6 +107,10 @@ class H(BaseHTTPRequestHandler):
 
             if self.path == "/claude-stream":  # streaming twin of /claude (NDJSON lines)
                 prompt = data.get("prompt", "")
+                if "__force_error__" in prompt:  # test-only: simulate a failed answer
+                    self.send_response(200); self._cors(); self.send_header("Content-Type", "application/x-ndjson"); self.end_headers()
+                    self.wfile.write((json.dumps({"done": True, "success": False, "error": "forced test error"}) + "\n").encode())
+                    return
                 model = (data.get("model") or "haiku").lower()
                 for i, b64 in enumerate(data.get("images") or []):
                     import base64

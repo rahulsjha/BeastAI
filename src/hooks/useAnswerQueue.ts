@@ -14,6 +14,7 @@ export interface AnswerJob {
   startedAt?: number;
   doneAt?: number;
   error?: string;
+  answer?: string; // the full answer text, kept for history
 }
 
 const DEDUPE_WINDOW_MS = 30_000;
@@ -24,14 +25,16 @@ const norm = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").tri
  * asked in. A new question never cancels the answer that is streaming.
  */
 export function useAnswerQueue(opts: {
-  submit: (text: string) => void;
+  submit: (text: string, opts?: { mode?: string }) => void;
   isLoading: boolean;
   error: string | null;
   response: string;
-  currentMode: ModeKey;
-  applyMode: (m: ModeKey) => void;
+  cancelCount?: { current: number };
+  currentMode?: ModeKey;
+  applyMode?: (m: ModeKey) => void;
 }) {
-  const { submit, isLoading, error, response, currentMode, applyMode } = opts;
+  const { submit, isLoading, error, response, cancelCount } = opts;
+  const cancelAtStart = useRef(0);
   const [jobs, setJobs] = useState<AnswerJob[]>([]);
   const nextId = useRef(1);
   const startingRef = useRef<number | null>(null); // job submitted, waiting for isLoading
@@ -45,6 +48,7 @@ export function useAnswerQueue(opts: {
       const key = norm(text);
       if (!key) return null;
       let added: AnswerJob | null = null;
+      const id = nextId.current++; // assigned outside the updater (StrictMode runs updaters twice)
       setJobs((prev) => {
         const now = Date.now();
         const dup = prev.find(
@@ -55,7 +59,7 @@ export function useAnswerQueue(opts: {
               now - (j.doneAt ?? j.queuedAt) < DEDUPE_WINDOW_MS)
         );
         if (dup) return prev;
-        added = { id: nextId.current++, text, ...o, status: "waiting", queuedAt: now };
+        added = { id, text, ...o, status: "waiting", queuedAt: now };
         return [...prev, added];
       });
       return added;
@@ -84,8 +88,15 @@ export function useAnswerQueue(opts: {
     }
     if (!sawLoading.current) return; // submit hasn't started loading yet
     sawLoading.current = false;
-    const status: JobStatus = error ? "failed" : response.trim() ? "done" : "cancelled";
-    patch(active.id, { status, doneAt: Date.now(), error: error ?? undefined });
+    const cancelled = (cancelCount?.current ?? 0) > cancelAtStart.current;
+    const cliError = /^\s*Claude CLI error:/.test(response) ? response.trim().slice(0, 120) : null;
+    const status: JobStatus = cancelled ? "cancelled" : error || cliError ? "failed" : response.trim() ? "done" : "failed";
+    patch(active.id, {
+      status,
+      doneAt: Date.now(),
+      error: error ?? cliError ?? (status === "failed" ? "no answer" : undefined),
+      answer: response || undefined,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, active?.id]);
 
@@ -94,14 +105,11 @@ export function useAnswerQueue(opts: {
     if (active || isLoading || startingRef.current !== null) return;
     const next = jobs.find((j) => j.status === "waiting");
     if (!next) return;
-    if (next.mode !== currentMode) {
-      applyMode(next.mode); // effect re-runs once the mode has switched
-      return;
-    }
     startingRef.current = next.id;
     sawLoading.current = false;
+    cancelAtStart.current = cancelCount?.current ?? 0;
     patch(next.id, { status: "answering", startedAt: Date.now() });
-    submit(next.text);
+    submit(next.text, { mode: next.mode }); // answered in its own mode; UI mode untouched
     // If loading never starts (e.g. empty answer path), don't block the queue.
     const t = setTimeout(() => {
       if (startingRef.current === next.id) {
@@ -111,7 +119,7 @@ export function useAnswerQueue(opts: {
     }, 6000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobs, isLoading, currentMode, active?.id]);
+  }, [jobs, isLoading, active?.id]);
 
   return { jobs, enqueue, remove, clearFinished, active };
 }

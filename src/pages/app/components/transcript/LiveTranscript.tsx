@@ -1,7 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { saveSession } from "@/lib/storage/transcript-history";
+import { TranscriptHistory } from "./TranscriptHistory";
 import { Button, Switch } from "@/components";
 import {
   HeadphonesIcon,
+  HistoryIcon,
   Loader2,
   MicIcon,
   SendIcon,
@@ -9,6 +12,8 @@ import {
   XIcon,
 } from "lucide-react";
 import { useLiveTranscript, type Speaker } from "@/hooks/useLiveTranscript";
+import type { AnswerJob } from "@/hooks/useAnswerQueue";
+import { AnswerQueue } from "./AnswerQueue";
 
 const SPEAKER = {
   you: {
@@ -73,15 +78,41 @@ function SourceButton({
 export function LiveTranscript({
   onAnswer,
   onClose,
-  queued = [],
-  answering = false,
+  jobs = [],
+  onRemoveJob,
+  onClearFinished,
+  getMode,
 }: {
-  onAnswer: (question: string) => void;
+  onAnswer: (question: string, entryId: number | undefined, source: "auto" | "manual", mode?: string) => void;
+  getMode?: () => string;
   onClose: () => void;
-  queued?: string[];
-  answering?: boolean;
+  jobs?: AnswerJob[];
+  onRemoveJob: (id: number) => void;
+  onClearFinished: () => void;
 }) {
-  const t = useLiveTranscript({ onQuestion: onAnswer });
+  const t = useLiveTranscript({ onQuestion: (q, id, mode) => onAnswer(q, id, "auto", mode), getMode });
+  const answering = jobs.some((j) => j.status === "answering");
+  const waitingCount = jobs.filter((j) => j.status === "waiting").length;
+  const jobFor = (entryId: number) => [...jobs].reverse().find((j) => j.entryId === entryId);
+
+  // Auto-save this session (lines + questions + answers) for History.
+  const [sessionStart] = useState(() => Date.now());
+  const [showHistory, setShowHistory] = useState(false);
+  useEffect(() => {
+    if (!t.entries.length && !jobs.length) return;
+    const timer = setTimeout(() => {
+      saveSession({
+        id: String(sessionStart),
+        startedAt: sessionStart,
+        updatedAt: Date.now(),
+        entries: t.entries
+          .filter((e) => e.status === "done")
+          .map((e) => ({ ...e, at: e.at.getTime() })),
+        jobs,
+      });
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [t.entries, jobs, sessionStart]);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,20 +141,26 @@ export function LiveTranscript({
           title='Share the meeting tab with "Also share tab audio" to transcribe the interviewer'
         />
         <div className="flex-1" />
-        {(answering || queued.length > 0) && (
-          <span
-            className="flex items-center gap-1 text-[11px] text-muted-foreground select-none"
-            title={queued.length ? "Waiting: " + queued.join(" | ") : undefined}
-          >
+        {(answering || waitingCount > 0) && (
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground select-none">
             {answering && <Loader2 className="h-3 w-3 animate-spin" />}
             {answering ? "Answering" : ""}
-            {queued.length > 0 && ` · ${queued.length} queued`}
+            {waitingCount > 0 && ` · ${waitingCount} waiting`}
           </span>
         )}
         <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground select-none">
           Auto-answer questions
           <Switch checked={t.autoAnswer} onCheckedChange={t.setAutoAnswer} className="scale-75" />
         </label>
+        <Button
+          size="icon"
+          variant={showHistory ? "default" : "ghost"}
+          className="h-7 w-7"
+          onClick={() => setShowHistory((v) => !v)}
+          title="Transcript history (past sessions and answers)"
+        >
+          <HistoryIcon className="h-3.5 w-3.5" />
+        </Button>
         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={t.clear} title="Clear transcript">
           <Trash2Icon className="h-3.5 w-3.5" />
         </Button>
@@ -132,6 +169,10 @@ export function LiveTranscript({
         </Button>
       </div>
 
+      {showHistory ? (
+        <TranscriptHistory onBack={() => setShowHistory(false)} currentId={String(sessionStart)} />
+      ) : (
+      <>
       {t.error && (
         <div className="mx-3 mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-[11px] text-red-300">
           {t.error}
@@ -171,12 +212,21 @@ export function LiveTranscript({
                     e.text
                   )}
                 </span>
-                {e.speaker === "interviewer" && e.status === "done" && (
+                {(() => {
+                  const job = jobFor(e.id);
+                  if (!job) return null;
+                  const cls =
+                    job.status === "done" ? "text-green-400" : job.status === "answering" ? "text-sky-300" : job.status === "waiting" ? "text-muted-foreground" : "text-red-300";
+                  const label =
+                    job.status === "waiting" ? `queued #${jobs.filter((j) => j.status === "waiting").indexOf(job) + 1}` : job.status === "done" ? "answered" : job.status;
+                  return <span className={`mt-0.5 shrink-0 text-[10px] ${cls}`}>{label}</span>;
+                })()}
+                {e.speaker === "interviewer" && e.status === "done" && !jobFor(e.id) && (
                   <Button
                     size="sm"
                     variant={e.isQuestion ? "default" : "ghost"}
                     className="h-6 shrink-0 gap-1 px-2 text-[10px]"
-                    onClick={() => onAnswer(e.text)}
+                    onClick={() => onAnswer(e.text, e.id, "manual", e.mode)}
                     title="Answer this with the current mode"
                   >
                     <SendIcon className="h-3 w-3" /> Answer
@@ -188,15 +238,19 @@ export function LiveTranscript({
         )}
       </div>
 
-      {lastQuestion && !t.autoAnswer && (
+      <AnswerQueue jobs={jobs} onRemove={onRemoveJob} onClearFinished={onClearFinished} />
+
+      {lastQuestion && !t.autoAnswer && !jobFor(lastQuestion.id) && (
         <div className="flex items-center justify-between gap-2 border-t border-input/30 px-3 py-1.5">
           <span className="truncate text-[11px] text-muted-foreground">
             Last question: <span className="text-foreground">{lastQuestion.text}</span>
           </span>
-          <Button size="sm" className="h-6 px-2 text-[10px]" onClick={() => onAnswer(lastQuestion.text)}>
+          <Button size="sm" className="h-6 px-2 text-[10px]" onClick={() => onAnswer(lastQuestion.text, lastQuestion.id, "manual", lastQuestion.mode)}>
             Answer it
           </Button>
         </div>
+      )}
+      </>
       )}
     </div>
   );
