@@ -21,9 +21,15 @@ export function isNoiseTranscript(text: string): boolean {
 }
 
 /** Rough check for "this line is a question the interviewer wants answered". */
+const START_QUESTION =
+  /^(what|why|how|when|where|which|who|whom|can|could|would|should|will|do|does|did|is|are|was|were|have|has|explain|describe|tell me|walk me|talk me|design|implement|write|build|create|code|solve|find|given|compare|define|suppose|imagine|let's say|lets say|say you|reverse|sort|merge|optimi[sz]e|count|return|check|determine|compute|calculate|print|detect|validate|convert|(a )?function (to|that)|(an )?algorithm (to|that))\b/i;
+
 export function looksLikeQuestion(text: string): boolean {
   const t = text.trim();
   if (t.endsWith("?")) return true;
+  // Any sentence that starts like a question/task ("Next one. Given a string…").
+  const sentences = t.split(/(?<=[.!?।])\s+/u).map((x) => x.trim());
+  if (sentences.length > 1 && sentences.some((x) => START_QUESTION.test(x))) return true;
   // Starts like a question or an interview task ("Given an array…", "Write a function…").
   if (/^(what|why|how|when|where|which|who|whom|can|could|would|should|will|do|does|did|is|are|was|were|have|has|explain|describe|tell me|walk me|talk me|design|implement|write|build|create|code|solve|find|given|compare|define|suppose|imagine|let's say|lets say|say you|reverse|sort|merge|optimi[sz]e|(a )?function (to|that)|(an )?algorithm (to|that))\b/i.test(t))
     return true;
@@ -57,7 +63,12 @@ export function splitQuestions(text: string): string[] {
     // pointing back at a preceding statement keeps that statement as context.
     const backRef =
       !!prev && !/\?$/.test(prev) && !looksLikeQuestion(prev) && /\b(it|this|that|them|these|those|such)\b/i.test(s);
-    const continues = afterSetup || backRef || /^(and|also|or|then|so|plus|but)\b/i.test(s);
+    // "Find the k-th largest… Can you do better than sorting?" — a refinement of
+    // the task just asked stays with it.
+    const refinement =
+      !!prev &&
+      /^(can|could) you (do|make|solve|improve|optimi[sz]e|use|avoid|handle|reduce|beat)\b|better than|faster than|without (using|extra)|in o\(|in constant|in linear|in logarithmic|in place\b/i.test(s);
+    const continues = afterSetup || backRef || refinement || /^(and|also|or|then|so|plus|but)\b/i.test(s);
     if (groups.length && !continues && !looksLikeQuestion(s) && /\?$/.test(prev)) continue; // stray tail after a question
     if (groups.length && (continues || !looksLikeQuestion(s))) groups[groups.length - 1] += " " + s;
     else groups.push(s);

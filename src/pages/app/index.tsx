@@ -12,7 +12,8 @@ import { Screenshot } from "./components/completion/Screenshot";
 import { Files } from "./components/completion/Files";
 import { useApp, useCompletion } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
-import { CaptionsIcon, SparklesIcon } from "lucide-react";
+import { CaptionsIcon, HistoryIcon, SparklesIcon } from "lucide-react";
+import { HistoryPanel } from "./components/history/HistoryPanel";
 import { useRef, useState } from "react";
 import { useAnswerQueue } from "@/hooks/useAnswerQueue";
 import { LiveTranscript } from "./components/transcript/LiveTranscript";
@@ -28,6 +29,7 @@ const App = () => {
   const platform = getPlatform();
   const capturing = systemAudio?.capturing;
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Questions are answered one at a time, in order, each in the mode it was
   // asked in; a new question never cancels the answer that is streaming.
@@ -105,6 +107,15 @@ const App = () => {
                 >
                   <CaptionsIcon className="h-4 w-4" />
                 </Button>
+                <Button
+                  size="icon"
+                  variant={historyOpen ? "default" : "outline"}
+                  className="cursor-pointer"
+                  title="History — previous questions and answers"
+                  onClick={() => setHistoryOpen((o) => !o)}
+                >
+                  <HistoryIcon className="h-4 w-4" />
+                </Button>
                 <div className="flex-1" />
                 <Button
                   size={"icon"}
@@ -124,9 +135,17 @@ const App = () => {
           {/* Input row — below the divider, expands downward as you type */}
           {!capturing && (
             <div className="w-full border-t border-input/30 pt-1.5">
-              <Input {...completion} isHidden={isHidden} />
+              <Input
+                {...completion}
+                // Hide the answer overlay while History is open so it doesn't cover it.
+                isPopoverOpen={completion.isPopoverOpen && !historyOpen}
+                isHidden={isHidden}
+              />
             </div>
           )}
+
+          {/* History — every previous question and answer */}
+          {historyOpen && !capturing && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
 
           {/* Live transcript — speaker-labelled You / Interviewer */}
           {transcriptOpen && !capturing && (

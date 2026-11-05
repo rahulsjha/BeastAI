@@ -29,7 +29,7 @@ if not os.path.exists(CLAUDE):
 
 # Same answer-only flags as the app (src-tauri/src/claude_cli.rs).
 ANSWER_ONLY = ["--disallowedTools", "Bash Write Edit NotebookEdit WebFetch WebSearch Task Agent",
-               "--append-system-prompt", "You are answering inside a live-interview overlay. Never use tools or run code; write the full answer, including complete code, directly in your reply."]
+               "--append-system-prompt", "You are answering inside a live-interview overlay. Never write files or run code or commands. Do read any files or images referenced with @ (they are the user's screenshots and documents) and use them. Write the full answer, including complete code, directly in your reply."]
 
 
 def _child_env():

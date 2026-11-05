@@ -4,6 +4,7 @@ import { useGlobalShortcuts } from "@/hooks";
 import { MAX_FILES } from "@/config";
 import { useApp } from "@/contexts";
 import { MODES } from "@/config/modes";
+import { addQA } from "@/lib/storage/qa-history";
 import {
   fetchAIResponse,
   saveConversation,
@@ -164,6 +165,7 @@ export const useCompletion = () => {
   const submit = useCallback(
     async (speechText?: string, opts?: { mode?: string }) => {
       const input = speechText || state.input;
+      const submitStartedAt = Date.now();
       // A queued job can ask for its own mode without changing the UI mode.
       const overrideDef = opts?.mode ? MODES[opts.mode as keyof typeof MODES] : undefined;
       const selectedAIProvider = overrideDef
@@ -308,6 +310,17 @@ export const useCompletion = () => {
 
         // Save the conversation after successful completion
         if (fullResponse) {
+          if (!/^\s*Claude CLI error:/.test(fullResponse)) {
+            addQA({
+              question: input,
+              answer: fullResponse,
+              mode: opts?.mode ?? currentMode,
+              at: Date.now(),
+              durationMs: Date.now() - submitStartedAt,
+              hadImage: state.attachedFiles.some((f) => f.type.startsWith("image/")),
+              hadDocs: state.attachedFiles.some((f) => !f.type.startsWith("image/")),
+            });
+          }
           await saveCurrentConversation(
             input,
             fullResponse,
@@ -699,6 +712,7 @@ export const useCompletion = () => {
 
             // Save the conversation after successful completion
             if (fullResponse) {
+              addQA({ question: prompt, answer: fullResponse, mode: currentMode, at: Date.now(), hadImage: true });
               await saveCurrentConversation(prompt, fullResponse, [
                 attachedFile,
               ]);

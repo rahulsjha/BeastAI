@@ -94,3 +94,20 @@ Every question (auto-detected, **Answer** click, or **Answer it**) becomes a job
 | Q8 | History | After the burst | every Q&A is in the conversation thread, in order |
 | Q9 | Status UI | During the burst | each job shows waiting / answering / done with times; transcript lines show their job status |
 | Q10 | Long queue | 6+ questions quickly | all kept; section scrolls; no layout break |
+
+## Results — 2026-11-05 (browser harness, isolated interviewer simulator)
+Interviewer audio = scripted clips (Daniel/Lekha voices) fed into the Interviewer pipeline; You = spoken out loud through the speakers into the real mic.
+
+| Area | Result |
+|---|---|
+| Transcription, 13 interviewer lines (all modes + edge cases) | 13/13 heard correctly after fixes (vocabulary hint, language auto-detect, pre-speech padding) |
+| Speaker labels (You vs Interviewer, incl. cross-talk) | correct; no leakage between sides |
+| Auto-answer detection | questions answered; statements ("Great, thanks") and your own questions not answered |
+| Live coding round (7 interviewer turns, Code mode) | 8/8 jobs answered; hidden tests: LRU 10/10, brackets 8/8, islands 5/5, k-th largest 5/5 ×2, palindrome 6/6, median (hard) 6/6; follow-up used prior context |
+| Answer queue Q1–Q10 | all pass: burst, mixed modes (each in its own mode), duplicate, manual-while-streaming, cancel, remove, failure, long queue (6), history saved |
+| Conversation mode + auto-answer | turns stack in the conversation view; follow-ups keep context |
+| Debug live watch | each frame shows the image sent + analysis; screen changes detected; runs alongside queued answers |
+| Screenshot questions (Code / Concept) | Opus / Sonnet vision read the screen correctly |
+| History panel | every Q&A saved (typed, voice, screenshot, transcript); search, mode filter, expand answer |
+
+Typical timings: transcript shown 2–6s after the speaker stops; Concept/Design answers 1–5s (Groq); Code 13–25s (Opus, streams from ~6s); Debug 30–48s (Opus high effort); screenshot answers 12–16s; watch frame ~12s.

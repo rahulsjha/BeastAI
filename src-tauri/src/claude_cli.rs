@@ -77,7 +77,7 @@ fn base_command(bin: &str) -> Command {
 /// trying to write or run files (which in print mode gets denied and left the
 /// answer with empty code blocks).
 const DENIED_TOOLS: &str = "Bash Write Edit NotebookEdit WebFetch WebSearch Task Agent";
-const ANSWER_ONLY_PROMPT: &str = "You are answering inside a live-interview overlay. Never use tools or run code; write the full answer, including complete code, directly in your reply.";
+const ANSWER_ONLY_PROMPT: &str = "You are answering inside a live-interview overlay. Never write files or run code or commands. Do read any files or images referenced with @ (they are the user's screenshots and documents) and use them. Write the full answer, including complete code, directly in your reply.";
 
 fn answer_only(cmd: &mut Command) {
     cmd.arg("--disallowedTools")
