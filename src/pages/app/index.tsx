@@ -183,6 +183,7 @@ const App = () => {
               files={completion.attachedFiles}
               onRemove={completion.removeFile}
               onClear={completion.clearFiles}
+              onNote={completion.setFileNote}
             />
           )}
 

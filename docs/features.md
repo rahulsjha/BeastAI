@@ -45,6 +45,7 @@ Click **Solve screen** (next to the question bar, in Design / Code / Concept). I
 - 💻 **Screenshot** attaches your screen; 📎 **Attach** adds images, **PDFs**, and text/code files (`.md`, `.txt`, `.py`, …).
 - Everything that will be sent appears in the **"Sending with next question"** tray above the bar: screenshots as thumbnails (click to view full size), documents with how many characters were read. Remove any with ✕, or **Clear all**.
 - Several screenshots and documents can go together in one question. The tray clears after sending.
+- **✎ Note per file** (every mode): add a message about one attachment — e.g. "this is the question my interviewer pasted", "ignore this one", "use my resume for the behavioral answer". The note is sent together with that file.
 
 ## Asking questions
 

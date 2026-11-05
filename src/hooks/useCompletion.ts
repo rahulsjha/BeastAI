@@ -29,6 +29,7 @@ interface AttachedFile {
   size: number;
   text?: string;
   label?: string; // e.g. Before / After / Trace (Debug mode)
+  note?: string; // the user's message about this specific attachment
 }
 
 // The screenshot button always lets the user drag-select the area to capture
@@ -170,6 +171,13 @@ export const useCompletion = () => {
     }));
   }, []);
 
+  const setFileNote = useCallback((fileId: string, note: string) => {
+    setState((prev) => ({
+      ...prev,
+      attachedFiles: prev.attachedFiles.map((f) => (f.id === fileId ? { ...f, note } : f)),
+    }));
+  }, []);
+
   const clearFiles = useCallback(() => {
     setState((prev) => ({ ...prev, attachedFiles: [] }));
   }, []);
@@ -234,17 +242,16 @@ export const useCompletion = () => {
           state.attachedFiles.forEach((file) => {
             if (file.type.startsWith("image/")) {
               imagesBase64.push(file.base64);
-              imageLabels.push(file.label ? `${file.label.toUpperCase()} screenshot` : "screenshot");
+              const kind = file.label ? `${file.label.toUpperCase()} screenshot` : "screenshot";
+              imageLabels.push(file.note?.trim() ? `${kind} — user's note: "${file.note.trim()}"` : kind);
             } else if (file.text) {
-              docSections.push(
-                file.label
-                  ? `--- ${file.label} (${file.name}) ---\n${file.text}`
-                  : `--- Document: ${file.name} ---\n${file.text}`
-              );
+              const head = file.label ? `${file.label} (${file.name})` : `Document: ${file.name}`;
+              const note = file.note?.trim() ? `\nUser's note about this document: ${file.note.trim()}` : "";
+              docSections.push(`--- ${head} ---${note}\n${file.text}`);
             }
           });
           // Tell the model which image is which (e.g. Before vs After).
-          if (imageLabels.some((l) => l !== "screenshot")) {
+          if (imageLabels.some((l) => l !== "screenshot")) { // labels or notes present
             docSections.unshift(
               "Attached images, in order: " +
                 imageLabels.map((l, i) => `image ${i + 1} = ${l}`).join("; ") + "."
@@ -1126,6 +1133,7 @@ export const useCompletion = () => {
     addFile,
     removeFile,
     clearFiles,
+    setFileNote,
     submit,
     cancel,
     reset,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components";
-import { FileTextIcon, ImageIcon, XIcon } from "lucide-react";
+import { FileTextIcon, ImageIcon, PencilIcon, XIcon } from "lucide-react";
 
 interface Attached {
   id: string;
@@ -10,6 +10,7 @@ interface Attached {
   size: number;
   text?: string;
   label?: string;
+  note?: string;
 }
 
 const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
@@ -23,12 +24,21 @@ export function AttachmentTray({
   files,
   onRemove,
   onClear,
+  onNote,
 }: {
   files: Attached[];
   onRemove: (id: string) => void;
   onClear: () => void;
+  onNote?: (id: string, note: string) => void;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const editingFile = files.find((f) => f.id === editing);
+  const saveNote = () => {
+    if (editing && onNote) onNote(editing, draft.trim());
+    setEditing(null);
+  };
   if (!files.length) return null;
   const shown = files.find((f) => f.id === preview);
 
@@ -77,7 +87,24 @@ export function AttachmentTray({
                 <div className="text-[9px] text-muted-foreground">
                   {isImage ? kb(f.size) : `${(f.text?.length ?? 0).toLocaleString()} chars`}
                 </div>
+                {f.note && (
+                  <div className="truncate text-[9px] italic text-sky-300" title={f.note}>
+                    “{f.note}”
+                  </div>
+                )}
               </div>
+              {onNote && (
+                <button
+                  onClick={() => {
+                    setEditing(f.id);
+                    setDraft(f.note ?? "");
+                  }}
+                  className={`rounded p-0.5 hover:text-foreground ${f.note ? "text-sky-300" : "text-muted-foreground"}`}
+                  title="Add a message about this file"
+                >
+                  <PencilIcon className="h-3 w-3" />
+                </button>
+              )}
               <button
                 onClick={() => onRemove(f.id)}
                 className="absolute right-0.5 top-0.5 rounded p-0.5 text-muted-foreground hover:text-foreground"
@@ -94,6 +121,30 @@ export function AttachmentTray({
           </Button>
         )}
       </div>
+      {editingFile && (
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <span className="shrink-0 text-[10px] text-muted-foreground">
+            Note for {editingFile.type.startsWith("image/") ? "screenshot" : editingFile.name}:
+          </span>
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                saveNote();
+              }
+              if (e.key === "Escape") setEditing(null);
+            }}
+            placeholder="e.g. this is the error I get on submit"
+            className="h-7 min-w-0 flex-1 rounded-md border border-input/50 bg-background/40 px-2 text-xs outline-none focus:border-ring/60"
+          />
+          <Button size="sm" className="h-7 px-2 text-[10px]" onClick={saveNote}>
+            Save
+          </Button>
+        </div>
+      )}
       {shown && (
         <div className="mt-1.5">
           <img

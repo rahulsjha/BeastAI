@@ -48,6 +48,8 @@ export interface UseCompletionReturn {
   removeFile: (fileId: string) => void;
   /** Function to clear all attached files */
   clearFiles: () => void;
+  /** Sets the user's message about one attachment. */
+  setFileNote: (fileId: string, note: string) => void;
 
   // Completion actions
   /** Function to submit the completion request, optionally with speech text */

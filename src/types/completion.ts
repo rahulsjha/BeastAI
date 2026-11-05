@@ -8,6 +8,7 @@ export interface AttachedFile {
   /** Extracted text for parsed documents (txt/md/csv/code). Images leave this unset. */
   text?: string;
   label?: string; // e.g. Before / After / Trace (Debug mode)
+  note?: string; // the user's message about this specific attachment
 }
 
 export interface ChatMessage {
