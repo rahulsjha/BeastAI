@@ -273,3 +273,10 @@ Fix: <concrete fix, e.g. the corrected line of code, or '-'>"
         })
     }
 }
+
+/// Prints a diagnostic line from the frontend to the app log (tauri dev output).
+/// Used by the mic pipeline so failures are visible without the webview console.
+#[tauri::command]
+pub fn log_frontend(message: String) {
+    println!("[frontend] {message}");
+}

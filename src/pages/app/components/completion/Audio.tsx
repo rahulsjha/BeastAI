@@ -3,6 +3,7 @@ import { Popover, PopoverContent, PopoverTrigger, Button } from "@/components";
 import { AutoSpeechVAD } from "./AutoSpeechVad";
 import { UseCompletionReturn } from "@/types";
 import { useApp } from "@/contexts";
+import { invoke } from "@tauri-apps/api/core";
 
 export const Audio = ({
   micOpen,
@@ -32,6 +33,9 @@ export const Audio = ({
           <Button
             size="icon"
             onClick={() => {
+              invoke("log_frontend", {
+                message: `mic: button clicked (speech provider: ${speechProviderStatus || "NONE"}, input device: ${selectedAudioDevices.input.id || "default"})`,
+              }).catch(() => {});
               setEnableVAD(!enableVAD);
             }}
             className="cursor-pointer"

@@ -106,6 +106,7 @@ pub fn run() {
             api::check_license_status,
             api::get_activity,
             claude_cli::claude_cli_response,
+            claude_cli::log_frontend,
             claude_cli::claude_cli_status,
             claude_cli::debug_analyze_screen,
             speaker::start_system_audio_capture,

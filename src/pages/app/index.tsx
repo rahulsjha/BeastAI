@@ -12,7 +12,9 @@ import { Screenshot } from "./components/completion/Screenshot";
 import { Files } from "./components/completion/Files";
 import { useApp, useCompletion } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
-import { SparklesIcon } from "lucide-react";
+import { CaptionsIcon, SparklesIcon } from "lucide-react";
+import { useState } from "react";
+import { LiveTranscript } from "./components/transcript/LiveTranscript";
 import { invoke } from "@tauri-apps/api/core";
 import { ErrorBoundary } from "react-error-boundary";
 import { ErrorLayout } from "@/layouts";
@@ -24,6 +26,7 @@ const App = () => {
   const completion = useCompletion();
   const platform = getPlatform();
   const capturing = systemAudio?.capturing;
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
 
   const openDashboard = async () => {
     try {
@@ -73,6 +76,15 @@ const App = () => {
                 <Audio {...completion} />
                 <Screenshot {...completion} />
                 <Files {...completion} />
+                <Button
+                  size="icon"
+                  variant={transcriptOpen ? "default" : "outline"}
+                  className="cursor-pointer"
+                  title="Live transcript (You + Interviewer)"
+                  onClick={() => setTranscriptOpen((o) => !o)}
+                >
+                  <CaptionsIcon className="h-4 w-4" />
+                </Button>
                 <div className="flex-1" />
                 <Button
                   size={"icon"}
@@ -94,6 +106,14 @@ const App = () => {
             <div className="w-full border-t border-input/30 pt-1.5">
               <Input {...completion} isHidden={isHidden} />
             </div>
+          )}
+
+          {/* Live transcript — speaker-labelled You / Interviewer */}
+          {transcriptOpen && !capturing && (
+            <LiveTranscript
+              onAnswer={(q) => completion.submit(q)}
+              onClose={() => setTranscriptOpen(false)}
+            />
           )}
         </Card>
 
