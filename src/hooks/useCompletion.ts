@@ -31,6 +31,10 @@ interface AttachedFile {
   label?: string; // e.g. Before / After / Trace (Debug mode)
 }
 
+// The screenshot button always lets the user drag-select the area to capture
+// (full-screen grabs are used only by Solve screen).
+const SCREENSHOT_FULL_SCREEN = false;
+
 // Documents we can parse to text (no image/vision needed).
 const isTextDocument = (file: File): boolean => {
   if (file.type.startsWith("text/")) return true;
@@ -172,7 +176,15 @@ export const useCompletion = () => {
 
   const submit = useCallback(
     async (speechText?: string, opts?: { mode?: string }) => {
-      const input = speechText || state.input;
+      // Attachments can be sent without a message; use a sensible default.
+      const typed = speechText || state.input;
+      const input = typed.trim()
+        ? typed
+        : state.attachedFiles.length
+          ? (opts?.mode ?? currentMode) === "debug"
+            ? "Debug this using the attached evidence."
+            : "Answer using the attached screenshots and documents."
+          : typed;
       const submitStartedAt = Date.now();
       // A queued job can ask for its own mode without changing the UI mode.
       const overrideDef = opts?.mode ? MODES[opts.mode as keyof typeof MODES] : undefined;
@@ -800,7 +812,7 @@ export const useCompletion = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (!state.isLoading && state.input.trim()) {
+      if (!state.isLoading && (state.input.trim() || state.attachedFiles.length)) {
         submit();
       }
     }
@@ -815,6 +827,20 @@ export const useCompletion = () => {
       const hasImages = Array.from(items).some((item) =>
         item.type.startsWith("image/")
       );
+
+      // A long paste (stack trace, logs, a file's contents) becomes an
+      // attachment instead of flooding the question bar.
+      const pastedText = e.clipboardData?.getData("text") ?? "";
+      if (!hasImages && (pastedText.length > 600 || pastedText.split("\n").length > 12)) {
+        e.preventDefault();
+        const looksLikeTrace = /traceback|exception|error|at .+\(.+:\d+\)|^\s+at /im.test(pastedText);
+        await addFile(
+          new File([pastedText], `${looksLikeTrace ? "trace" : "pasted"}-${new Date().toTimeString().slice(0, 8).replace(/:/g, "")}.txt`, {
+            type: "text/plain",
+          })
+        );
+        return;
+      }
 
       // If we have images, prevent default text pasting and process images
       if (hasImages) {
@@ -969,7 +995,7 @@ export const useCompletion = () => {
         hasCheckedPermissionRef.current = true;
       }
 
-      if (config.enabled) {
+      if (SCREENSHOT_FULL_SCREEN && config.enabled) {
         const base64 = await invoke("capture_to_base64");
 
         if (config.mode === "auto") {
@@ -993,7 +1019,7 @@ export const useCompletion = () => {
       isProcessingScreenshotRef.current = false;
       screenshotInitiatedByThisContext.current = false;
     } finally {
-      if (config.enabled) {
+      if (SCREENSHOT_FULL_SCREEN && config.enabled) {
         setIsScreenshotLoading(false);
       }
     }

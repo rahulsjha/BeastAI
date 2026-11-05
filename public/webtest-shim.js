@@ -94,6 +94,11 @@
       return browserListen().start(emit, args && args.vadConfig).then(function () { return "started"; });
     }
     if (cmd === "stop_system_audio_capture") return browserListen().stop(emit).then(function () { return "stopped"; });
+    if (cmd === "start_screen_capture") {
+      if (!window.__browserCrop) return Promise.reject(new Error("area selection not loaded"));
+      window.__browserCrop.start(emit);
+      return Promise.resolve(null);
+    }
     if (cmd === "manual_stop_continuous") return browserListen().manualStop(emit).then(function () { return null; });
     if (cmd === "get_vad_config") {
       return Promise.resolve({ enabled: true, hop_size: 1024, sensitivity_rms: 0.012, peak_threshold: 0.035, silence_chunks: 45,

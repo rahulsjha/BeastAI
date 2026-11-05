@@ -10,6 +10,7 @@ installAudioContextTracker();
 // Browser version only: real Listen engine (meeting tab / system audio capture).
 if ((window as any).__PLUELY_WEBTEST__) {
   import("./lib/webtest/browser-listen").then((m) => m.installBrowserListen());
+  import("./lib/webtest/browser-crop").then((m) => m.installBrowserCrop());
 }
 
 const currentWindow = getCurrentWindow();

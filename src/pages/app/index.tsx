@@ -14,7 +14,6 @@ import { useApp as useAppContext } from "@/contexts";
 import { CaptionsIcon, HistoryIcon, SparklesIcon } from "lucide-react";
 import { HistoryPanel } from "./components/history/HistoryPanel";
 import { SolveScreen } from "./components/SolveScreen";
-import { DebugKit } from "./components/DebugKit";
 import { AnswerQueue } from "./components/transcript/AnswerQueue";
 import { AttachmentTray } from "./components/completion/AttachmentTray";
 import { useRef, useState } from "react";
@@ -33,6 +32,7 @@ const App = () => {
   const capturing = systemAudio?.capturing;
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
   // Questions are answered one at a time, in order, each in the mode it was
   // asked in; a new question never cancels the answer that is streaming.
@@ -76,7 +76,23 @@ const App = () => {
           isHidden ? "hidden pointer-events-none" : ""
         }`}
       >
-        <Card id="app-card" className="w-full flex flex-col gap-1.5 p-2">
+        <Card
+          id="app-card"
+          className={`w-full flex flex-col gap-1.5 p-2 ${dragOver ? "ring-2 ring-sky-400/70" : ""}`}
+          // Drop screenshots, images, PDFs, logs or documents anywhere on the bar.
+          onDragOver={(e) => {
+            if (e.dataTransfer?.types?.includes("Files")) {
+              e.preventDefault();
+              setDragOver(true);
+            }
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={async (e) => {
+            e.preventDefault();
+            setDragOver(false);
+            for (const f of Array.from(e.dataTransfer?.files ?? [])) await completion.addFile(f);
+          }}
+        >
           {/* Header row — fixed height, never grows with the input */}
           <div className="flex flex-row items-center gap-1.5 w-full min-w-0 [&_button.size-9]:size-8">
             <SystemAudio {...systemAudio} />
@@ -170,22 +186,10 @@ const App = () => {
             />
           )}
 
-          {/* Debug mode: Before/After screenshots + traces, on their own row so the question bar keeps its width */}
-          {!capturing && currentMode === "debug" && (
-            <div className="w-full border-t border-input/30 pt-1.5">
-              <DebugKit
-                addFile={completion.addFile}
-                submit={(t) => completion.submit(t)}
-                attachedCount={completion.attachedFiles.length}
-                isLoading={completion.isLoading}
-              />
-            </div>
-          )}
-
           {/* Input row — below the divider, expands downward as you type */}
           {!capturing && (
             <div className="w-full border-t border-input/30 pt-1.5 flex items-center gap-2">
-              {/* Solve screen (Debug mode has its own kit row above). */}
+              {/* Solve screen: reads the screen and answers new questions (not in Debug). */}
               {currentMode !== "debug" && (
                 <SolveScreen
                   onQuestion={(q, mode) => queue.enqueue(q, { mode, source: "auto" })}

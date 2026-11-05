@@ -9,14 +9,14 @@ Pluely is a small always-on-top bar (600px wide) that answers interview question
 | 🎧 **Listen** | Desktop only: captures call audio from a virtual input (BlackHole) for the system-audio flow. |
 | **Design · Code · Concept · Debug** | Interview mode. Picks the model, answer format and voice settings in one click (see *Modes*). |
 | 🎤 **Mic** | Ask by voice. Speak, pause, and the question is transcribed and answered. Noise ("thank you", "yes yes") is ignored. |
-| 💻 **Screenshot** | Attaches a picture of your screen to the next question ("solve this", "what's wrong here?"). |
+| 💻 **Screenshot** | Drag to select an area of the screen; it's attached to the next question ("solve this", "what's wrong here?"). |
 | 📎 **Attach** | Attach images or text documents (`.md`, `.txt`, code). Their content is used in the answer. |
 | 💬 **Live transcript** | Speaker-labelled transcript of You and the Interviewer, with auto-answer and the answer queue. |
 | 🕘 **History** | Every past question and answer, searchable. |
 | ✨ **Dev Space** | Opens the settings/dashboard window. |
 | ⠿ | Drag handle to move the bar. |
 
-In **Debug** mode a Before / After / Trace kit appears above the question bar; in other modes **Solve screen** sits beside it.
+In Design / Code / Concept, **Solve screen** sits beside the question bar.
 
 ## Modes
 
@@ -74,14 +74,15 @@ Click **Solve screen** (next to the question bar, in Design / Code / Concept). I
 - **Transcript sessions**: past Live-transcript sessions with their lines and answers.
 - Stored on this device only.
 
-## Debug mode (Before / After + traces)
+## Debug mode
 
-In **Debug** a kit row appears above the question bar:
-- **📸 Before** — screenshot of the broken / current state. **📸 After** — screenshot after a change (or the expected state).
-- **📋 Trace** — paste a stack trace, logs or error output (clipboard is pre-filled); **📄** attaches `.log/.txt/.json` files.
-- **Analyze** — sends everything, labelled (BEFORE / AFTER / TRACE), to Opus.
+Debug works like a normal conversation — attach evidence, add a message (or leave it empty) and send:
+- 💻 **Screenshot**: drag to select the area of the screen you want (double-click = whole screen, Esc = cancel).
+- 📎 **Attach** / **drag & drop** onto the bar: images, PDFs, documents, logs (`.log .txt .json .out .err`).
+- **Paste a long trace or logs** into the question bar: it becomes an attachment automatically.
+- Press **Enter** — with no message it sends "Debug this using the attached evidence."
 
-Every answer has the same shape: **Root cause → Evidence** (the exact trace line or what the screenshot shows) **→ Fix** (code) **→ Before vs After** table (code, behaviour/output, error) **→ How to verify**. With both screenshots it first says what changed and whether that fixed it. Labels show in the tray as BEFORE / AFTER / TRACE chips.
+The answer always has: **Root cause → Evidence** (the exact trace line / what the screenshot shows) **→ Fix → Before vs After** (current broken state vs after the fix: code, behaviour/output, error) **→ How to verify**.
 
 ## Privacy & setup
 
