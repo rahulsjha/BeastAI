@@ -23,6 +23,16 @@ export type SourceState = "off" | "starting" | "on" | "error";
 
 const VAD_ASSETS = { baseAssetPath: "/vad/", onnxWASMBasePath: "/vad/" };
 
+// Test instrumentation (?simtest=1): timestamps every step on window.__txlog and
+// keeps the shared tab's audio off the speakers so the mic doesn't hear it.
+const SIMTEST =
+  typeof window !== "undefined" && new URLSearchParams(window.location.search).has("simtest");
+const txlog = (event: string, data: Record<string, unknown> = {}) => {
+  if (!SIMTEST) return;
+  const w = window as any;
+  (w.__txlog ||= []).push({ event, t: Date.now(), ...data });
+};
+
 /**
  * Live, speaker-labelled transcript.
  * - "You": the microphone.
@@ -60,6 +70,7 @@ export function useLiveTranscript(opts: {
 
   const handleClip = useCallback(async (speaker: Speaker, audio: Float32Array) => {
     const id = nextId.current++;
+    txlog("speech_end", { id, speaker, seconds: +(audio.length / 16000).toFixed(2) });
     setEntries((prev) => [
       ...prev,
       { id, speaker, text: "", at: new Date(), status: "transcribing", isQuestion: false },
@@ -72,14 +83,20 @@ export function useLiveTranscript(opts: {
         selectedProvider: sel,
         audio: floatArrayToWav(audio, 16000, "wav"),
       });
+      txlog("transcribed", { id, speaker, text });
       if (!text || isNoiseTranscript(text)) {
+        txlog("dropped_noise", { id, speaker, text });
         setEntries((prev) => prev.filter((e) => e.id !== id));
         return;
       }
       const clean = text.trim();
       const isQuestion = speaker === "interviewer" && looksLikeQuestion(clean);
       update(id, { text: clean, status: "done", isQuestion });
-      if (isQuestion && autoRef.current) onQuestionRef.current?.(clean);
+      txlog("shown", { id, speaker, text: clean, isQuestion });
+      if (isQuestion && autoRef.current) {
+        txlog("auto_answer", { id, text: clean });
+        onQuestionRef.current?.(clean);
+      }
     } catch (e) {
       update(id, {
         status: "error",
@@ -94,7 +111,14 @@ export function useLiveTranscript(opts: {
         ...VAD_ASSETS,
         stream,
         positiveSpeechThreshold: 0.6,
-        onSpeechStart: () => setSpeaking((s) => ({ ...s, [speaker]: true })),
+        // Keep ~1s of audio from before speech was detected so first words
+        // ("Write a…") aren't clipped, and wait a little longer before ending.
+        preSpeechPadFrames: 10,
+        redemptionFrames: 10,
+        onSpeechStart: () => {
+          txlog("speech_start", { speaker });
+          setSpeaking((s) => ({ ...s, [speaker]: true }));
+        },
         onVADMisfire: () => setSpeaking((s) => ({ ...s, [speaker]: false })),
         onSpeechEnd: (audio: Float32Array) => {
           setSpeaking((s) => ({ ...s, [speaker]: false }));
@@ -155,10 +179,14 @@ export function useLiveTranscript(opts: {
     setShare("starting");
     try {
       // Chrome only shares audio together with video; we drop the video track.
+      // Ask for a browser tab (the meeting tab): the picker opens on the tab
+      // list, tab audio is supported, and no screen-recording permission is needed.
       const display = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      } as DisplayMediaStreamOptions);
+        video: { displaySurface: "browser" },
+        audio: SIMTEST ? ({ suppressLocalAudioPlayback: true } as any) : true,
+        selfBrowserSurface: "exclude",
+        preferCurrentTab: false,
+      } as any);
       display.getVideoTracks().forEach((t) => t.stop());
       const audioTracks = display.getAudioTracks();
       if (!audioTracks.length) {

@@ -8,7 +8,7 @@ export const SPEECH_TO_TEXT_PROVIDERS = [
     curl: `curl -X POST "https://api.cloudflare.com/client/v4/accounts/d27053e91cdcc6f2e55d2157e09cf132/ai/run/@cf/openai/whisper-large-v3-turbo" \\
       -H "Authorization: Bearer {{API_KEY}}" \\
       -H "Content-Type: application/json" \\
-      -d '{"audio":"{{AUDIO}}","task":"transcribe","language":"en","vad_filter":true,"condition_on_previous_text":false}'`,
+      -d '{"audio":"{{AUDIO}}","task":"transcribe","vad_filter":true,"condition_on_previous_text":false,"initial_prompt":"Software engineering interview. Terms: API, REST, gRPC, idempotent, idempotency, bit.ly, URL shortener, rate limiter, Kubernetes, Redis, Kafka, PostgreSQL, sharding, replication, cache, CDN, load balancer, mutex, semaphore, deadlock, race condition, linked list, binary tree, hash map, useEffect, React, TypeScript, Python, Go, latency, throughput, QPS."}'`,
     responseContentPath: "result.text",
     streaming: false,
   },

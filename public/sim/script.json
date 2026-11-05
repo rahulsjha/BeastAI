@@ -1,0 +1,15 @@
+[
+ {"id":"c1","mode":"Concept","voice":"Daniel","kind":"question","text":"Can you explain what a race condition is?"},
+ {"id":"c2","mode":"Concept","voice":"Daniel","kind":"question","text":"What is the difference between a process and a thread?"},
+ {"id":"d1","mode":"Design","voice":"Daniel","kind":"question","text":"How would you design a URL shortener like bit ly?"},
+ {"id":"d2","mode":"Design","voice":"Daniel","kind":"question","text":"Design a rate limiter for a public API."},
+ {"id":"k1","mode":"Code","voice":"Daniel","kind":"question","text":"Write a function to reverse a linked list."},
+ {"id":"k2","mode":"Code","voice":"Daniel","kind":"question","text":"Given an array of integers, find two numbers that add up to a target."},
+ {"id":"g1","mode":"Debug","voice":"Daniel","kind":"question","text":"My API returns 500 errors only under heavy load. How would you debug it?"},
+ {"id":"g2","mode":"Debug","voice":"Daniel","kind":"question","text":"A React component re-renders forever after I added a use effect. What could cause that?"},
+ {"id":"e_stmt","mode":"Concept","voice":"Daniel","kind":"statement","text":"Great, thanks for that answer."},
+ {"id":"e_follow","mode":"Code","voice":"Daniel","kind":"followup","text":"Can you optimize that further?"},
+ {"id":"e_long","mode":"Design","voice":"Daniel","kind":"long","text":"Let's say you have a service that processes payments. It has to be idempotent, it has to handle retries from clients, and you also need an audit log for every change. How would you design it?"},
+ {"id":"e_two","mode":"Concept","voice":"Daniel","kind":"two-questions","text":"What is caching? And when should you avoid it?"},
+ {"id":"e_hindi","mode":"Concept","voice":"Lekha","kind":"hindi","text":"प्रोसेस और थ्रेड में क्या अंतर है?"}
+]

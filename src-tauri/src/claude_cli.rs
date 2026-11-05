@@ -280,3 +280,122 @@ Fix: <concrete fix, e.g. the corrected line of code, or '-'>"
 pub fn log_frontend(message: String) {
     println!("[frontend] {message}");
 }
+
+#[derive(Clone, Serialize)]
+struct StreamDelta {
+    request_id: String,
+    text: String,
+}
+
+/// Streaming version of `claude_cli_response`: runs the CLI with
+/// `--output-format stream-json --include-partial-messages` and emits each text
+/// piece as a `claude-cli-delta` event ({request_id, text}) while it arrives.
+/// Resolves with the final answer (or error) when the CLI exits.
+#[tauri::command]
+pub async fn claude_cli_stream(
+    app: tauri::AppHandle,
+    request_id: String,
+    prompt: String,
+    model: Option<String>,
+    session_id: Option<String>,
+    resume: Option<bool>,
+    images: Option<Vec<String>>,
+) -> Result<ClaudeCliResult, String> {
+    use std::io::{BufRead, BufReader};
+    use std::process::Stdio;
+    use tauri::Emitter;
+
+    let Some(bin) = resolve_claude_bin() else {
+        return Ok(ClaudeCliResult {
+            success: false,
+            text: None,
+            error: Some("claude CLI not found. Install Claude Code and run `claude` once to log in.".into()),
+        });
+    };
+    let model = model.unwrap_or_else(|| "haiku".to_string());
+
+    // Attach images exactly like the non-streaming command.
+    let mut prompt = prompt;
+    let tmp = std::env::var("TMPDIR").unwrap_or_else(|_| "/tmp".to_string());
+    let tmp = tmp.trim_end_matches('/').to_string();
+    for (i, b64) in images.unwrap_or_default().iter().enumerate() {
+        let raw = b64.split_once("base64,").map(|(_, d)| d).unwrap_or(b64);
+        if let Ok(bytes) = general_purpose::STANDARD.decode(raw.trim()) {
+            let path = format!("{tmp}/pluely_attach_{i}.png");
+            if std::fs::write(&path, bytes).is_ok() {
+                prompt.push_str(&format!("\n\n@{path}"));
+            }
+        }
+    }
+
+    let mut cmd = base_command(&bin);
+    cmd.arg("-p").arg(&prompt).arg("--model").arg(&model);
+    if model == "opus" || model == "claude-opus-5-5" {
+        cmd.arg("--effort").arg("high");
+    }
+    if let Some(sid) = session_id.as_ref() {
+        if resume.unwrap_or(false) {
+            cmd.arg("--resume").arg(sid);
+        } else {
+            cmd.arg("--session-id").arg(sid);
+        }
+    }
+    cmd.arg("--output-format")
+        .arg("stream-json")
+        .arg("--include-partial-messages")
+        .arg("--verbose");
+    answer_only(&mut cmd);
+    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| format!("Failed to run claude CLI: {e}"))?;
+        let stdout = child.stdout.take().ok_or("no stdout")?;
+        let mut streamed = String::new();
+        let mut final_text: Option<String> = None;
+        let mut final_error: Option<String> = None;
+
+        for line in BufReader::new(stdout).lines().map_while(Result::ok) {
+            let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) else { continue };
+            match v.get("type").and_then(|t| t.as_str()) {
+                Some("stream_event") => {
+                    let delta = &v["event"]["delta"];
+                    if delta["type"] == "text_delta" {
+                        if let Some(t) = delta["text"].as_str() {
+                            streamed.push_str(t);
+                            let _ = app.emit(
+                                "claude-cli-delta",
+                                StreamDelta { request_id: request_id.clone(), text: t.to_string() },
+                            );
+                        }
+                    }
+                }
+                Some("result") => {
+                    if v["is_error"].as_bool().unwrap_or(false) {
+                        final_error = v["result"].as_str().map(String::from)
+                            .or_else(|| Some("claude CLI returned an error".into()));
+                    } else {
+                        final_text = v["result"].as_str().map(String::from);
+                    }
+                }
+                _ => {}
+            }
+        }
+        let status = child.wait().map_err(|e| e.to_string())?;
+        if final_text.is_none() && final_error.is_none() && !status.success() {
+            let mut err = String::new();
+            if let Some(mut e) = child.stderr.take() {
+                use std::io::Read;
+                let _ = e.read_to_string(&mut err);
+            }
+            final_error = Some(if err.trim().is_empty() { format!("claude CLI exited with {status}") } else { err.trim().to_string() });
+        }
+        Ok(match final_error {
+            Some(e) => ClaudeCliResult { success: false, text: None, error: Some(e) },
+            None => ClaudeCliResult { success: true, text: Some(final_text.unwrap_or(streamed)), error: None },
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}

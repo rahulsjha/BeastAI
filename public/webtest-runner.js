@@ -95,3 +95,92 @@
     return "started " + items.length;
   };
 })();
+
+// ---- Interviewer simulator driver (needs ?simtest=1 and the sim tab shared) ----
+(() => {
+  const ch = new BroadcastChannel("pluely-sim");
+  const waitMsg = (pred, ms) => new Promise((res) => {
+    const t = setTimeout(() => { ch.removeEventListener("message", h); res(null); }, ms);
+    const h = (e) => { if (pred(e.data)) { clearTimeout(t); ch.removeEventListener("message", h); res(e.data); } };
+    ch.addEventListener("message", h);
+  });
+  const T = window.__T;
+  window.__simPing = async () => { const p = waitMsg((d) => d.type === "pong", 2000); ch.postMessage({ type: "ping" }); return !!(await p); };
+  // Play one scripted line in a given mode; measure transcript + answer.
+  window.__simOne = async (item, { answerTimeout = 120000 } = {}) => {
+    if (item.mode) { T.mode(item.mode); await T.sleep(400); }
+    const logStart = (window.__txlog || []).length;
+    const ended = waitMsg((d) => d.id === item.id && (d.type === "ended" || d.type === "error"), 30000);
+    const tPlay = Date.now();
+    ch.postMessage({ type: "play", id: item.id });
+    const end = await ended;
+    // Wait for this line's transcript (or noise drop) to appear.
+    let shown = null, dropped = null, auto = null; const t0 = Date.now();
+    while (Date.now() - t0 < 20000) {
+      const ev = (window.__txlog || []).slice(logStart);
+      shown = ev.find((e) => e.event === "shown" && e.speaker === "interviewer");
+      dropped = ev.find((e) => e.event === "dropped_noise" && e.speaker === "interviewer");
+      if (shown || dropped) { auto = ev.find((e) => e.event === "auto_answer"); break; }
+      await T.sleep(200);
+    }
+    const ev = (window.__txlog || []).slice(logStart);
+    const speechEnd = ev.find((e) => e.event === "speech_end" && e.speaker === "interviewer");
+    // If auto-answered, wait for the answer to finish streaming.
+    let answer = null;
+    if (auto) {
+      const ta = Date.now(); let last = "", stable = Date.now(), first = null;
+      while (Date.now() - ta < answerTimeout) {
+        await T.sleep(300);
+        const a = T.answer(); const body = (a.split("Asked:")[1] || "");
+        if (first === null && body.trim().length > auto.text.length + 20 && !T.loading()) first = Date.now();
+        if (a !== last) { last = a; stable = Date.now(); }
+        if (first && !T.loading() && Date.now() - stable > 2500) break;
+      }
+      const p = T.panel();
+      answer = { totalMs: Date.now() - auto.t - 2500, firstMs: first ? first - auto.t : null,
+        mermaidErr: (last.match(/Mermaid Error/g) || []).length, backends: (window.__calls || []).splice(0),
+        words: last.split(/\s+/).length, text: last.split("Asked:")[1]?.slice(0, 700) || "",
+        code: p ? [...p.querySelectorAll("pre")].map((x) => x.innerText) : [] };
+    }
+    return {
+      id: item.id, mode: item.mode, kind: item.kind, expected: item.text,
+      heard: shown?.text || (dropped ? `(dropped as noise: ${dropped.text})` : null),
+      segments: ev.filter((e) => e.event === "shown" && e.speaker === "interviewer").length,
+      youLeak: ev.filter((e) => e.event === "shown" && e.speaker === "you").map((e) => e.text),
+      clipSec: end && end.type === "ended" ? +((end.at - tPlay) / 1000).toFixed(1) : null,
+      sttMs: speechEnd && shown ? shown.t - speechEnd.t : null,
+      endToShownMs: end && shown ? shown.t - end.at : null,
+      autoAnswered: !!auto, answer,
+    };
+  };
+  window.__simRun = (items, opts) => {
+    window.__S = { done: false, out: [] };
+    (async () => {
+      for (const it of items) {
+        try { window.__S.out.push(await window.__simOne(it, opts)); }
+        catch (e) { window.__S.out.push({ id: it.id, err: String(e) }); }
+        await T.sleep(1500);
+      }
+      window.__S.done = true;
+    })();
+    return "sim started " + items.length;
+  };
+})();
+
+// One-call setup for the live transcript test: open panel, auto-answer on, both sources on.
+window.__setupLive = async ({ autoAnswer = true } = {}) => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  if (![...document.querySelectorAll("h3")].some((h) => h.textContent === "Live transcript")) {
+    document.querySelector("svg.lucide-captions")?.closest("button")?.click(); await sleep(600);
+  }
+  const panel = [...document.querySelectorAll("h3")].find((h) => h.textContent === "Live transcript")?.parentElement;
+  const btn = (t) => [...panel.querySelectorAll("button")].find((b) => b.textContent.trim().startsWith(t));
+  const dot = (t) => btn(t).querySelector("span:last-child").className.includes("green");
+  window.__dot = dot;
+  const sw = panel.querySelector("[role=switch]");
+  if ((sw.getAttribute("aria-checked") === "true") !== autoAnswer) sw.click();
+  if (!dot("You")) { btn("You").click(); await sleep(2500); }
+  if (!dot("Interviewer")) { btn("Interviewer").click(); await sleep(4000); }
+  return { you: dot("You"), interviewer: dot("Interviewer"), autoAnswer: sw.getAttribute("aria-checked"),
+    error: panel.parentElement.innerText.match(/Microphone unavailable.*|No audio.*|Couldn.t.*/)?.[0] || null };
+};

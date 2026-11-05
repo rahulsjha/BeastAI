@@ -70,6 +70,7 @@ const AutoSpeechVADInternal = ({
     baseAssetPath: "/vad/",
     onnxWASMBasePath: "/vad/",
     userSpeakingThreshold: 0.6,
+    preSpeechPadFrames: 10,
     onFrameProcessed: (probs: { isSpeech: number }, frame: Float32Array) =>
       trackFrame(probs.isSpeech, frame),
     startOnLoad: true,

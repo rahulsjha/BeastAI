@@ -13,7 +13,7 @@ import { Files } from "./components/completion/Files";
 import { useApp, useCompletion } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
 import { CaptionsIcon, SparklesIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LiveTranscript } from "./components/transcript/LiveTranscript";
 import { invoke } from "@tauri-apps/api/core";
 import { ErrorBoundary } from "react-error-boundary";
@@ -27,6 +27,27 @@ const App = () => {
   const platform = getPlatform();
   const capturing = systemAudio?.capturing;
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+
+  // Questions from the transcript are answered one at a time, in order.
+  // A new question never cancels the answer that is still streaming.
+  const [questionQueue, setQuestionQueue] = useState<string[]>([]);
+  const pendingRef = useRef(false);
+  const enqueueQuestion = (q: string) => setQuestionQueue((prev) => [...prev, q]);
+  useEffect(() => {
+    if (completion.isLoading) {
+      pendingRef.current = false; // our submit has started
+      return;
+    }
+    if (pendingRef.current || questionQueue.length === 0) return;
+    const [next, ...rest] = questionQueue;
+    setQuestionQueue(rest);
+    pendingRef.current = true;
+    completion.submit(next);
+    // Safety: if the submit never starts loading, don't block the queue.
+    const t = setTimeout(() => (pendingRef.current = false), 4000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionQueue, completion.isLoading]);
 
   const openDashboard = async () => {
     try {
@@ -111,7 +132,9 @@ const App = () => {
           {/* Live transcript — speaker-labelled You / Interviewer */}
           {transcriptOpen && !capturing && (
             <LiveTranscript
-              onAnswer={(q) => completion.submit(q)}
+              onAnswer={enqueueQuestion}
+              queued={questionQueue}
+              answering={completion.isLoading}
               onClose={() => setTranscriptOpen(false)}
             />
           )}

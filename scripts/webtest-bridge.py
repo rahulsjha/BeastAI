@@ -105,6 +105,44 @@ class H(BaseHTTPRequestHandler):
                     cmd += (["--resume", sid] if resume else ["--session-id", sid])
                 return self._send(200, self._run_claude(cmd))
 
+            if self.path == "/claude-stream":  # streaming twin of /claude (NDJSON lines)
+                prompt = data.get("prompt", "")
+                model = (data.get("model") or "haiku").lower()
+                for i, b64 in enumerate(data.get("images") or []):
+                    import base64
+                    path = f"/tmp/pluely_attach_{i}.png"
+                    open(path, "wb").write(base64.b64decode(b64.split("base64,", 1)[-1]))
+                    prompt += f"\n\n@{path}"
+                cmd = [CLAUDE, "-p", prompt, "--model", model]
+                if model == "opus":
+                    cmd += ["--effort", "high"]
+                sid, resume = data.get("session_id"), data.get("resume")
+                if sid:
+                    cmd += (["--resume", sid] if resume else ["--session-id", sid])
+                cmd += ["--output-format", "stream-json", "--include-partial-messages", "--verbose"] + ANSWER_ONLY
+                self.send_response(200); self._cors()
+                self.send_header("Content-Type", "application/x-ndjson")
+                self.send_header("Cache-Control", "no-cache"); self.end_headers()
+                p = subprocess.Popen(cmd, env=_child_env(), cwd="/tmp", stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                final = {"done": True, "success": False, "error": "no result"}
+                for line in p.stdout:
+                    try:
+                        j = json.loads(line)
+                    except Exception:
+                        continue
+                    if j.get("type") == "stream_event":
+                        d = j.get("event", {}).get("delta", {})
+                        if d.get("type") == "text_delta":
+                            self.wfile.write((json.dumps({"text": d.get("text", "")}) + "\n").encode()); self.wfile.flush()
+                    elif j.get("type") == "result":
+                        final = {"done": True, "success": not j.get("is_error"), "text": j.get("result"),
+                                 "error": j.get("result") if j.get("is_error") else None}
+                p.wait()
+                if final.get("error") == "no result" and p.returncode != 0:
+                    final["error"] = (p.stderr.read() or "claude CLI failed").strip()[-500:]
+                self.wfile.write((json.dumps(final) + "\n").encode()); self.wfile.flush()
+                return
+
             if self.path == "/save":  # test-only: persist an answer for offline checking
                 out_dir = os.environ.get("PLUELY_TEST_OUT")
                 if not out_dir:

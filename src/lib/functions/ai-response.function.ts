@@ -212,30 +212,107 @@ async function* fetchClaudeCliResponse(params: {
     ? userMessage
     : [systemPrompt?.trim(), userMessage].filter(Boolean).join("\n\n");
 
+  // Stream the answer: text pieces arrive as they're generated.
+  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const queue: string[] = [];
+  let finished = false;
+  let failure: string | null = null;
+  let wake: (() => void) | null = null;
+  const push = (t: string) => {
+    queue.push(t);
+    wake?.();
+  };
+  const finish = (err?: string | null) => {
+    finished = true;
+    failure = err ?? null;
+    wake?.();
+  };
+
+  let unlisten: (() => void) | null = null;
   try {
-    const result = await invoke<{
-      success: boolean;
-      text?: string;
-      error?: string;
-    }>("claude_cli_response", {
-      prompt,
-      model: model ?? "haiku",
-      sessionId: claudeCliSessionId,
-      resume,
-      images: imagesBase64.length ? imagesBase64 : null,
-    });
-
-    if (signal?.aborted) return;
-
-    if (result.success && result.text) {
-      claudeCliTurns += 1;
-      yield result.text;
+    if ((window as any).__PLUELY_WEBTEST__) {
+      // Browser harness: the local bridge streams NDJSON lines.
+      (async () => {
+        try {
+          const res = await fetch("http://localhost:8787/claude-stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt,
+              model: model ?? "haiku",
+              session_id: claudeCliSessionId,
+              resume,
+              images: imagesBase64,
+            }),
+          });
+          const reader = res.body!.getReader();
+          const dec = new TextDecoder();
+          let buf = "";
+          for (;;) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let nl;
+            while ((nl = buf.indexOf("\n")) >= 0) {
+              const line = buf.slice(0, nl).trim();
+              buf = buf.slice(nl + 1);
+              if (!line) continue;
+              const msg = JSON.parse(line);
+              if (msg.done) return finish(msg.success ? null : msg.error || "no response");
+              if (msg.text) push(msg.text);
+            }
+          }
+          finish();
+        } catch (e) {
+          finish(e instanceof Error ? e.message : String(e));
+        }
+      })();
     } else {
-      yield `Claude CLI error: ${result.error ?? "no response"}`;
+      // Desktop app: Rust emits claude-cli-delta events while the CLI runs.
+      const { listen } = await import("@tauri-apps/api/event");
+      unlisten = await listen<{ request_id: string; text: string }>(
+        "claude-cli-delta",
+        (e) => {
+          if (e.payload.request_id === requestId) push(e.payload.text);
+        }
+      );
+      invoke<{ success: boolean; text?: string; error?: string }>(
+        "claude_cli_stream",
+        {
+          requestId,
+          prompt,
+          model: model ?? "haiku",
+          sessionId: claudeCliSessionId,
+          resume,
+          images: imagesBase64.length ? imagesBase64 : null,
+        }
+      )
+        .then((r) => finish(r.success ? null : r.error ?? "no response"))
+        .catch((e) => finish(e instanceof Error ? e.message : String(e)));
+    }
+
+    let gotText = false;
+    while (true) {
+      if (signal?.aborted) return;
+      if (queue.length) {
+        gotText = true;
+        yield queue.shift()!;
+        continue;
+      }
+      if (finished) break;
+      await new Promise<void>((r) => (wake = r));
+      wake = null;
+    }
+    if (failure && !gotText) {
+      yield `Claude CLI error: ${failure}`;
+    } else {
+      claudeCliTurns += 1;
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     yield `Claude CLI error: ${msg}`;
+  } finally {
+    unlisten?.();
   }
 }
 

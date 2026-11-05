@@ -73,9 +73,13 @@ function SourceButton({
 export function LiveTranscript({
   onAnswer,
   onClose,
+  queued = [],
+  answering = false,
 }: {
   onAnswer: (question: string) => void;
   onClose: () => void;
+  queued?: string[];
+  answering?: boolean;
 }) {
   const t = useLiveTranscript({ onQuestion: onAnswer });
   const listRef = useRef<HTMLDivElement>(null);
@@ -106,6 +110,16 @@ export function LiveTranscript({
           title='Share the meeting tab with "Also share tab audio" to transcribe the interviewer'
         />
         <div className="flex-1" />
+        {(answering || queued.length > 0) && (
+          <span
+            className="flex items-center gap-1 text-[11px] text-muted-foreground select-none"
+            title={queued.length ? "Waiting: " + queued.join(" | ") : undefined}
+          >
+            {answering && <Loader2 className="h-3 w-3 animate-spin" />}
+            {answering ? "Answering" : ""}
+            {queued.length > 0 && ` · ${queued.length} queued`}
+          </span>
+        )}
         <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground select-none">
           Auto-answer questions
           <Switch checked={t.autoAnswer} onCheckedChange={t.setAutoAnswer} className="scale-75" />
