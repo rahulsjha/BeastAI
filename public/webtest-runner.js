@@ -186,7 +186,7 @@ window.__setupLive = async ({ autoAnswer = true, you = true } = {}) => {
   const btn = (t) => [...panel.querySelectorAll("button")].find((b) => b.textContent.trim().startsWith(t));
   const dot = (t) => btn(t).querySelector("span:last-child").className.includes("green");
   window.__dot = dot;
-  const sw = panel.querySelector("[role=switch]");
+  const sw = panel.querySelector("[role=switch]"); // first = Interviewer
   if ((sw.getAttribute("aria-checked") === "true") !== autoAnswer) sw.click();
   if (you && !dot("You")) { btn("You").click(); await sleep(2500); }
   if (!you && dot("You")) { btn("You").click(); await sleep(500); }

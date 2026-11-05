@@ -54,7 +54,7 @@ export const Input = ({
           <div className="relative select-none">
             <textarea
               ref={inputRef as unknown as React.Ref<HTMLTextAreaElement>}
-              placeholder="Ask me anything…  (Enter to send, Shift+Enter for a new line)"
+              placeholder="Ask anything…  ↵ send · ⇧↵ new line"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}

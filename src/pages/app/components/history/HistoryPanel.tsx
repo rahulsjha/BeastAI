@@ -54,7 +54,8 @@ export function HistoryPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="w-full rounded-xl border border-input/50 bg-muted/20">
-      <div className="flex flex-wrap items-center gap-2 border-b border-input/30 px-3 py-2">
+      <div className="border-b border-input/30 px-3 py-2 space-y-1.5">
+      <div className="flex items-center gap-2">
         <h3 className="text-xs font-semibold select-none mr-1">History</h3>
         <div className="flex rounded-lg bg-muted/40 p-0.5 text-[11px]">
           {(["qa", "sessions"] as const).map((t) => (
@@ -67,8 +68,13 @@ export function HistoryPanel({ onClose }: { onClose: () => void }) {
             </button>
           ))}
         </div>
+        <div className="flex-1" />
+        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onClose} title="Close">
+          <XIcon className="h-3.5 w-3.5" />
+        </Button>
+      </div>
         {tab === "qa" && (
-          <>
+          <div className="flex items-center gap-2">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -101,12 +107,8 @@ export function HistoryPanel({ onClose }: { onClose: () => void }) {
                 <Trash2Icon className="h-3.5 w-3.5" />
               </Button>
             )}
-          </>
+          </div>
         )}
-        <div className="flex-1" />
-        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onClose} title="Close">
-          <XIcon className="h-3.5 w-3.5" />
-        </Button>
       </div>
 
       {tab === "sessions" ? (

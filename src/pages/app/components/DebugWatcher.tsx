@@ -2,7 +2,7 @@ import { useApp } from "@/contexts";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button, Popover, PopoverContent, PopoverTrigger, ScrollArea } from "@/components";
-import { CheckCircle2Icon, CircleDotIcon, Loader2, XIcon } from "lucide-react";
+import { CheckCircle2Icon, CircleDotIcon, EyeIcon, Loader2, XIcon } from "lucide-react";
 
 interface DebugResult {
   success: boolean;
@@ -183,17 +183,18 @@ export const DebugWatcher = () => {
     <Popover open={open && (watching || frames.length > 0)} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div className="flex items-center gap-2 shrink-0">
-          <Button size="sm" variant={watching ? "destructive" : "default"} onClick={toggle}>
-            {watching ? (phase === "analyzing" ? `Analyzing… ${elapsed}s` : "Stop watch") : "Watch screen"}
+          <Button size="sm" variant={watching ? "destructive" : "default"} onClick={toggle} className="h-9 gap-1.5 px-3">
+            {watching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <EyeIcon className="h-3.5 w-3.5" />}
+            {watching ? (phase === "analyzing" ? `Analyzing ${elapsed}s` : "Stop") : "Watch screen"}
           </Button>
           {(frames.length > 0 || watching) && (
             <button
               type="button"
               onClick={() => setOpen((o) => !o)}
-              className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+              className="whitespace-nowrap text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
             >
               {frames.length} frame{frames.length === 1 ? "" : "s"}
-              {openIssues.length > 0 && ` · ${openIssues.length} open issue${openIssues.length > 1 ? "s" : ""}`}
+              {openIssues.length > 0 && ` · ${openIssues.length} open`}
             </button>
           )}
         </div>

@@ -10,6 +10,7 @@ import { shouldUsePluelyAPI } from "@/lib/functions/pluely.api";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { resumeAllAudio } from "@/lib/audio-context-tracker";
+import { cleanTranscript, isNoiseTranscript } from "@/lib/functions/transcript-filter";
 
 // Mic pipeline diagnostics → app log ("[frontend] mic: …" in the tauri dev output).
 const micLog = (msg: string) => {
@@ -122,16 +123,13 @@ const AutoSpeechVADInternal = ({
         });
 
         micLog(`transcript: "${(transcription || "").slice(0, 120)}"`);
-        // Whisper emits filler phrases on silence/noise; don't send those.
-        const clean = transcription?.trim() ?? "";
-        const isNoise =
-          clean.replace(/[^a-z]/gi, "").length < 3 ||
-          /^(thank(s| you)( for watching)?|you|bye|okay|uh|um)[.!]?$/i.test(clean);
-        if (clean && !isNoise) {
+        // Same noise rules as the Live transcript (fillers, repeats, hallucinations).
+        const clean = cleanTranscript(transcription ?? "");
+        if (clean && !isNoiseTranscript(clean)) {
           micLog("question sent");
           submit(clean);
         } else if (clean) {
-          console.debug("[VAD] ignored noise transcription:", clean);
+          micLog(`ignored noise: "${clean.slice(0, 60)}"`);
         }
       } catch (error) {
         console.error("Failed to transcribe audio:", error);

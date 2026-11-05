@@ -53,7 +53,9 @@ export function useLiveTranscript(opts: {
   const [mic, setMic] = useState<SourceState>("off");
   const [share, setShare] = useState<SourceState>("off");
   const [error, setError] = useState<string | null>(null);
-  const [autoAnswer, setAutoAnswer] = useState(false);
+  // Auto-answer per speaker: interviewer questions, and your own questions too.
+  const [autoAnswer, setAutoAnswer] = useState(true);
+  const [autoAnswerYou, setAutoAnswerYou] = useState(true);
   const [speaking, setSpeaking] = useState<Record<Speaker, boolean>>({
     you: false,
     interviewer: false,
@@ -64,6 +66,8 @@ export function useLiveTranscript(opts: {
   const streams = useRef<Partial<Record<Speaker, MediaStream>>>({});
   const autoRef = useRef(autoAnswer);
   autoRef.current = autoAnswer;
+  const autoYouRef = useRef(autoAnswerYou);
+  autoYouRef.current = autoAnswerYou;
   const onQuestionRef = useRef(opts.onQuestion);
   onQuestionRef.current = opts.onQuestion;
   const getModeRef = useRef(opts.getMode);
@@ -97,10 +101,11 @@ export function useLiveTranscript(opts: {
         return;
       }
       const clean = cleanTranscript(text);
-      const isQuestion = speaker === "interviewer" && looksLikeQuestion(clean);
+      const isQuestion = looksLikeQuestion(clean);
       update(id, { text: clean, status: "done", isQuestion });
       txlog("shown", { id, speaker, text: clean, isQuestion });
-      if (isQuestion && autoRef.current) {
+      const auto = speaker === "interviewer" ? autoRef.current : autoYouRef.current;
+      if (isQuestion && auto) {
         // Several questions in one breath → one queued job each.
         for (const q of splitQuestions(clean)) {
           txlog("auto_answer", { id, text: q });
@@ -260,6 +265,8 @@ export function useLiveTranscript(opts: {
     speaking,
     autoAnswer,
     setAutoAnswer,
+    autoAnswerYou,
+    setAutoAnswerYou,
     toggleMic,
     toggleShare,
     clear,

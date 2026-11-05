@@ -8,6 +8,9 @@ export function isNoiseTranscript(text: string): boolean {
   // Lines made only of filler sentences ("Obrigado. Obrigado. Vamos lá.").
   const sentences = clean.split(/(?<=[.!?…])\s+/).map((x) => x.trim()).filter(Boolean);
   if (sentences.length > 1 && sentences.every((x) => FILLER_SENTENCE.test(x))) return true;
+  // One or two words repeated ("Easy, easy, easy.", "Shit, shit.").
+  const words = clean.toLowerCase().match(/[\p{L}\p{N}']+/gu) ?? [];
+  if (words.length >= 2 && new Set(words).size <= Math.max(1, Math.floor(words.length / 3))) return true;
   // Placeholder our STT layer returns when nothing was recognised.
   if (/no transcription found/i.test(clean)) return true;
   // Whisper's well-known silence/noise hallucinations, incl. other languages

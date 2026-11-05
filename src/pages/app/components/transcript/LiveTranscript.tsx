@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { saveSession } from "@/lib/storage/transcript-history";
 import { TranscriptHistory } from "./TranscriptHistory";
-import { Button, Switch } from "@/components";
+import { Button } from "@/components";
 import {
   HeadphonesIcon,
   HistoryIcon,
@@ -124,8 +124,8 @@ export function LiveTranscript({
   return (
     <div className="w-full rounded-xl border border-input/50 bg-muted/20">
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-input/30 px-3 py-2">
-        <h3 className="text-xs font-semibold select-none mr-1">Live transcript</h3>
+      <div className="flex items-center gap-1.5 border-b border-input/30 px-3 py-2 min-w-0">
+        <h3 className="text-xs font-semibold select-none mr-1 whitespace-nowrap">Live transcript</h3>
         <SourceButton
           speaker="you"
           state={t.mic}
@@ -142,16 +142,32 @@ export function LiveTranscript({
         />
         <div className="flex-1" />
         {(answering || waitingCount > 0) && (
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground select-none">
+          <span className="flex items-center gap-1 whitespace-nowrap text-[11px] text-muted-foreground select-none">
             {answering && <Loader2 className="h-3 w-3 animate-spin" />}
-            {answering ? "Answering" : ""}
-            {waitingCount > 0 && ` · ${waitingCount} waiting`}
+            {waitingCount > 0 ? `${waitingCount} waiting` : answering ? "Answering" : ""}
           </span>
         )}
-        <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground select-none">
-          Auto-answer questions
-          <Switch checked={t.autoAnswer} onCheckedChange={t.setAutoAnswer} className="scale-75" />
-        </label>
+        {/* Auto-answer: which speakers' questions are answered automatically */}
+        <div className="flex items-center gap-1 whitespace-nowrap text-[11px] text-muted-foreground select-none">
+          <span title="Answer questions automatically">Auto:</span>
+          {([
+            ["Interviewer", t.autoAnswer, t.setAutoAnswer],
+            ["You", t.autoAnswerYou, t.setAutoAnswerYou],
+          ] as const).map(([label, on, set]) => (
+            <button
+              key={label}
+              role="switch"
+              aria-checked={on}
+              onClick={() => set(!on)}
+              className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                on ? "border-green-500/40 bg-green-500/15 text-green-300" : "border-input/50 text-muted-foreground"
+              }`}
+              title={`${on ? "Stop" : "Start"} answering ${label === "You" ? "your" : "the interviewer's"} questions automatically`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <Button
           size="icon"
           variant={showHistory ? "default" : "ghost"}
@@ -221,7 +237,7 @@ export function LiveTranscript({
                     job.status === "waiting" ? `queued #${jobs.filter((j) => j.status === "waiting").indexOf(job) + 1}` : job.status === "done" ? "answered" : job.status;
                   return <span className={`mt-0.5 shrink-0 text-[10px] ${cls}`}>{label}</span>;
                 })()}
-                {e.speaker === "interviewer" && e.status === "done" && !jobFor(e.id) && (
+                {e.status === "done" && !jobFor(e.id) && (
                   <Button
                     size="sm"
                     variant={e.isQuestion ? "default" : "ghost"}
@@ -240,7 +256,7 @@ export function LiveTranscript({
 
       <AnswerQueue jobs={jobs} onRemove={onRemoveJob} onClearFinished={onClearFinished} />
 
-      {lastQuestion && !t.autoAnswer && !jobFor(lastQuestion.id) && (
+      {lastQuestion && !jobFor(lastQuestion.id) && (
         <div className="flex items-center justify-between gap-2 border-t border-input/30 px-3 py-1.5">
           <span className="truncate text-[11px] text-muted-foreground">
             Last question: <span className="text-foreground">{lastQuestion.text}</span>

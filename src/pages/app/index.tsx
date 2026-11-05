@@ -73,9 +73,9 @@ const App = () => {
           isHidden ? "hidden pointer-events-none" : ""
         }`}
       >
-        <Card className="w-full flex flex-col gap-1.5 p-2">
+        <Card id="app-card" className="w-full flex flex-col gap-1.5 p-2">
           {/* Header row — fixed height, never grows with the input */}
-          <div className="flex flex-row items-center gap-2 w-full">
+          <div className="flex flex-row items-center gap-1.5 w-full min-w-0 [&_button.size-9]:size-8">
             <SystemAudio {...systemAudio} />
 
             {capturing ? (
@@ -94,8 +94,13 @@ const App = () => {
             ) : (
               <>
                 <ModeSelector />
-                <DebugWatcher />
-                <Audio {...completion} />
+                <Audio
+                  {...completion}
+                  // Voice questions join the answer queue, so they never cancel an answer in progress.
+                  submit={async (text?: string) => {
+                    if (text) queue.enqueue(text, { mode: currentMode, source: "manual" });
+                  }}
+                />
                 <Screenshot {...completion} />
                 <Files {...completion} />
                 <Button
@@ -132,22 +137,7 @@ const App = () => {
             <DragButton />
           </div>
 
-          {/* Input row — below the divider, expands downward as you type */}
-          {!capturing && (
-            <div className="w-full border-t border-input/30 pt-1.5">
-              <Input
-                {...completion}
-                // Hide the answer overlay while History is open so it doesn't cover it.
-                isPopoverOpen={completion.isPopoverOpen && !historyOpen}
-                isHidden={isHidden}
-              />
-            </div>
-          )}
-
-          {/* History — every previous question and answer */}
-          {historyOpen && !capturing && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
-
-          {/* Live transcript — speaker-labelled You / Interviewer */}
+          {/* Live transcript — above the question bar so answers (which open below it) never cover it */}
           {transcriptOpen && !capturing && (
             <LiveTranscript
               onAnswer={(text, entryId, source, mode) =>
@@ -160,6 +150,27 @@ const App = () => {
               onClose={() => setTranscriptOpen(false)}
             />
           )}
+
+          {/* Input row — below the divider, expands downward as you type */}
+          {!capturing && (
+            <div className="w-full border-t border-input/30 pt-1.5 flex items-center gap-2">
+              {/* Debug mode: screen-watch control sits beside the question bar (the header is full at 600px). */}
+              <DebugWatcher />
+              <div className="flex-1 min-w-0">
+              <Input
+                {...completion}
+                // Hide the answer overlay while History is open so it doesn't cover it.
+                isPopoverOpen={completion.isPopoverOpen && !historyOpen}
+                isHidden={isHidden}
+              />
+              </div>
+            </div>
+          )}
+
+          {/* History — every previous question and answer */}
+          {historyOpen && !capturing && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
+
+
         </Card>
 
         {customizable.cursor.type === "invisible" && platform !== "linux" ? (
