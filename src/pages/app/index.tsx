@@ -14,6 +14,9 @@ import { useApp, useCompletion } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
 import { CaptionsIcon, HistoryIcon, SparklesIcon } from "lucide-react";
 import { HistoryPanel } from "./components/history/HistoryPanel";
+import { SolveScreen } from "./components/SolveScreen";
+import { AnswerQueue } from "./components/transcript/AnswerQueue";
+import { AttachmentTray } from "./components/completion/AttachmentTray";
 import { useRef, useState } from "react";
 import { useAnswerQueue } from "@/hooks/useAnswerQueue";
 import { LiveTranscript } from "./components/transcript/LiveTranscript";
@@ -151,11 +154,32 @@ const App = () => {
             />
           )}
 
+          {/* Answer queue (when the Live transcript, which also shows it, is closed) */}
+          {!transcriptOpen && !historyOpen && !capturing && queue.jobs.length > 0 && (
+            <div className="w-full rounded-xl border border-input/50 bg-muted/20">
+              <AnswerQueue jobs={queue.jobs} onRemove={queue.remove} onClearFinished={queue.clearFinished} />
+            </div>
+          )}
+
+          {/* What will be sent with the next question (screenshots, documents) */}
+          {!capturing && (
+            <AttachmentTray
+              files={completion.attachedFiles}
+              onRemove={completion.removeFile}
+              onClear={completion.clearFiles}
+            />
+          )}
+
           {/* Input row — below the divider, expands downward as you type */}
           {!capturing && (
             <div className="w-full border-t border-input/30 pt-1.5 flex items-center gap-2">
-              {/* Debug mode: screen-watch control sits beside the question bar (the header is full at 600px). */}
+              {/* Debug mode: screen watch. Other modes: Solve screen (answers every new question on screen). */}
               <DebugWatcher />
+              {currentMode !== "debug" && (
+                <SolveScreen
+                  onQuestion={(q, mode) => queue.enqueue(q, { mode, source: "auto" })}
+                />
+              )}
               <div className="flex-1 min-w-0">
               <Input
                 {...completion}

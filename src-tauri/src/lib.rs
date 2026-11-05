@@ -108,6 +108,7 @@ pub fn run() {
             claude_cli::claude_cli_response,
             claude_cli::log_frontend,
             claude_cli::claude_cli_stream,
+            claude_cli::extract_screen_question,
             claude_cli::claude_cli_status,
             claude_cli::debug_analyze_screen,
             speaker::start_system_audio_capture,

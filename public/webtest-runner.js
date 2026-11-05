@@ -243,3 +243,23 @@ window.__setupLive = async ({ autoAnswer = true, you = true } = {}) => {
     return "queue run started";
   };
 })();
+
+// Attach a file through the app's real file input (same path as picking a file).
+window.__attach = async (url, name, type) => {
+  const blob = await (await fetch(url)).blob();
+  const file = new File([blob], name, { type: type || blob.type });
+  const input = document.querySelector('input[type=file]');
+  if (!input) {
+    document.querySelector("svg.lucide-paperclip")?.closest("button")?.click();
+    await new Promise((r) => setTimeout(r, 400));
+  }
+  const el = document.querySelector('input[type=file]');
+  const dt = new DataTransfer(); dt.items.add(file); el.files = dt.files;
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 1500));
+  return name;
+};
+window.__tray = () => {
+  const t = [...document.querySelectorAll("span")].find((s) => s.textContent.startsWith("Sending with next question"));
+  return t ? t.parentElement.innerText.replace(/\n+/g, " | ") : "(no tray)";
+};

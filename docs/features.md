@@ -31,6 +31,21 @@ Pluely is a small always-on-top bar (600px wide) that answers interview question
 - Answers render markdown, code with copy, tables, math and diagrams (diagrams are checked and auto-repaired up to 2 times).
 - Replies come in the language you asked in (Hindi question → Hindi answer).
 
+## Solve screen (any website)
+
+Click **Solve screen** (next to the question bar, in Design / Code / Concept). It keeps reading your screen every few seconds:
+- When a **new question** appears (LeetCode, HackerRank, Codeforces, quizzes, design prompts …) it extracts the full text — examples, constraints, options — and its type.
+- It answers in the matching mode: coding → **Code** (Opus), design → **Design**, concept/MCQ → **Concept**, debugging → **Debug**.
+- The same question still on screen is **not** answered twice; pages without a question are ignored.
+- The thumbnail next to the button shows **exactly what was captured** and what was read from it.
+- Every question goes through the **Answer queue** (shown above the question bar).
+
+## Attachments (screenshots & documents)
+
+- 💻 **Screenshot** attaches your screen; 📎 **Attach** adds images, **PDFs**, and text/code files (`.md`, `.txt`, `.py`, …).
+- Everything that will be sent appears in the **"Sending with next question"** tray above the bar: screenshots as thumbnails (click to view full size), documents with how many characters were read. Remove any with ✕, or **Clear all**.
+- Several screenshots and documents can go together in one question. The tray clears after sending.
+
 ## Asking questions
 
 - **Type** in the question bar: `Enter` sends, `Shift+Enter` adds a line. The bar keeps one fixed height; long text scrolls inside it.

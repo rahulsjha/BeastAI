@@ -164,7 +164,7 @@ export const Files = ({
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*,text/*,.txt,.md,.markdown,.csv,.tsv,.json,.yaml,.yml,.log,.py,.js,.ts,.tsx,.jsx,.java,.go,.rs,.rb,.php,.c,.cpp,.h,.cs,.sql,.sh,.html,.htm,.css"
+        accept="image/*,application/pdf,.pdf,text/*,.txt,.md,.markdown,.csv,.tsv,.json,.yaml,.yml,.log,.py,.js,.ts,.tsx,.jsx,.java,.go,.rs,.rb,.php,.c,.cpp,.h,.cs,.sql,.sh,.html,.htm,.css"
         onChange={handleFileSelect}
         className="hidden"
       />

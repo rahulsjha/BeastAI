@@ -50,6 +50,9 @@
     if (cmd === "capture_to_base64") {
       return post("/screenshot", {}).then((r) => r.image);
     }
+    if (cmd === "extract_screen_question") {
+      return post("/extract-question", {});
+    }
     if (cmd === "debug_analyze_screen") {
       return post("/debug", {});
     }

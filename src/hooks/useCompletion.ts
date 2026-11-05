@@ -130,13 +130,19 @@ export const useCompletion = () => {
 
   const addFile = useCallback(async (file: File) => {
     try {
-      const parseAsText = isTextDocument(file);
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+      const parseAsText = isPdf || isTextDocument(file);
       const base64 = parseAsText ? "" : await fileToBase64(file);
-      const text = parseAsText ? await file.text() : undefined;
+      const text = isPdf
+        ? await (await import("@/lib/pdf-text")).pdfToText(file)
+        : parseAsText
+          ? await file.text()
+          : undefined;
       const attachedFile: AttachedFile = {
-        id: Date.now().toString(),
+        // Unique even when several files are added in the same millisecond.
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         name: file.name,
-        type: file.type || (parseAsText ? "text/plain" : ""),
+        type: file.type || (isPdf ? "application/pdf" : parseAsText ? "text/plain" : ""),
         base64,
         size: file.size,
         text,
@@ -590,7 +596,7 @@ export const useCompletion = () => {
     files.forEach((file) => {
       // Accept images (for vision models) and parsable text documents.
       if (
-        (file.type.startsWith("image/") || isTextDocument(file)) &&
+        (file.type.startsWith("image/") || isTextDocument(file) || file.type === "application/pdf" || /\.pdf$/i.test(file.name)) &&
         state.attachedFiles.length < MAX_FILES
       ) {
         addFile(file);
