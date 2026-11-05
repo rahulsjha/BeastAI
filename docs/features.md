@@ -31,6 +31,16 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 - Answers render markdown, code with copy, tables, math and diagrams (diagrams are checked and auto-repaired up to 2 times).
 - Replies come in the language you asked in (Hindi question → Hindi answer).
 
+## Shortcuts
+
+| Keys | Action |
+|---|---|
+| **⌘⇧S** (Ctrl+Shift+S) | Screenshot — drag to select an area; it's attached to the next question |
+| **⌘⇧O** (Ctrl+Shift+O) | Start / stop **Solve screen** monitoring |
+| ⌘⇧A | Mic on/off · ⌘⇧M Listen · ⌘⇧I focus the question bar · ⌘\\ show/hide |
+
+No tab-sharing pop-ups anywhere: screens are captured with screenshots, and in the desktop app the meeting's audio (Listen / Interviewer) is captured automatically from the computer.
+
 ## Solve screen (any website)
 
 Click **Solve screen** (next to the question bar, in Design / Code / Concept). It keeps reading your screen every few seconds:
@@ -57,7 +67,7 @@ Click **Solve screen** (next to the question bar, in Design / Code / Concept). I
 
 ## Live transcript (💬)
 
-- **You** — your microphone. **Interviewer** — the meeting tab's audio (Chrome: pick the meeting tab and turn on *Also share tab audio*).
+- **You** — your microphone. **Interviewer** — the computer's audio (everyone in Zoom/Meet/Teams), captured automatically in the desktop app — no tab sharing.
 - Every line shows the time, a **You** (blue) or **Interviewer** (amber) label, and the text.
 - **Auto: [Interviewer] [You]** — which questions are answered automatically (both on by default). Statements and small talk are not answered; only questions and tasks are ("What is…", "Design…", "Given an array…").
 - Several questions in one breath are split into separate jobs; refinements ("…can you do better than sorting?") stay with their question.

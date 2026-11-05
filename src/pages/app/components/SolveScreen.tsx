@@ -109,6 +109,19 @@ export function SolveScreen({
 
   useEffect(() => () => void (onRef.current = false), []);
 
+  // ⌘⇧O (Ctrl+Shift+O) starts/stops monitoring.
+  const toggleRef = useRef(toggle);
+  toggleRef.current = toggle;
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    import("@tauri-apps/api/event").then(({ listen }) =>
+      listen<{ action: string }>("custom-shortcut-triggered", (e) => {
+        if (e.payload?.action === "solve_screen") toggleRef.current();
+      }).then((u) => (off = u))
+    );
+    return () => off?.();
+  }, []);
+
   return (
     <div className="flex items-center gap-2 shrink-0 min-w-0">
       <Button
@@ -116,7 +129,7 @@ export function SolveScreen({
         variant={on ? "destructive" : "default"}
         onClick={toggle}
         className="h-9 gap-1.5 px-3"
-        title="Keep reading the screen and answer every new question that appears"
+        title="Keep reading the screen and answer every new question that appears (⌘⇧O)"
       >
         {on && busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanTextIcon className="h-3.5 w-3.5" />}
         {on ? "Stop" : "Solve screen"}

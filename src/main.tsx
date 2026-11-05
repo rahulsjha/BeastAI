@@ -11,6 +11,22 @@ installAudioContextTracker();
 if ((window as any).__PLUELY_WEBTEST__) {
   import("./lib/webtest/browser-listen").then((m) => m.installBrowserListen());
   import("./lib/webtest/browser-crop").then((m) => m.installBrowserCrop());
+  // Shortcuts (the desktop app registers these globally):
+  //   ⌘⇧S / Ctrl+Shift+S → screenshot (drag to select)
+  //   ⌘⇧O / Ctrl+Shift+O → start/stop Solve screen monitoring
+  window.addEventListener("keydown", (e) => {
+    if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
+    const emit = (window as any).__webtestEmit;
+    if (!emit) return;
+    const k = e.key.toLowerCase();
+    if (k === "s") {
+      e.preventDefault();
+      emit("trigger-screenshot", {});
+    } else if (k === "o") {
+      e.preventDefault();
+      emit("custom-shortcut-triggered", { action: "solve_screen" });
+    }
+  });
 }
 
 const currentWindow = getCurrentWindow();

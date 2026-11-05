@@ -39,7 +39,8 @@ const txlog = (event: string, data: Record<string, unknown> = {}) => {
 /**
  * Live, speaker-labelled transcript.
  * - "You": the microphone.
- * - "Interviewer": audio shared from the meeting tab/window (getDisplayMedia),
+ * - "Interviewer": the computer's audio, captured natively by the desktop app
+ *   (ScreenCaptureKit) — no tab-sharing pop-up,
  *   so the other side of a browser call is captured without virtual devices.
  * Each source runs its own voice-activity detector; every finished phrase is
  * transcribed and appended with its speaker and time.
@@ -202,7 +203,7 @@ export function useLiveTranscript(opts: {
       return;
     }
     setError(null);
-    if (!navigator.mediaDevices?.getDisplayMedia) {
+    if (!(window as any).__PLUELY_WEBTEST__) {
       // Desktop app: capture the computer's audio natively (ScreenCaptureKit),
       // which hears everyone in any meeting app — no tab sharing, no BlackHole.
       setShare("starting");
@@ -252,55 +253,12 @@ export function useLiveTranscript(opts: {
       }
       return;
     }
-    try {
-      // Chrome only shares audio together with video; we drop the video track.
-      // Ask for a browser tab (the meeting tab): the picker opens on the tab
-      // list, tab audio is supported, and no screen-recording permission is needed.
-      const display = await navigator.mediaDevices.getDisplayMedia(
-        (SIMTEST
-          ? // Test mode: the interviewer simulator plays inside this tab, so share
-            // this tab and keep its sound off the speakers (mic won't hear it).
-            { video: { displaySurface: "browser" }, audio: { suppressLocalAudioPlayback: true }, preferCurrentTab: true, selfBrowserSurface: "include" }
-          : {
-              // Let the user pick a meeting tab OR the entire screen. With the
-              // entire screen + "Share system audio", Chrome captures all
-              // computer audio (Zoom/Teams/Meet apps) — no virtual audio device.
-              video: { displaySurface: "browser" }, // opens on Tabs; Entire screen still selectable
-              audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-              systemAudio: "include",
-              selfBrowserSurface: "exclude",
-              surfaceSwitching: "include",
-              monitorTypeSurfaces: "include",
-              preferCurrentTab: false,
-            }) as any
-      );
-      const audioTracks = display.getAudioTracks();
-      if (!audioTracks.length) {
-        setShare("error");
-        setError(
-          'No audio was shared. Pick the meeting tab with "Also share tab audio", or Entire screen with "Share system audio" (for Zoom/Teams apps).'
-        );
-        return;
-      }
-      const vt = display.getVideoTracks()[0];
-      txlog("share_track", {
-        surface: (vt?.getSettings() as any)?.displaySurface,
-        videoLabel: vt?.label,
-        audioLabel: audioTracks[0]?.label,
-      });
-      display.getVideoTracks().forEach((t) => t.stop());
-      const stream = new MediaStream(audioTracks);
-      audioTracks[0].addEventListener("ended", () => {
-        stopSource("interviewer");
-        setShare("off");
-      });
-      await startSource("interviewer", stream);
-      setShare("on");
-    } catch (e) {
-      setShare("off");
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!/denied|cancel|abort/i.test(msg)) setError("Couldn't share audio: " + msg);
-    }
+    // Browser version: no tab-sharing pop-up. Interviewer audio is captured
+    // automatically by the desktop app.
+    setShare("off");
+    setError(
+      "Interviewer audio is captured automatically in the desktop app. In the browser, use the mic, screenshots or Solve screen."
+    );
   }, [share, startSource, stopSource]);
 
   const clear = useCallback(() => setEntries([]), []);
