@@ -111,3 +111,22 @@ Interviewer audio = scripted clips (Daniel/Lekha voices) fed into the Interviewe
 | History panel | every Q&A saved (typed, voice, screenshot, transcript); search, mode filter, expand answer |
 
 Typical timings: transcript shown 2–6s after the speaker stops; Concept/Design answers 1–5s (Groq); Code 13–25s (Opus, streams from ~6s); Debug 30–48s (Opus high effort); screenshot answers 12–16s; watch frame ~12s.
+
+## End-to-end demo run (recorded, real examples)
+
+Video: `~/Movies/pluely-demo.mp4` (7m51s). Scripts: `scripts/demo/` (run in the `?webtest=1` / `?webtest=1&simtest=1` page).
+
+| Scene | Real example | Result |
+|---|---|---|
+| Concept | "What is consistent hashing…" | ✅ Groq, 4.4s, hash-ring diagram |
+| Design | URL shortener, 100M URLs/month | ✅ requirements, estimates, diagram |
+| Code + follow-up | Longest substring (Python) → "same in C++" | ✅ Opus streamed, C++ kept context |
+| Documents + notes | `interview-notes.md` + `resume.pdf`, a note on each | ✅ "Marigold-DB" and "480 ms → 95 ms" (facts only in the files) |
+| Screenshot (⌘⇧S) | Drag over a LeetCode page + note, empty message | ✅ Valid Parentheses solved with tests, 17s |
+| Debug | Full-screen shot of a KeyError + pasted trace, empty message | ✅ Root cause, Evidence, Fix, Before vs After, Verify |
+| Solve screen (⌘⇧O) | MCQ quiz → Twitter design prompt | ✅ MCQ → Concept 1.8s; design → Design 4.4s |
+| Live + queue | Interviewer asks two questions in one breath | ✅ split into 2 jobs, both answered in order |
+| Listen (browser) | "What is the difference between TCP and UDP?" spoken from the speakers | ✅ transcribed and answered |
+| History | Open panel, read a past answer | ✅ |
+
+Note: the test Chrome must run with `--disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=BackgroundMediaSuspend`, otherwise a hidden window holds the simulator's audio playback.

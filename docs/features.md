@@ -6,7 +6,7 @@ Pluely is a small always-on-top bar (600px wide) that answers interview question
 
 | Button | What it does |
 |---|---|
-| 🎧 **Listen** | Desktop only: captures call audio from a virtual input (BlackHole) for the system-audio flow. |
+| 🎧 **Listen** | Hears the meeting and answers its questions. Desktop app: the computer's audio directly (no BlackHole, no tab sharing). Browser: through the default mic. |
 | **Design · Code · Concept · Debug** | Interview mode. Picks the model, answer format and voice settings in one click (see *Modes*). |
 | 🎤 **Mic** | Ask by voice. Speak, pause, and the question is transcribed and answered. Noise ("thank you", "yes yes") is ignored. |
 | 💻 **Screenshot** | Drag to select an area of the screen; it's attached to the next question ("solve this", "what's wrong here?"). |

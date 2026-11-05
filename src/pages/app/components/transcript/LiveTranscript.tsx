@@ -199,8 +199,8 @@ export function LiveTranscript({
       <div ref={listRef} className="max-h-64 overflow-y-auto px-3 py-2 space-y-1.5">
         {t.entries.length === 0 ? (
           <p className="py-3 text-center text-[11px] text-muted-foreground select-none">
-            <b>You</b> = your mic. <b>Interviewer</b> = the meeting audio: pick the meeting tab (“Also share tab
-            audio”) or <b>Entire screen</b> with “Share system audio” to hear Zoom/Teams/any app.
+            <b>You</b> = your mic. <b>Interviewer</b> = the computer’s audio (Zoom/Meet/Teams/any app), captured
+            automatically — no tab sharing.
           </p>
         ) : (
           t.entries.map((e) => {
