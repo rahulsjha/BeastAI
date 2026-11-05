@@ -9,6 +9,7 @@ import { floatArrayToWav } from "@/lib/utils";
 import { shouldUsePluelyAPI } from "@/lib/functions/pluely.api";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
+import { resumeAllAudio } from "@/lib/audio-context-tracker";
 
 // Mic pipeline diagnostics → app log ("[frontend] mic: …" in the tauri dev output).
 const micLog = (msg: string) => {
@@ -145,6 +146,19 @@ const AutoSpeechVADInternal = ({
       }
     },
   });
+
+  // Keep the audio engine running while listening (WKWebView starts it suspended).
+  useEffect(() => {
+    if (!vad.listening) return;
+    let n = 0;
+    const tick = async () => {
+      const states = await resumeAllAudio();
+      if (n++ < 3) micLog(`audio engine: ${states.join(", ") || "none"}`);
+    };
+    tick();
+    const t = setInterval(tick, 2000);
+    return () => clearInterval(t);
+  }, [vad.listening]);
 
   useEffect(() => {
     if (vad.errored) micLog(`ERROR voice detector failed to start: ${vad.errored}`);

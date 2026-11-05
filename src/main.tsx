@@ -5,6 +5,8 @@ import { AppProvider, ThemeProvider } from "./contexts";
 import "./global.css";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import AppRoutes from "./routes";
+import { installAudioContextTracker } from "./lib/audio-context-tracker";
+installAudioContextTracker();
 
 const currentWindow = getCurrentWindow();
 const windowLabel = currentWindow.label;

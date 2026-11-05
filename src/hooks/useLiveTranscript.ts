@@ -136,6 +136,7 @@ export function useLiveTranscript(opts: {
         },
       } as any);
       vad.start();
+      void (await import("@/lib/audio-context-tracker")).resumeAllAudio();
       vads.current[speaker] = vad;
       streams.current[speaker] = stream;
     },
