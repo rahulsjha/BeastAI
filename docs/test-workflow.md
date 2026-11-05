@@ -78,3 +78,19 @@ Each mode gets 5 standard questions plus edge cases (below). Code answers are ex
 | Code with tricky constraints (overflow, empty input, duplicates) | handles edges; tests pass |
 | Cancel mid-answer (X) | stops cleanly, can ask again |
 | Rapid double Enter | one request, no duplicate answers |
+
+### F13 Answer queue (multiple questions at a time)
+Every question (auto-detected, **Answer** click, or **Answer it**) becomes a job in the **Answer queue** section. Jobs run one at a time, in arrival order, each in the mode it was asked in. Nothing is dropped or cancelled by a newer question.
+
+| # | Case | Steps | Expected |
+|---|---|---|---|
+| Q1 | Burst | Interviewer asks 3 questions back to back while the first is still answering | 3 jobs; answered in order 1→2→3; none dropped |
+| Q2 | Mixed modes | Q in Code mode, then switch to Concept and a Q arrives | job 1 answered by Opus (Code), job 2 by Groq (Concept); each job shows its mode |
+| Q3 | Duplicate | Same question transcribed twice within 30s (echo / repeat) | queued once |
+| Q4 | Manual + auto | Click **Answer** on an old line while another answer streams | added to the end of the queue |
+| Q5 | Cancel current | Press ✕ on the streaming answer | current job → cancelled; next job starts |
+| Q6 | Remove queued | Press ✕ on a waiting job | removed; others keep order |
+| Q7 | Failure | An answer errors (e.g. network) | job → failed; queue continues |
+| Q8 | History | After the burst | every Q&A is in the conversation thread, in order |
+| Q9 | Status UI | During the burst | each job shows waiting / answering / done with times; transcript lines show their job status |
+| Q10 | Long queue | 6+ questions quickly | all kept; section scrolls; no layout break |
