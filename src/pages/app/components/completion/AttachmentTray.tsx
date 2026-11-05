@@ -9,6 +9,7 @@ interface Attached {
   base64: string;
   size: number;
   text?: string;
+  label?: string;
 }
 
 const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
@@ -57,7 +58,22 @@ export function AttachmentTray({
                 <FileTextIcon className="ml-1 h-4 w-4 text-sky-300" />
               )}
               <div className="max-w-[110px] leading-tight">
-                <div className="truncate text-[10px]">{isImage && /^screenshot/i.test(f.name) ? "Screenshot" : f.name}</div>
+                <div className="truncate text-[10px]">
+                  {f.label && (
+                    <span
+                      className={`mr-1 rounded px-1 text-[9px] font-semibold ${
+                        f.label === "Before"
+                          ? "bg-amber-500/20 text-amber-300"
+                          : f.label === "After"
+                            ? "bg-green-500/20 text-green-300"
+                            : "bg-sky-500/20 text-sky-300"
+                      }`}
+                    >
+                      {f.label.toUpperCase()}
+                    </span>
+                  )}
+                  {isImage && (f.label || /^screenshot/i.test(f.name)) ? "Screenshot" : f.name}
+                </div>
                 <div className="text-[9px] text-muted-foreground">
                   {isImage ? kb(f.size) : `${(f.text?.length ?? 0).toLocaleString()} chars`}
                 </div>

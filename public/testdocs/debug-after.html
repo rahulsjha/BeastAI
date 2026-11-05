@@ -1,0 +1,12 @@
+<html><body style="background:#1e1e1e;color:#ddd;font:15px Menlo,monospace;padding:24px">
+<h3 style="color:#9cdcfe">AFTER — orders.py (attempted fix)</h3>
+<pre style="background:#252526;padding:12px">def total_by_customer(orders):
+    totals = {}
+    for o in orders:
+        totals[o["customer"]] = o["amount"]
+    return totals
+
+print(total_by_customer([{"customer": "ana", "amount": 30}, {"customer": "ana", "amount": 12}]))</pre>
+<h3 style="color:#ce9178">$ python orders.py</h3>
+<pre style="background:#2d2d1d;color:#dcdcaa;padding:12px">{'ana': 12}
+# expected {'ana': 42}</pre></body></html>

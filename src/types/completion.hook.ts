@@ -43,7 +43,7 @@ export interface UseCompletionReturn {
   /** Array of currently attached files */
   attachedFiles: any[];
   /** Function to add a file to attachments */
-  addFile: (file: File) => Promise<void>;
+  addFile: (file: File, label?: string) => Promise<void>;
   /** Function to remove a file by its ID */
   removeFile: (fileId: string) => void;
   /** Function to clear all attached files */

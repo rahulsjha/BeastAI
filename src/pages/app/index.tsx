@@ -4,7 +4,6 @@ import {
   AudioVisualizer,
   StatusIndicator,
   ModeSelector,
-  DebugWatcher,
 } from "./components";
 import { Audio } from "./components/completion/Audio";
 import { Input } from "./components/completion/Input";
@@ -15,6 +14,7 @@ import { useApp as useAppContext } from "@/contexts";
 import { CaptionsIcon, HistoryIcon, SparklesIcon } from "lucide-react";
 import { HistoryPanel } from "./components/history/HistoryPanel";
 import { SolveScreen } from "./components/SolveScreen";
+import { DebugKit } from "./components/DebugKit";
 import { AnswerQueue } from "./components/transcript/AnswerQueue";
 import { AttachmentTray } from "./components/completion/AttachmentTray";
 import { useRef, useState } from "react";
@@ -170,11 +170,22 @@ const App = () => {
             />
           )}
 
+          {/* Debug mode: Before/After screenshots + traces, on their own row so the question bar keeps its width */}
+          {!capturing && currentMode === "debug" && (
+            <div className="w-full border-t border-input/30 pt-1.5">
+              <DebugKit
+                addFile={completion.addFile}
+                submit={(t) => completion.submit(t)}
+                attachedCount={completion.attachedFiles.length}
+                isLoading={completion.isLoading}
+              />
+            </div>
+          )}
+
           {/* Input row — below the divider, expands downward as you type */}
           {!capturing && (
             <div className="w-full border-t border-input/30 pt-1.5 flex items-center gap-2">
-              {/* Debug mode: screen watch. Other modes: Solve screen (answers every new question on screen). */}
-              <DebugWatcher />
+              {/* Solve screen (Debug mode has its own kit row above). */}
               {currentMode !== "debug" && (
                 <SolveScreen
                   onQuestion={(q, mode) => queue.enqueue(q, { mode, source: "auto" })}

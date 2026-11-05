@@ -28,6 +28,7 @@ interface AttachedFile {
   base64: string;
   size: number;
   text?: string;
+  label?: string; // e.g. Before / After / Trace (Debug mode)
 }
 
 // Documents we can parse to text (no image/vision needed).
@@ -128,7 +129,7 @@ export const useCompletion = () => {
     setState((prev) => ({ ...prev, response: value }));
   }, []);
 
-  const addFile = useCallback(async (file: File) => {
+  const addFile = useCallback(async (file: File, label?: string) => {
     try {
       const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
       const parseAsText = isPdf || isTextDocument(file);
@@ -142,6 +143,7 @@ export const useCompletion = () => {
         // Unique even when several files are added in the same millisecond.
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         name: file.name,
+        label,
         type: file.type || (isPdf ? "application/pdf" : parseAsText ? "text/plain" : ""),
         base64,
         size: file.size,
@@ -216,15 +218,26 @@ export const useCompletion = () => {
         const imagesBase64: string[] = [];
         const docSections: string[] = [];
         if (state.attachedFiles.length > 0) {
+          const imageLabels: string[] = [];
           state.attachedFiles.forEach((file) => {
             if (file.type.startsWith("image/")) {
               imagesBase64.push(file.base64);
+              imageLabels.push(file.label ? `${file.label.toUpperCase()} screenshot` : "screenshot");
             } else if (file.text) {
               docSections.push(
-                `--- Document: ${file.name} ---\n${file.text}`
+                file.label
+                  ? `--- ${file.label} (${file.name}) ---\n${file.text}`
+                  : `--- Document: ${file.name} ---\n${file.text}`
               );
             }
           });
+          // Tell the model which image is which (e.g. Before vs After).
+          if (imageLabels.some((l) => l !== "screenshot")) {
+            docSections.unshift(
+              "Attached images, in order: " +
+                imageLabels.map((l, i) => `image ${i + 1} = ${l}`).join("; ") + "."
+            );
+          }
         }
         // Prepend parsed document text to the question so the model can use it.
         const userMessageWithDocs = docSections.length

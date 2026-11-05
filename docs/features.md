@@ -16,7 +16,7 @@ Pluely is a small always-on-top bar (600px wide) that answers interview question
 | ✨ **Dev Space** | Opens the settings/dashboard window. |
 | ⠿ | Drag handle to move the bar. |
 
-`Watch screen` appears next to the question bar in **Debug** mode.
+In **Debug** mode a Before / After / Trace kit appears above the question bar; in other modes **Solve screen** sits beside it.
 
 ## Modes
 
@@ -74,16 +74,14 @@ Click **Solve screen** (next to the question bar, in Design / Code / Concept). I
 - **Transcript sessions**: past Live-transcript sessions with their lines and answers.
 - Stored on this device only.
 
-## Debug · Watch screen
+## Debug mode (Before / After + traces)
 
-Click **Watch screen** in Debug mode. Every ~5s after each analysis it:
-1. captures your screen and shows a live progress line (*capturing & analyzing… 11.8s*),
-2. shows **what's on screen** (the exact image sent),
-3. shows **What changed · Issue · Suggested fix** as separate cards,
-4. keeps an **issue tracker**: an issue stays *open since …* until a later frame no longer shows it, then it is marked **resolved ✓**,
-5. keeps a **timeline** of frames you can click back through.
+In **Debug** a kit row appears above the question bar:
+- **📸 Before** — screenshot of the broken / current state. **📸 After** — screenshot after a change (or the expected state).
+- **📋 Trace** — paste a stack trace, logs or error output (clipboard is pre-filled); **📄** attaches `.log/.txt/.json` files.
+- **Analyze** — sends everything, labelled (BEFORE / AFTER / TRACE), to Opus.
 
-Text on the screen is treated as data, never as instructions.
+Every answer has the same shape: **Root cause → Evidence** (the exact trace line or what the screenshot shows) **→ Fix** (code) **→ Before vs After** table (code, behaviour/output, error) **→ How to verify**. With both screenshots it first says what changed and whether that fixed it. Labels show in the tray as BEFORE / AFTER / TRACE chips.
 
 ## Privacy & setup
 
