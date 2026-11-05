@@ -62,6 +62,8 @@ export function useLiveTranscript(opts: {
   });
 
   const nextId = useRef(1);
+  const nativeCapture = useRef(false);
+  const nativeUnlisten = useRef<(() => void) | null>(null);
   const vads = useRef<Partial<Record<Speaker, MicVAD>>>({});
   const streams = useRef<Partial<Record<Speaker, MediaStream>>>({});
   const autoRef = useRef(autoAnswer);
@@ -78,10 +80,17 @@ export function useLiveTranscript(opts: {
   const update = (id: number, patch: Partial<TranscriptEntry>) =>
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
 
-  const handleClip = useCallback(async (speaker: Speaker, audio: Float32Array) => {
+  const handleClip = useCallback(
+    (speaker: Speaker, audio: Float32Array) =>
+      handleAudio(speaker, floatArrayToWav(audio, 16000, "wav"), audio.length / 16000),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const handleAudio = useCallback(async (speaker: Speaker, wav: Blob, seconds: number) => {
     const id = nextId.current++;
     const mode = getModeRef.current?.(); // the mode when the question was asked
-    txlog("speech_end", { id, speaker, mode, seconds: +(audio.length / 16000).toFixed(2) });
+    txlog("speech_end", { id, speaker, mode, seconds: +seconds.toFixed(2) });
     setEntries((prev) => [
       ...prev,
       { id, speaker, text: "", at: new Date(), status: "transcribing", isQuestion: false, mode },
@@ -92,7 +101,7 @@ export function useLiveTranscript(opts: {
       const text = await fetchSTT({
         provider,
         selectedProvider: sel,
-        audio: floatArrayToWav(audio, 16000, "wav"),
+        audio: wav,
       });
       txlog("transcribed", { id, speaker, text });
       if (!text || isNoiseTranscript(text)) {
@@ -149,6 +158,12 @@ export function useLiveTranscript(opts: {
   );
 
   const stopSource = useCallback((speaker: Speaker) => {
+    if (speaker === "interviewer" && nativeCapture.current) {
+      nativeCapture.current = false;
+      nativeUnlisten.current?.();
+      nativeUnlisten.current = null;
+      import("@tauri-apps/api/core").then(({ invoke }) => invoke("stop_system_audio_capture").catch(() => {}));
+    }
     try {
       vads.current[speaker]?.destroy();
     } catch {}
@@ -188,8 +203,36 @@ export function useLiveTranscript(opts: {
     }
     setError(null);
     if (!navigator.mediaDevices?.getDisplayMedia) {
-      setShare("error");
-      setError("Sharing call audio isn't supported here. In the desktop app use Listen (headphones) with BlackHole.");
+      // Desktop app: capture the computer's audio natively (ScreenCaptureKit),
+      // which hears everyone in any meeting app — no tab sharing, no BlackHole.
+      setShare("starting");
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const { listen } = await import("@tauri-apps/api/event");
+        nativeUnlisten.current?.();
+        const unSpeech = await listen<string>("speech-detected", (ev) => {
+          const bytes = Uint8Array.from(atob(ev.payload), (c) => c.charCodeAt(0));
+          handleAudio("interviewer", new Blob([bytes], { type: "audio/wav" }), bytes.length / 32000);
+        });
+        const unStart = await listen("speech-start", () =>
+          setSpeaking((sp) => ({ ...sp, interviewer: true }))
+        );
+        nativeUnlisten.current = () => {
+          unSpeech();
+          unStart();
+        };
+        const vadConfig = await invoke("get_vad_config").catch(() => undefined);
+        await invoke("start_system_audio_capture", { vadConfig, deviceId: null });
+        nativeCapture.current = true;
+        setShare("on");
+      } catch (e) {
+        setShare("error");
+        setError(
+          "Couldn't capture the computer's audio: " +
+            (e instanceof Error ? e.message : String(e)) +
+            ". Allow Pluely in Privacy & Security → Screen & System Audio Recording."
+        );
+      }
       return;
     }
     setShare("starting");
@@ -218,12 +261,25 @@ export function useLiveTranscript(opts: {
           ? // Test mode: the interviewer simulator plays inside this tab, so share
             // this tab and keep its sound off the speakers (mic won't hear it).
             { video: { displaySurface: "browser" }, audio: { suppressLocalAudioPlayback: true }, preferCurrentTab: true, selfBrowserSurface: "include" }
-          : { video: { displaySurface: "browser" }, audio: true, selfBrowserSurface: "exclude", preferCurrentTab: false }) as any
+          : {
+              // Let the user pick a meeting tab OR the entire screen. With the
+              // entire screen + "Share system audio", Chrome captures all
+              // computer audio (Zoom/Teams/Meet apps) — no virtual audio device.
+              video: true,
+              audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+              systemAudio: "include",
+              selfBrowserSurface: "exclude",
+              surfaceSwitching: "include",
+              monitorTypeSurfaces: "include",
+              preferCurrentTab: false,
+            }) as any
       );
       const audioTracks = display.getAudioTracks();
       if (!audioTracks.length) {
         setShare("error");
-        setError('No audio was shared. Pick the meeting tab and turn on "Also share tab audio".');
+        setError(
+          'No audio was shared. Pick the meeting tab with "Also share tab audio", or Entire screen with "Share system audio" (for Zoom/Teams apps).'
+        );
         return;
       }
       const vt = display.getVideoTracks()[0];

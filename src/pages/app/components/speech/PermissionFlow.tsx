@@ -164,9 +164,9 @@ export const PermissionFlow = ({
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside pt-2 border-t border-border/50">
                   <li>Open System Settings</li>
                   <li>Go to Privacy & Security</li>
-                  <li>Select Microphone</li>
-                  <li>Enable Pluely</li>
-                  <li>To capture a call's audio, select BlackHole as the Listen input</li>
+                  <li>Select Screen &amp; System Audio Recording</li>
+                  <li>Enable Pluely (this lets Listen hear everyone in your meeting app)</li>
+                  <li>Restart Pluely if it was already open</li>
                 </ol>
               )}
             </div>

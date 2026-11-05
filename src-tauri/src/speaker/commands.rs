@@ -503,6 +503,13 @@ pub async fn manual_stop_continuous(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn check_system_audio_access(_app: AppHandle) -> Result<bool, String> {
+    // System audio is captured with ScreenCaptureKit: needs the
+    // "Screen & System Audio Recording" permission (no virtual device).
+    #[cfg(target_os = "macos")]
+    {
+        return Ok(super::sck::system_audio_available().is_ok());
+    }
+    #[allow(unreachable_code)]
     match SpeakerInput::new() {
         Ok(_) => Ok(true),
         Err(e) => {
@@ -518,7 +525,7 @@ pub async fn request_system_audio_access(app: AppHandle) -> Result<(), String> {
     {
         app.shell()
             .command("open")
-            .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"])
+            .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"])
             .spawn()
             .map_err(|e| {
                 error!("Failed to open system preferences: {}", e);

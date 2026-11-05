@@ -96,10 +96,24 @@ impl SpeakerInput {
         let sr = current_sample_rate.clone();
         let stop_flag = stop.clone();
 
-        // Dedicated thread owns the cpal stream (keeps !Send types off the async runtime).
+        // Listen = the computer's audio (everyone in the call), captured with
+        // ScreenCaptureKit — no virtual device needed. If that isn't available
+        // (e.g. permission missing), fall back to the selected input device.
         std::thread::spawn(move || {
-            if let Err(e) = run_capture(want, producer, ws, sr, stop_flag) {
-                tracing::error!("cpal capture failed: {e}");
+            match super::sck::system_audio_available() {
+                Ok(()) => {
+                    let ws2 = ws.clone();
+                    let wake: Box<dyn Fn() + Send + Sync> = Box::new(move || wake(&ws2));
+                    if let Err(e) = super::sck::run_system_capture(producer, wake, sr, stop_flag) {
+                        tracing::error!("system audio capture failed: {e}");
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("system audio unavailable ({e}); falling back to input device");
+                    if let Err(e) = run_capture(want, producer, ws, sr, stop_flag) {
+                        tracing::error!("cpal capture failed: {e}");
+                    }
+                }
             }
         });
 

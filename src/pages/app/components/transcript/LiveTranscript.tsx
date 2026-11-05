@@ -138,7 +138,7 @@ export function LiveTranscript({
           state={t.share}
           speaking={t.speaking.interviewer}
           onClick={t.toggleShare}
-          title='Share the meeting tab with "Also share tab audio" to transcribe the interviewer'
+          title="Share the meeting's audio: a meeting tab, or Entire screen with system audio (Zoom/Teams apps)"
         />
         <div className="flex-1" />
         {(answering || waitingCount > 0) && (
@@ -199,8 +199,8 @@ export function LiveTranscript({
       <div ref={listRef} className="max-h-64 overflow-y-auto px-3 py-2 space-y-1.5">
         {t.entries.length === 0 ? (
           <p className="py-3 text-center text-[11px] text-muted-foreground select-none">
-            Turn on <b>You</b> to transcribe your mic. Turn on <b>Interviewer</b> and share the meeting
-            tab (tick “Also share tab audio”) to transcribe the other side.
+            <b>You</b> = your mic. <b>Interviewer</b> = the meeting audio: pick the meeting tab (“Also share tab
+            audio”) or <b>Entire screen</b> with “Share system audio” to hear Zoom/Teams/any app.
           </p>
         ) : (
           t.entries.map((e) => {

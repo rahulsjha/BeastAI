@@ -6,6 +6,8 @@ use std::pin::Pin;
 #[cfg(target_os = "macos")]
 mod macos;
 #[cfg(target_os = "macos")]
+mod sck;
+#[cfg(target_os = "macos")]
 use macos::{SpeakerInput as PlatformSpeakerInput, SpeakerStream as PlatformSpeakerStream};
 
 #[cfg(target_os = "windows")]
