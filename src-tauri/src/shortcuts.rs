@@ -563,6 +563,25 @@ pub fn set_app_icon_visibility<R: Runtime>(app: AppHandle<R>, visible: bool) -> 
 /// Tauri command to set always on top state
 #[tauri::command]
 pub fn set_always_on_top<R: Runtime>(app: AppHandle<R>, enabled: bool) -> Result<(), String> {
+    // macOS: the bar is an NSPanel. Never drop below floating level (a plain
+    // "not on top" window ends up behind every other app). "On top" = status
+    // level, which also floats over full-screen apps on every Space.
+    #[cfg(target_os = "macos")]
+    {
+        #[allow(non_upper_case_globals)]
+        const NSFloatingWindowLevel: i32 = 4;
+        #[allow(non_upper_case_globals)]
+        const NSStatusWindowLevel: i32 = 25;
+        let level = if enabled { NSStatusWindowLevel } else { NSFloatingWindowLevel };
+        let handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            if let Ok(panel) = handle.get_webview_panel("main") {
+                panel.set_level(level);
+            }
+        });
+        return Ok(());
+    }
+    #[allow(unreachable_code)]
     if let Some(window) = app.get_webview_window("main") {
         window
             .set_always_on_top(enabled)

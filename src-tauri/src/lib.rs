@@ -245,10 +245,10 @@ fn init(app_handle: &AppHandle) {
         }
     }));
 
-    // Set the window to float level
+    // Overlay level: above other apps, including full-screen ones (status level).
     #[allow(non_upper_case_globals)]
-    const NSFloatWindowLevel: i32 = 4;
-    panel.set_level(NSFloatWindowLevel);
+    const NSStatusWindowLevel: i32 = 25;
+    panel.set_level(NSStatusWindowLevel);
 
     #[allow(non_upper_case_globals)]
     const NSWindowStyleMaskNonActivatingPanel: i32 = 1 << 7;
@@ -257,8 +257,16 @@ fn init(app_handle: &AppHandle) {
     #[allow(deprecated)]
     panel.set_collection_behaviour(
         NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary
-            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces,
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle,
     );
+
+    // Stay visible when another app is active (NSPanel hides on deactivate by
+    // default), float like an overlay and work over modal dialogs.
+    panel.set_hides_on_deactivate(false);
+    panel.set_floating_panel(true);
+    panel.set_works_when_modal(true);
 
     panel.set_delegate(delegate);
 }
