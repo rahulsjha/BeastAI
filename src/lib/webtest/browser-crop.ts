@@ -5,11 +5,15 @@
 type Emit = (event: string, payload?: unknown) => void;
 
 export async function start(emit: Emit) {
+  // Go full screen first (needs the shortcut's user gesture), so the frozen
+  // screen picture lines up 1:1 with the real screen — like the native overlay.
+  const fs = document.documentElement.requestFullscreen?.().catch(() => undefined);
   const res = await fetch("http://localhost:8787/screenshot", { method: "POST", body: "{}" });
   const { image } = (await res.json()) as { image: string };
   const img = new Image();
   img.src = `data:image/png;base64,${image}`;
   await img.decode();
+  await fs;
 
   const overlay = document.createElement("div");
   overlay.style.cssText =
@@ -17,9 +21,10 @@ export async function start(emit: Emit) {
   const view = document.createElement("img");
   view.src = img.src;
   view.draggable = false;
-  view.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.85";
+  view.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:brightness(.7)";
   const box = document.createElement("div");
-  box.style.cssText = "position:absolute;border:2px solid #4ade80;background:rgba(74,222,128,.12);display:none";
+  box.style.cssText =
+    "position:absolute;border:2px solid #4ade80;display:none;box-shadow:0 0 0 9999px rgba(0,0,0,.25);backdrop-filter:brightness(1.43)";
   const hint = document.createElement("div");
   hint.textContent = "Drag to select the area to attach · double-click = whole screen · Esc = cancel";
   hint.style.cssText =
@@ -41,9 +46,14 @@ export async function start(emit: Emit) {
     };
   };
 
+  let done = false;
   const finish = (b64?: string) => {
+    if (done) return;
+    done = true;
     overlay.remove();
     window.removeEventListener("keydown", onKey, true);
+    document.removeEventListener("fullscreenchange", onFsChange);
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
     if (b64) emit("captured-selection", b64);
     else emit("capture-closed");
   };
@@ -61,6 +71,11 @@ export async function start(emit: Emit) {
     }
   };
   window.addEventListener("keydown", onKey, true);
+  // Esc in full screen is taken by the browser (it leaves full screen): treat that as cancel.
+  const onFsChange = () => {
+    if (!document.fullscreenElement) finish();
+  };
+  document.addEventListener("fullscreenchange", onFsChange);
 
   let start: { x: number; y: number } | null = null;
   overlay.addEventListener("dblclick", () => finish(image));
