@@ -150,3 +150,10 @@ Script: `scripts/demo/screenshot-shortcut-test.mjs` (bridge started without `PLU
 | Empty bar → ⌘↵ → drag | ✅ sent with the default prompt, answer shown (12.5s) |
 | Click 💻 → drag | ✅ one overlay, sent at once, answer shown (10.5s) |
 | ⌘⇧S → drag | ✅ only attached (waits in the tray), nothing sent |
+
+## Irrelevant screenshots → "Not useful"
+
+| Mode | Attachment (no message) | Reply |
+|---|---|---|
+| Concept / Code / Debug / Design | plain gradient (`testdocs/wallpaper.png`) | ✅ one line: "⚠️ Not useful — no question or relevant content in this screenshot. Attach one that shows the question, code or error." |
+| Code (control) | LeetCode problem (`testdocs/leetcode.png`) | ✅ solved normally (Valid Parentheses) |
