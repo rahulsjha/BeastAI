@@ -819,6 +819,7 @@ export const useCompletion = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      if (e.metaKey || e.ctrlKey) return; // ⌘↵ = screenshot shortcut, not send
       if (!state.isLoading && (state.input.trim() || state.attachedFiles.length)) {
         submit();
       }

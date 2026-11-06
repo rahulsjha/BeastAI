@@ -9,7 +9,7 @@ Pluely is a small always-on-top bar (600px wide) that answers interview question
 | 🎧 **Listen** | Hears the meeting and answers its questions. Desktop app: the computer's audio directly (no BlackHole, no tab sharing). Browser: through the default mic. |
 | **Design · Code · Concept · Debug** | Interview mode. Picks the model, answer format and voice settings in one click (see *Modes*). |
 | 🎤 **Mic** | Ask by voice. Speak, pause, and the question is transcribed and answered. Noise ("thank you", "yes yes") is ignored. |
-| 💻 **Screenshot** | Drag to select an area of the screen; it's attached to the next question ("solve this", "what's wrong here?"). |
+| 💻 **Screenshot** (⌘↵) | Drag to select an area of the screen; it's attached to the next question ("solve this", "what's wrong here?"). |
 | 📎 **Attach** | Attach images or text documents (`.md`, `.txt`, code). Their content is used in the answer. |
 | 💬 **Live transcript** | Speaker-labelled transcript of You and the Interviewer, with auto-answer and the answer queue. |
 | 🕘 **History** | Every past question and answer, searchable. |
@@ -35,7 +35,7 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 
 | Keys | Action |
 |---|---|
-| **⌘⇧S** (Ctrl+Shift+S) | Screenshot — drag to select an area; it's attached to the next question |
+| **⌘↵** or **⌘⇧S** (Ctrl+Enter / Ctrl+Shift+S) | Screenshot — drag to select an area; it's attached to the next question |
 | **⌘⇧O** (Ctrl+Shift+O) | Start / stop **Solve screen** monitoring |
 | ⌘⇧A | Mic on/off · ⌘⇧M Listen · ⌘⇧I focus the question bar · ⌘\\ show/hide |
 
@@ -88,7 +88,7 @@ Click **Solve screen** (next to the question bar, in Design / Code / Concept). I
 ## Debug mode
 
 Debug works like a normal conversation — attach evidence, add a message (or leave it empty) and send:
-- 💻 **Screenshot**: drag to select the area of the screen you want (double-click = whole screen, Esc = cancel).
+- 💻 **Screenshot** (⌘↵ or ⌘⇧S): drag to select the area of the screen you want (double-click = whole screen, Esc = cancel).
 - 📎 **Attach** / **drag & drop** onto the bar: images, PDFs, documents, logs (`.log .txt .json .out .err`).
 - **Paste a long trace or logs** into the question bar: it becomes an attachment automatically.
 - Press **Enter** — with no message it sends "Debug this using the attached evidence."
