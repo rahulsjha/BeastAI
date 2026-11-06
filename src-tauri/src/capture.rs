@@ -271,8 +271,19 @@ extern "C" {
 /// Without Screen Recording permission macOS still returns an image, but only
 /// the wallpaper (no app windows) — so check first and say what to do.
 #[cfg(target_os = "macos")]
+pub(crate) fn screen_permission_state() -> (bool, Result<(), String>) {
+    let preflight = unsafe { CGPreflightScreenCaptureAccess() };
+    // ScreenCaptureKit refuses to list displays without the permission, so it is
+    // a reliable second opinion (the preflight call can say "no" after a grant).
+    let sck = crate::speaker::sck::system_audio_available().map_err(|e| e.to_string());
+    (preflight, sck)
+}
+
+#[cfg(target_os = "macos")]
 fn ensure_screen_permission() -> Result<(), String> {
-    if unsafe { CGPreflightScreenCaptureAccess() } {
+    let (preflight, sck) = screen_permission_state();
+    eprintln!("[capture] permission preflight={preflight} screencapturekit={:?}", sck);
+    if preflight || sck.is_ok() {
         return Ok(());
     }
     unsafe { CGRequestScreenCaptureAccess() };

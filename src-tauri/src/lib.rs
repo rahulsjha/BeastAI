@@ -128,6 +128,11 @@ pub fn run() {
             window::setup_main_window(app).expect("Failed to setup main window");
             #[cfg(target_os = "macos")]
             init(app.app_handle());
+            #[cfg(target_os = "macos")]
+            {
+                let (pre, sck) = capture::screen_permission_state();
+                eprintln!("[startup] screen recording: preflight={pre} screencapturekit={:?}", sck);
+            }
             let app_handle = app.handle();
             if app_handle.get_webview_window("dashboard").is_none() {
                 if let Err(e) = window::create_dashboard_window(&app_handle) {
