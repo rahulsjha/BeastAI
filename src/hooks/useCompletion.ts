@@ -1008,7 +1008,7 @@ export const useCompletion = () => {
             setState((prev) => ({
               ...prev,
               error:
-                "Screen Recording is off for Pluely. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Pluely.",
+                "Screen Recording is off for Beast. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Beast.",
             }));
             setIsScreenshotLoading(false);
             screenshotInitiatedByThisContext.current = false;
@@ -1125,7 +1125,7 @@ export const useCompletion = () => {
     } catch (e) {
       setState((prev) => ({
         ...prev,
-        error: `Screenshot failed: ${e instanceof Error ? e.message : String(e)}. Allow Screen & System Audio Recording for Pluely.`,
+        error: `Screenshot failed: ${e instanceof Error ? e.message : String(e)}. Allow Screen & System Audio Recording for Beast.`,
       }));
     } finally {
       setIsScreenshotLoading(false);
@@ -1140,7 +1140,7 @@ export const useCompletion = () => {
     } catch (e) {
       setState((prev) => ({
         ...prev,
-        error: `Screenshot failed: ${e instanceof Error ? e.message : String(e)}. Allow Screen & System Audio Recording for Pluely.`,
+        error: `Screenshot failed: ${e instanceof Error ? e.message : String(e)}. Allow Screen & System Audio Recording for Beast.`,
       }));
     } finally {
       setIsScreenshotLoading(false);

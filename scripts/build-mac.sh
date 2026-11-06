@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 export PATH="$HOME/.cargo/bin:$PATH"
 KC="$HOME/Library/Keychains/pluely-signing.keychain-db"
 ID="Pluely Local Signing"
-APP="src-tauri/target/release/bundle/macos/Pluely.app"
+APP="src-tauri/target/release/bundle/macos/Beast.app"
 
 npm run tauri build -- --bundles app || true   # the updater-key message is not fatal
 [ -d "$APP" ] || { echo "build failed"; exit 1; }
@@ -28,10 +28,15 @@ OLD="$HOME/Library/Application Support/com.srikanthnani.pluely"; NEW="$HOME/Libr
 OLDW="$HOME/Library/WebKit/com.srikanthnani.pluely"; NEWW="$HOME/Library/WebKit/com.rahulsjha.pluely"
 [ -d "$OLDW" ] && [ ! -d "$NEWW" ] && cp -R "$OLDW" "$NEWW" && echo "Copied web storage to $NEWW"
 
-pkill -f "Pluely.app/Contents/MacOS" 2>/dev/null || true
+pkill -f "Beast.app/Contents/MacOS" 2>/dev/null || true
+pkill -f "/Applications/Pluely.app/Contents/MacOS" 2>/dev/null || true
 sleep 1
-rm -rf /Applications/Pluely.app
+# Earlier builds of this app were called Pluely.app (same bundle id): replace them.
+if [ -d /Applications/Pluely.app ] && [ "$(defaults read /Applications/Pluely.app/Contents/Info.plist CFBundleIdentifier 2>/dev/null)" = "com.rahulsjha.pluely" ]; then
+  rm -rf /Applications/Pluely.app
+fi
+rm -rf /Applications/Beast.app
 cp -R "$APP" /Applications/
-xattr -dr com.apple.quarantine /Applications/Pluely.app 2>/dev/null || true
-open /Applications/Pluely.app
-echo "Installed /Applications/Pluely.app"
+xattr -dr com.apple.quarantine /Applications/Beast.app 2>/dev/null || true
+open /Applications/Beast.app
+echo "Installed /Applications/Beast.app"

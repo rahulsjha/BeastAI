@@ -56,7 +56,7 @@ async function startNow(args: { vadConfig: VadConfig; deviceId?: string | null }
       nativeOn = false;
       const msg = e instanceof Error ? e.message : String(e);
       lastNote = /permission|declined|TCC|not allowed/i.test(msg)
-        ? "Computer audio is off (Screen & System Audio Recording not allowed for Pluely) — listening through the microphone."
+        ? "Computer audio is off (Screen & System Audio Recording not allowed for Beast) — listening through the microphone."
         : `Computer audio unavailable (${msg}) — listening through the microphone.`;
       trace(`[listen] computer audio unavailable: ${e instanceof Error ? e.message : String(e)}`);
     }
