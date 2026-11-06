@@ -28,7 +28,7 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 | **Code** | Claude **Opus**, high effort (via your `claude` login) | Approach · dry run · runnable code · complexity | 13–25s, text streams from ~6s |
 | **Debug** | Claude **Opus**, high effort | Root cause · fix; or screen watch (below) | 30–48s |
 
-- Screenshots in Concept/Design are answered by Claude **Sonnet** (Groq can't read images).
+- **Screenshots answer in ~2–3s, in every mode:** Groq **Qwen 3.8 vision** reads the screen (~1s: question, options, code, errors), then the fast Groq `gpt-oss-120b` answers in the mode's style. Screenshots are scaled to 1568px first. If reading fails, Claude answers instead (slower).
 - Answers render markdown, code with copy, tables, math and diagrams (diagrams are checked and auto-repaired up to 2 times).
 - Replies come in the language you asked in (Hindi question → Hindi answer).
 

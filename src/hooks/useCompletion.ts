@@ -142,7 +142,10 @@ export const useCompletion = () => {
     try {
       const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
       const parseAsText = isPdf || isTextDocument(file);
-      const base64 = parseAsText ? "" : await fileToBase64(file);
+      const isImage = !parseAsText && file.type.startsWith("image/");
+      const raw = parseAsText ? "" : await fileToBase64(file);
+      // Images are sent as PNG ≤1568px (fast to send, still readable).
+      const base64 = isImage ? await downscalePng(raw, undefined, file.type) : raw;
       const text = isPdf
         ? await (await import("@/lib/pdf-text")).pdfToText(file)
         : parseAsText
@@ -153,9 +156,9 @@ export const useCompletion = () => {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         name: file.name,
         label,
-        type: file.type || (isPdf ? "application/pdf" : parseAsText ? "text/plain" : ""),
+        type: isImage ? "image/png" : file.type || (isPdf ? "application/pdf" : parseAsText ? "text/plain" : ""),
         base64,
-        size: file.size,
+        size: isImage ? Math.round((base64.length * 3) / 4) : file.size,
         text,
       };
 

@@ -3,13 +3,14 @@
 // before sending: much smaller upload, faster answers, same readable text.
 export const MAX_IMAGE_EDGE = 1568;
 
-export async function downscalePng(base64: string, maxEdge = MAX_IMAGE_EDGE): Promise<string> {
+export async function downscalePng(base64: string, maxEdge = MAX_IMAGE_EDGE, mime = "image/png"): Promise<string> {
   try {
     const img = new Image();
-    img.src = `data:image/png;base64,${base64}`;
+    img.src = `data:${mime};base64,${base64}`;
     await img.decode();
     const scale = Math.min(1, maxEdge / Math.max(img.naturalWidth, img.naturalHeight));
-    if (scale >= 1) return base64;
+    // Already small enough: still re-encode non-PNG images as PNG (sent as image/png).
+    if (scale >= 1 && mime === "image/png") return base64;
     const c = document.createElement("canvas");
     c.width = Math.round(img.naturalWidth * scale);
     c.height = Math.round(img.naturalHeight * scale);

@@ -23,6 +23,17 @@ export const AI_PROVIDERS = [
     streaming: true,
   },
   {
+    // Screenshots: Qwen 3.8 vision on Groq — reads the image and starts answering in ~1s.
+    id: "groq-vision",
+    curl: `curl https://api.groq.com/openai/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "User-Agent: Mozilla/5.0" \\
+  -H "Authorization: Bearer {{API_KEY}}" \\
+  -d '{"model":"{{MODEL}}","reasoning_effort":"none","messages":[{"role":"system","content":"{{SYSTEM_PROMPT}}"},{"role":"user","content":[{"type":"text","text":"{{TEXT}}"},{"type":"image_url","image_url":{"url":"data:image/png;base64,{{IMAGE}}"}}]}]}'`,
+    responseContentPath: "choices[0].message.content",
+    streaming: true,
+  },
+  {
     // Listen: same Groq model with low reasoning, so the first words arrive in well under a second.
     id: "groq-listen",
     curl: `curl https://api.groq.com/openai/v1/chat/completions \\

@@ -58,6 +58,9 @@ Rules for setup A: the screen must be **unlocked and awake** (run with `caffeina
 
 ## 5. Modes
 
+All modes now use the fast path for screenshots: **Qwen 3.8 vision reads the screen → Groq gpt-oss-120b (low reasoning) answers with the mode's prompt**. Typed questions without images keep their mode's model (Opus for Code/Debug).
+
+
 | Mode | Who answers a screenshot | Expected style |
 |---|---|---|
 | Concept — Full | Claude Sonnet (Groq can't read images) | Concept · use case · diagram · example |
@@ -99,7 +102,20 @@ The important combinations: every method once, every content type once, every mo
 | X25 | C | Code | M2 ⌘↵ from another app (LeetCode in Safari) | S1 | T1 | Works without switching to Pluely; Pluely not in the image |
 | X26 | C | any | M3 native overlay | S1 | — | Overlay over the real screen; crop correct on Retina / 2 monitors |
 
-## 7. Status (6 Nov 2026)
+## 7. Speed after the fast path (6 Nov 2026, setup B)
+
+| Case | Before (Claude) first words / total | After (Qwen read → Groq answer) |
+|---|---|---|
+| Concept Full / Short / MCQ | 10.5s / 17s · 6s / 9s · 5s / 10s | 1.6s / 1.8s · 1.2s / 1.4s · 1.2s / 1.4s |
+| Design (Twitter prompt) | 10s / 26s | 3.2s / 6.1s |
+| Debug (KeyError screen) | 5.3s / 12.4s | 1.2s / 2.2s |
+| Code (LeetCode, Retina) | 12s / 14s | 2.4–3.6s / 3.5–4.3s |
+| Code (buggy binary search) | 11.7s / 20.4s | 2.8s / 3.9s |
+| Blank screen → Not useful | 5–6s / 7–8s | 1.2–2.4s |
+
+Open points: two screenshots at once ~6–10s (two reads); "text contradicts screen" answers the screen but doesn't always say so first.
+
+## 8. Status (6 Nov 2026)
 
 | Cases | Setup | Result |
 |---|---|---|
