@@ -114,12 +114,16 @@ export function SolveScreen({
   toggleRef.current = toggle;
   useEffect(() => {
     let off: (() => void) | undefined;
+    let cancelled = false;
     import("@tauri-apps/api/event").then(({ listen }) =>
       listen<{ action: string }>("custom-shortcut-triggered", (e) => {
         if (e.payload?.action === "solve_screen") toggleRef.current();
-      }).then((u) => (off = u))
+      }).then((u) => (cancelled ? u() : (off = u)))
     );
-    return () => off?.();
+    return () => {
+      cancelled = true;
+      off?.();
+    };
   }, []);
 
   return (

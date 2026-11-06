@@ -9,7 +9,7 @@ Pluely is a small always-on-top bar (600px wide) that answers interview question
 | 🎧 **Listen** | Hears the meeting and answers its questions. Desktop app: the computer's audio directly (no BlackHole, no tab sharing). Browser: through the default mic. |
 | **Design · Code · Concept · Debug** | Interview mode. Picks the model, answer format and voice settings in one click (see *Modes*). |
 | 🎤 **Mic** | Ask by voice. Speak, pause, and the question is transcribed and answered. Noise ("thank you", "yes yes") is ignored. |
-| 💻 **Screenshot** (⌘↵) | Drag to select an area of the screen; it's attached to the next question ("solve this", "what's wrong here?"). |
+| 💻 **Screenshot** (⌘↵) | Drag to select an area; it's **sent right away** (with anything you typed) and the answer opens. ⌘⇧S only attaches it, so you can add a note or more files first. |
 | 📎 **Attach** | Attach images or text documents (`.md`, `.txt`, code). Their content is used in the answer. |
 | 💬 **Live transcript** | Speaker-labelled transcript of You and the Interviewer, with auto-answer and the answer queue. |
 | 🕘 **History** | Every past question and answer, searchable. |
@@ -38,7 +38,8 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 
 | Keys | Action |
 |---|---|
-| **⌘↵** or **⌘⇧S** (Ctrl+Enter / Ctrl+Shift+S) | Screenshot — drag to select an area; it's attached to the next question |
+| **⌘↵** (Ctrl+Enter) | Screenshot & send — select an area, it's sent at once and the answer opens |
+| **⌘⇧S** (Ctrl+Shift+S) | Screenshot & attach — select an area; it waits in the tray (add a ✎ note, more files) until you press Enter |
 | **⌘⇧O** (Ctrl+Shift+O) | Start / stop **Solve screen** monitoring |
 | ⌘⇧A | Mic on/off · ⌘⇧M Listen · ⌘⇧I focus the question bar · ⌘\\ show/hide |
 
@@ -59,7 +60,7 @@ Click **Solve screen** (next to the question bar, in Design / Code / Concept). I
 
 - 💻 **Screenshot** attaches your screen; 📎 **Attach** adds images, **PDFs**, and text/code files (`.md`, `.txt`, `.py`, …).
 - Everything that will be sent appears in the **"Sending with next question"** tray above the bar: screenshots as thumbnails (click to view full size), documents with how many characters were read. Remove any with ✕, or **Clear all**.
-- Several screenshots and documents can go together in one question. The tray clears after sending.
+- Several screenshots and documents can go together in one question. The tray empties as soon as the question is sent.
 - **✎ Note per file** (every mode): add a message about one attachment — e.g. "this is the question my interviewer pasted", "ignore this one", "use my resume for the behavioral answer". The note is sent together with that file.
 
 ## Asking questions

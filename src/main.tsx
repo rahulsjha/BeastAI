@@ -13,7 +13,7 @@ if ((window as any).__PLUELY_WEBTEST__) {
   import("./lib/webtest/browser-crop").then((m) => m.installBrowserCrop());
   // Shortcuts (the desktop app registers these globally):
   //   ⌘⇧S / Ctrl+Shift+S → screenshot (drag to select)
-  //   ⌘↵ / Ctrl+Enter   → screenshot (same as ⌘⇧S)
+  //   ⌘↵ / Ctrl+Enter   → screenshot, then send it and show the answer
   //   ⌘⇧O / Ctrl+Shift+O → start/stop Solve screen monitoring
   window.addEventListener("keydown", (e) => {
     if (!(e.metaKey || e.ctrlKey)) return;
@@ -21,7 +21,7 @@ if ((window as any).__PLUELY_WEBTEST__) {
     if (!emit) return;
     if (e.key === "Enter" && !e.shiftKey && !e.altKey) {
       e.preventDefault();
-      emit("trigger-screenshot", {});
+      emit("custom-shortcut-triggered", { action: "screenshot_enter" }); // capture + send
       return;
     }
     if (!e.shiftKey) return;

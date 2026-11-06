@@ -212,6 +212,9 @@ export const useCompletion = () => {
         }));
       }
 
+      // The attachments go with this question: empty the tray right away.
+      if (state.attachedFiles.length) setState((prev) => ({ ...prev, attachedFiles: [] }));
+
       // Generate unique request ID
       const requestId = generateRequestId();
       currentRequestIdRef.current = requestId;
@@ -1051,12 +1054,13 @@ export const useCompletion = () => {
         const config = screenshotConfigRef.current;
 
         try {
-          if (config.mode === "auto") {
-            // Auto mode: Submit directly to AI with the configured prompt
-            await handleScreenshotSubmit(base64 as string, config.autoPrompt);
-          } else if (config.mode === "manual") {
-            // Manual mode: Add to attached files without prompt
-            await handleScreenshotSubmit(base64 as string);
+          // Always attach (so notes, mode routing and the queue apply). With ⌘↵
+          // it is then sent straight away, together with anything typed.
+          void config;
+          await handleScreenshotSubmit(base64 as string);
+          if (autoSendRef.current) {
+            autoSendRef.current = false;
+            setAutoSendTick((t) => t + 1);
           }
         } catch (error) {
           console.error("Error processing selection:", error);
@@ -1079,8 +1083,35 @@ export const useCompletion = () => {
     };
   }, [handleScreenshotSubmit]);
 
+  // ⌘↵ / Ctrl+Enter: capture an area, then send it right away and show the answer.
+  const autoSendRef = useRef(false);
+  const [autoSendTick, setAutoSendTick] = useState(0);
+  const captureRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    let cancelled = false;
+    listen<{ action: string }>("custom-shortcut-triggered", (e) => {
+      if (e.payload?.action !== "screenshot_enter") return;
+      autoSendRef.current = true;
+      void captureRef.current();
+    }).then((u) => (cancelled ? u() : (off = u)));
+    return () => {
+      cancelled = true;
+      off?.();
+    };
+  }, []);
+  const captureAndSend = useCallback(async () => {
+    autoSendRef.current = true;
+    await captureRef.current();
+  }, []);
+  useEffect(() => {
+    if (autoSendTick > 0) void submit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSendTick]);
+
   useEffect(() => {
     const unlisten = listen("capture-closed", () => {
+      autoSendRef.current = false;
       setIsScreenshotLoading(false);
       isProcessingScreenshotRef.current = false;
       screenshotInitiatedByThisContext.current = false;
@@ -1111,6 +1142,7 @@ export const useCompletion = () => {
   useEffect(() => {
     globalShortcuts.registerAudioCallback(toggleRecording);
     globalShortcuts.registerInputRef(inputRef.current);
+    captureRef.current = captureScreenshot;
     globalShortcuts.registerScreenshotCallback(captureScreenshot);
   }, [
     globalShortcuts.registerAudioCallback,
@@ -1163,6 +1195,7 @@ export const useCompletion = () => {
     onRemoveAllFiles,
     inputRef,
     captureScreenshot,
+    captureAndSend,
     isScreenshotLoading,
     keepEngaged,
     setKeepEngaged,

@@ -73,8 +73,8 @@ export const DEFAULT_SHORTCUT_ACTIONS: ShortcutAction[] = [
   },
   {
     id: "screenshot_enter",
-    name: "Screenshot (⌘↵)",
-    description: "Same as Screenshot: drag to select an area, attached to the next question",
+    name: "Screenshot & send",
+    description: "Capture an area and send it right away (with anything typed); the answer opens",
     defaultKey: {
       macos: "cmd+enter",
       windows: "ctrl+enter",

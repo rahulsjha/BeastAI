@@ -141,3 +141,12 @@ Script: `scripts/demo/screenshot-shortcut-test.mjs` (bridge started without `PLU
 | B | ⌘↵ → Esc | ✅ overlay closed, nothing attached |
 | C | type text → ⌘↵ → double-click (whole screen) → Enter | ✅ typed text kept and not sent early, full screen attached (2.1 MB), answer used text + image (17s) |
 | Desktop | `cargo check` with `screenshot_enter` (⌘↵) wired to the native capture | ✅ compiles |
+
+## Screenshot & send (real key presses / mouse, real screen) — `scripts/demo/screenshot-send-test.mjs`
+
+| Case | Result |
+|---|---|
+| Typed question → ⌘↵ → drag | ✅ one capture, sent at once, tray emptied, answer shown (10.5s) |
+| Empty bar → ⌘↵ → drag | ✅ sent with the default prompt, answer shown (12.5s) |
+| Click 💻 → drag | ✅ one overlay, sent at once, answer shown (10.5s) |
+| ⌘⇧S → drag | ✅ only attached (waits in the tray), nothing sent |

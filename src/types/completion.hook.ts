@@ -131,6 +131,8 @@ export interface UseCompletionReturn {
   inputRef: RefObject<HTMLInputElement | null>;
   /** Function to capture a screenshot */
   captureScreenshot: () => Promise<void>;
+  /** Capture an area, then send it at once (with anything typed) and show the answer. */
+  captureAndSend: () => Promise<void>;
   /** Whether a screenshot is currently loading */
   isScreenshotLoading: boolean;
 }
