@@ -63,7 +63,7 @@ export async function start(emit: Emit, vadConfig: VadConfig) {
       onnxWASMBasePath: "/vad/",
       positiveSpeechThreshold: 0.6,
       preSpeechPadFrames: 10,
-      redemptionFrames: 10,
+      redemptionFrames: 6, // ~0.6s of silence ends a phrase
       onSpeechStart: () => emit("speech-start"),
       onSpeechEnd: (audio: Float32Array) => void emitClip(emit, audio),
     } as any);

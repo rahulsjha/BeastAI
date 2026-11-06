@@ -3,7 +3,7 @@ import { useWindowResize } from "./useWindow";
 import { useGlobalShortcuts } from "@/hooks";
 import { MAX_FILES } from "@/config";
 import { useApp } from "@/contexts";
-import { MODES } from "@/config/modes";
+import { getModeDef, type ModeKey } from "@/config/modes";
 import { addQA } from "@/lib/storage/qa-history";
 import {
   fetchAIResponse,
@@ -83,7 +83,7 @@ export const useCompletion = () => {
   // The selected interview mode is the source of truth for routing: every
   // question uses that mode's model, keys and prompt at send time, so an async
   // reload of saved settings can never send it to the previous mode's model.
-  const modeDef = MODES[currentMode as keyof typeof MODES];
+  const modeDef = getModeDef(currentMode as ModeKey);
   const modeProvider = modeDef
     ? { provider: modeDef.aiProvider, variables: modeDef.aiVariables }
     : storedAIProvider;
@@ -195,7 +195,7 @@ export const useCompletion = () => {
           : typed;
       const submitStartedAt = Date.now();
       // A queued job can ask for its own mode without changing the UI mode.
-      const overrideDef = opts?.mode ? MODES[opts.mode as keyof typeof MODES] : undefined;
+      const overrideDef = opts?.mode ? getModeDef(opts.mode as ModeKey) : undefined;
       const selectedAIProvider = overrideDef
         ? { provider: overrideDef.aiProvider, variables: overrideDef.aiVariables }
         : modeProvider;

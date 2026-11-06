@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useApp } from "@/contexts";
 import { fetchSTT, fetchAIResponse } from "@/lib/functions";
+import { LISTEN_FAST_PROVIDER } from "@/config/modes";
 import {
   DEFAULT_QUICK_ACTIONS,
   DEFAULT_SYSTEM_PROMPT,
@@ -39,7 +40,7 @@ const DEFAULT_VAD_CONFIG: VadConfig = {
   hop_size: 1024,
   sensitivity_rms: 0.012, // Much less sensitive - only real speech
   peak_threshold: 0.035, // Higher threshold - filters clicks/noise
-  silence_chunks: 45, // ~1.0s of required silence
+  silence_chunks: 27, // ~0.6s of silence ends a phrase (fast answers)
   min_speech_chunks: 7, // ~0.16s - captures short answers
   pre_speech_chunks: 12, // ~0.27s - enough to catch word start
   noise_gate_threshold: 0.003, // Stronger noise filtering
@@ -131,6 +132,7 @@ export function useSystemAudio() {
     if (savedVadConfig) {
       try {
         const parsed = JSON.parse(savedVadConfig);
+        if (parsed.silence_chunks === 45) parsed.silence_chunks = 27; // old 1.0s default → 0.6s
         setVadConfig(parsed);
       } catch (error) {
         console.error("Failed to load VAD config:", error);
@@ -493,9 +495,14 @@ export function useSystemAudio() {
           return;
         }
 
-        const provider = allAiProviders.find(
-          (p) => p.id === selectedAIProvider.provider
-        );
+        // Listen must answer in ~1–2s, so it always uses the fast Groq model
+        // (low reasoning) with the current mode's prompt — even in Code/Debug,
+        // where typed questions go to Opus.
+        const fast = allAiProviders.find((p) => p.id === LISTEN_FAST_PROVIDER.provider);
+        const useFast = !!fast && !!LISTEN_FAST_PROVIDER.variables.api_key;
+        const provider = useFast
+          ? fast
+          : allAiProviders.find((p) => p.id === selectedAIProvider.provider);
         if (!provider && !usePluelyAPI) {
           setError("AI provider config not found.");
           return;
@@ -504,7 +511,7 @@ export function useSystemAudio() {
         try {
           for await (const chunk of fetchAIResponse({
             provider: usePluelyAPI ? undefined : provider,
-            selectedProvider: selectedAIProvider,
+            selectedProvider: useFast ? LISTEN_FAST_PROVIDER : selectedAIProvider,
             systemPrompt: prompt,
             history: previousMessages,
             userMessage: transcription,
@@ -797,14 +804,28 @@ export function useSystemAudio() {
     }
   }, []);
 
+  // Switching Auto-detect ⇄ Manual while listening takes effect immediately:
+  // the running capture is restarted in the new mode.
+  const prevVadEnabled = useRef(vadConfig.enabled);
   useEffect(() => {
-    if (capturing) {
-      setIsContinuousMode(!vadConfig.enabled);
-
-      if (!vadConfig.enabled) {
-        setIsRecordingInContinuousMode(false);
+    const changed = prevVadEnabled.current !== vadConfig.enabled;
+    prevVadEnabled.current = vadConfig.enabled;
+    if (!capturing) return;
+    setIsContinuousMode(!vadConfig.enabled);
+    if (!vadConfig.enabled) setIsRecordingInContinuousMode(false);
+    if (!changed) return;
+    (async () => {
+      try {
+        await invoke<string>("stop_system_audio_capture");
+        if (vadConfig.enabled) {
+          const deviceId = selectedAudioDevices.output.id !== "default" ? selectedAudioDevices.output.id : null;
+          await invoke<string>("start_system_audio_capture", { vadConfig, deviceId });
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
       }
-    }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vadConfig.enabled, capturing]);
 
   // Keyboard arrow key support for scrolling (local shortcut)

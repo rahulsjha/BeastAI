@@ -101,7 +101,7 @@
     }
     if (cmd === "manual_stop_continuous") return browserListen().manualStop(emit).then(function () { return null; });
     if (cmd === "get_vad_config") {
-      return Promise.resolve({ enabled: true, hop_size: 1024, sensitivity_rms: 0.012, peak_threshold: 0.035, silence_chunks: 45,
+      return Promise.resolve({ enabled: true, hop_size: 1024, sensitivity_rms: 0.012, peak_threshold: 0.035, silence_chunks: 27,
         min_speech_chunks: 7, pre_speech_chunks: 12, noise_gate_threshold: 0.003, max_recording_duration_secs: 180 });
     }
     if (cmd.indexOf("plugin:") === 0) return Promise.resolve(null);

@@ -39,6 +39,17 @@ const CF_STT = {
   sttVariables: { api_key: SECRETS.CF_API_KEY },
 };
 
+// Voice: Groq Whisper turbo (fastest). Cloudflare Whisper is the fallback when no Groq key is set.
+const VOICE_STT = SECRETS.GROQ_API_KEY
+  ? { sttProvider: "groq-whisper-interview", sttVariables: { api_key: SECRETS.GROQ_API_KEY } }
+  : CF_STT;
+
+/** Listen answers with this fast model in every mode (target: answer 1–2s after the speaker stops). */
+export const LISTEN_FAST_PROVIDER = {
+  provider: "groq-listen",
+  variables: { api_key: SECRETS.GROQ_API_KEY, model: "openai/gpt-oss-120b" } as Record<string, string>,
+};
+
 const GROQ = {
   aiProvider: "groq-interview",
   model: "openai/gpt-oss-120b",
@@ -58,7 +69,7 @@ export const MODES: Record<ModeKey, ModeDef> = {
     label: "System Design",
     short: "Design",
     ...GROQ,
-    ...CF_STT,
+    ...VOICE_STT,
     systemPrompt:
       "You are an interview assistant for SYSTEM DESIGN / full-stack / AI-design rounds. " +
       "Give an answer the candidate can speak through, concise and point-wise, in this exact structure:\n" +
@@ -76,7 +87,7 @@ export const MODES: Record<ModeKey, ModeDef> = {
     label: "Coding",
     short: "Code",
     ...OPUS,
-    ...CF_STT,
+    ...VOICE_STT,
     systemPrompt:
       "You are a CODING-round interview assistant. Structure:\n" +
       "**Approach:** 3-5 short bullets.\n**Dry run:** walk one small example.\n" +
@@ -89,7 +100,7 @@ export const MODES: Record<ModeKey, ModeDef> = {
     label: "Conceptual",
     short: "Concept",
     ...GROQ,
-    ...CF_STT,
+    ...VOICE_STT,
     systemPrompt:
       "You are a CONCEPTUAL-round interview assistant. Concise bullet form:\n" +
       "**Concept:** 1-2 line definition.\n" +
@@ -102,7 +113,7 @@ export const MODES: Record<ModeKey, ModeDef> = {
     label: "Debug",
     short: "Debug",
     ...OPUS,
-    ...CF_STT,
+    ...VOICE_STT,
     systemPrompt:
       "You are a DEBUG assistant in a live interview. The user may attach screenshots, stack traces, logs, documents and/or code, " +
       "with or without a message. Use everything attached as evidence. Reply in this exact structure:\n" +
@@ -131,3 +142,42 @@ export const MODE_ORDER: ModeKey[] = [
 ];
 
 export const DEFAULT_MODE: ModeKey = "conceptual";
+
+
+// ---- Concept style: General (full answer) or Short (definition in ≤3 lines, fastest) ----
+const CONCEPT_STYLE_KEY = "concept_style";
+export type ConceptStyle = "general" | "short";
+export const getConceptStyle = (): ConceptStyle => {
+  try {
+    return localStorage.getItem(CONCEPT_STYLE_KEY) === "short" ? "short" : "general";
+  } catch {
+    return "general";
+  }
+};
+export const setConceptStyle = (style: ConceptStyle) => {
+  try {
+    localStorage.setItem(CONCEPT_STYLE_KEY, style);
+  } catch {
+    /* ignore */
+  }
+};
+
+const SHORT_CONCEPT_PROMPT =
+  "You answer concept questions in a live interview. Reply with ONLY a plain definition in at most 3 short lines " +
+  "(about 50 words). No headings, no lists, no code, no diagrams, no examples, no preamble. " +
+  "Reply in the same language as the question. If the question is unclear, give the most likely meaning's definition.";
+
+/** The mode definition to use right now (Concept honours the General/Short choice). */
+export const getModeDef = (mode: ModeKey): ModeDef => {
+  const def = MODES[mode];
+  if (mode === "conceptual" && def && getConceptStyle() === "short") {
+    return {
+      ...def,
+      aiProvider: LISTEN_FAST_PROVIDER.provider,
+      model: LISTEN_FAST_PROVIDER.variables.model,
+      aiVariables: LISTEN_FAST_PROVIDER.variables,
+      systemPrompt: SHORT_CONCEPT_PROMPT,
+    };
+  }
+  return def;
+};

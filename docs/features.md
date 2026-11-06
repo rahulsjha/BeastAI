@@ -22,7 +22,8 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 
 | Mode | Model | Answer format | Typical time |
 |---|---|---|---|
-| **Concept** | Groq `gpt-oss-120b` (fast) | Concept · use case · diagram · example | 1–3s |
+| **Concept** — General | Groq `gpt-oss-120b` (fast) | Concept · use case · diagram · example | 1–3s |
+| **Concept** — ⚡ Short | Groq, low reasoning | Definition only, ≤3 lines | ~0.6s first words, <1s total |
 | **Design** | Groq `gpt-oss-120b` | Requirements · scale estimates (with math) · API · data model · architecture · diagram · bottlenecks · trade-offs | 3–6s |
 | **Code** | Claude **Opus**, high effort (via your `claude` login) | Approach · dry run · runnable code · complexity | 13–25s, text streams from ~6s |
 | **Debug** | Claude **Opus**, high effort | Root cause · fix; or screen watch (below) | 30–48s |
@@ -31,6 +32,8 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 - Answers render markdown, code with copy, tables, math and diagrams (diagrams are checked and auto-repaired up to 2 times).
 - Replies come in the language you asked in (Hindi question → Hindi answer).
 
+- **General / ⚡ Short** (chip next to the modes, Concept only): Short answers with just a definition in at most 3 lines — fastest. Click the chip to switch.
+
 ## Shortcuts
 
 | Keys | Action |
@@ -38,6 +41,8 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 | **⌘↵** or **⌘⇧S** (Ctrl+Enter / Ctrl+Shift+S) | Screenshot — drag to select an area; it's attached to the next question |
 | **⌘⇧O** (Ctrl+Shift+O) | Start / stop **Solve screen** monitoring |
 | ⌘⇧A | Mic on/off · ⌘⇧M Listen · ⌘⇧I focus the question bar · ⌘\\ show/hide |
+
+**Listen speed:** the answer starts ~1.5s after the speaker stops (0.6s silence → Groq Whisper ~0.5s → fast Groq answer). Listen always answers with the fast model, in the current mode's style. While listening, the modes and all buttons stay in the header; Auto-detect ⇄ Manual switches immediately.
 
 No tab-sharing pop-ups anywhere: screens are captured with screenshots. **Listen** hears the meeting: in the desktop app straight from the computer's audio; in the browser through the system default microphone (it hears the meeting from your speakers).
 

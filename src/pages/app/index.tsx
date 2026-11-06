@@ -94,23 +94,10 @@ const App = () => {
           }}
         >
           {/* Header row — fixed height, never grows with the input */}
-          <div className="flex flex-row items-center gap-1.5 w-full min-w-0 [&_button.size-9]:size-8">
+          <div className="flex flex-row items-center gap-1 w-full min-w-0 [&_button.size-9]:size-8">
             <SystemAudio {...systemAudio} />
 
-            {capturing ? (
-              <div className="flex flex-1 items-center gap-2 justify-between">
-                <div className="flex flex-1 items-center gap-2">
-                  <AudioVisualizer isRecording={capturing} />
-                </div>
-                <StatusIndicator
-                  setupRequired={systemAudio.setupRequired}
-                  error={systemAudio.error}
-                  isProcessing={systemAudio.isProcessing}
-                  isAIProcessing={systemAudio.isAIProcessing}
-                  capturing={systemAudio.capturing}
-                />
-              </div>
-            ) : (
+            {(
               <>
                 <ModeSelector />
                 <Audio
@@ -156,8 +143,24 @@ const App = () => {
             <DragButton />
           </div>
 
+          {/* Listen is on: its status sits under the header, so modes and every button stay usable. */}
+          {capturing && (
+            <div className="flex w-full items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/5 px-2 py-1">
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                <AudioVisualizer isRecording={capturing} />
+              </div>
+              <StatusIndicator
+                setupRequired={systemAudio.setupRequired}
+                error={systemAudio.error}
+                isProcessing={systemAudio.isProcessing}
+                isAIProcessing={systemAudio.isAIProcessing}
+                capturing={systemAudio.capturing}
+              />
+            </div>
+          )}
+
           {/* Live transcript — above the question bar so answers (which open below it) never cover it */}
-          {transcriptOpen && !capturing && (
+          {transcriptOpen && (
             <LiveTranscript
               onAnswer={(text, entryId, source, mode) =>
                 queue.enqueue(text, { mode: (mode as typeof currentMode) || currentMode, source, entryId })
@@ -171,14 +174,14 @@ const App = () => {
           )}
 
           {/* Answer queue (when the Live transcript, which also shows it, is closed) */}
-          {!transcriptOpen && !historyOpen && !capturing && queue.jobs.length > 0 && (
+          {!transcriptOpen && !historyOpen && queue.jobs.length > 0 && (
             <div className="w-full rounded-xl border border-input/50 bg-muted/20">
               <AnswerQueue jobs={queue.jobs} onRemove={queue.remove} onClearFinished={queue.clearFinished} />
             </div>
           )}
 
           {/* What will be sent with the next question (screenshots, documents) */}
-          {!capturing && (
+          {(
             <AttachmentTray
               files={completion.attachedFiles}
               onRemove={completion.removeFile}
@@ -188,7 +191,7 @@ const App = () => {
           )}
 
           {/* Input row — below the divider, expands downward as you type */}
-          {!capturing && (
+          {(
             <div className="w-full border-t border-input/30 pt-1.5 flex items-center gap-2">
               {/* Solve screen: reads the screen and answers new questions (not in Debug). */}
               {currentMode !== "debug" && (
@@ -208,7 +211,7 @@ const App = () => {
           )}
 
           {/* History — every previous question and answer */}
-          {historyOpen && !capturing && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
+          {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
 
 
         </Card>

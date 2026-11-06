@@ -13,6 +13,20 @@ export const SPEECH_TO_TEXT_PROVIDERS = [
     streaming: false,
   },
   {
+    // Groq Whisper turbo: ~0.3–0.6s per phrase. Language auto-detected; prompt = interview vocabulary.
+    id: "groq-whisper-interview",
+    name: "Groq Whisper (interview)",
+    curl: `curl -X POST https://api.groq.com/openai/v1/audio/transcriptions \\
+      -H "Authorization: bearer {{API_KEY}}" \\
+      -F "file={{AUDIO}}" \\
+      -F model=whisper-large-v3-turbo \\
+      -F temperature=0 \\
+      -F response_format=json \\
+      -F "prompt=Software engineering interview. API, REST, gRPC, idempotency, URL shortener, rate limiter, Kubernetes, Redis, Kafka, PostgreSQL, sharding, replication, cache, CDN, load balancer, mutex, deadlock, race condition, linked list, binary tree, hash map, React, TypeScript, Python, latency, throughput, QPS."`,
+    responseContentPath: "text",
+    streaming: false,
+  },
+  {
     id: "openai-whisper",
     name: "OpenAI Whisper",
     curl: `curl -X POST "https://api.openai.com/v1/audio/transcriptions" \\
