@@ -207,3 +207,9 @@ body {
   word-wrap: break-word !important;
   white-space: pre-wrap !important;
 }
+
+/* See-through overlay: a soft shadow keeps text readable on any background. */
+#app-card,
+[data-radix-popper-content-wrapper] {
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+}
