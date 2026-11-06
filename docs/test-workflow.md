@@ -130,3 +130,14 @@ Video: `~/Movies/pluely-demo.mp4` (7m51s). Scripts: `scripts/demo/` (run in the 
 | History | Open panel, read a past answer | ✅ |
 
 Note: the test Chrome must run with `--disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=BackgroundMediaSuspend`, otherwise a hidden window holds the simulator's audio playback.
+
+## Screenshot shortcuts on the real screen (real key presses + mouse via CDP Input)
+
+Script: `scripts/demo/screenshot-shortcut-test.mjs` (bridge started without `PLUELY_TEST_SCREEN`, so it captures the real screen).
+
+| Case | Steps | Result |
+|---|---|---|
+| A | ⌘⇧S → drag a region → type question → Enter | ✅ overlay opened, crop attached (484 KB), answer described what was in the region (13s) |
+| B | ⌘↵ → Esc | ✅ overlay closed, nothing attached |
+| C | type text → ⌘↵ → double-click (whole screen) → Enter | ✅ typed text kept and not sent early, full screen attached (2.1 MB), answer used text + image (17s) |
+| Desktop | `cargo check` with `screenshot_enter` (⌘↵) wired to the native capture | ✅ compiles |
