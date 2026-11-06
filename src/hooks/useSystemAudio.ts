@@ -3,6 +3,7 @@ import { useWindowResize, useGlobalShortcuts } from ".";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import * as listenEngine from "@/lib/listen-engine";
+import { isNoiseTranscript } from "@/lib/functions/transcript-filter";
 import { useApp } from "@/contexts";
 import { fetchSTT, fetchAIResponse } from "@/lib/functions";
 import { LISTEN_FAST_PROVIDER } from "@/config/modes";
@@ -275,7 +276,14 @@ export function useSystemAudio() {
                 timeoutPromise,
               ]);
 
-              void invoke("log_frontend", { message: `[listen] heard: ${transcription.trim().slice(0, 160) || "(nothing)"}` }).catch(() => undefined);
+              const noise = isNoiseTranscript(transcription);
+              void invoke("log_frontend", { message: `[listen] heard: ${transcription.trim().slice(0, 160) || "(nothing)"}${noise ? "  → ignored (noise)" : ""}` }).catch(() => undefined);
+              // Whisper invents phrases on silence/noise ("Thank you.", other
+              // languages): skip them instead of answering.
+              if (noise) {
+                setIsProcessing(false);
+                return;
+              }
               if (transcription.trim()) {
                 setLastTranscription(transcription);
                 setError("");

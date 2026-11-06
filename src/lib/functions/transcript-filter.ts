@@ -18,6 +18,9 @@ export function isNoiseTranscript(text: string): boolean {
   if (/^(tchau|merci|gracias|obrigad[oa]|danke|ciao|adios|adeus|au revoir|sous-titres.*|subtítulos.*|продолжение следует.*|спасибо.*|ご視聴ありがとうございました.*|謝謝.*|谢谢.*|감사합니다.*|thank you for watching.*|please subscribe.*|like and subscribe.*)[.!…]*$/i.test(clean))
     return true;
   if (clean.replace(/[^\p{L}]/gu, "").length < 3) return true;
+  // Short phrases in Nordic/Icelandic letters ("Hvað er hann?") — a common
+  // room-noise hallucination; interviews here are English/Hindi.
+  if (/[ðþæøå]/i.test(clean) && (clean.match(/\S+/g) ?? []).length <= 6) return true;
   return /^(thank(s| you)( (so much|very much))?( for watching)?|you|bye|okay|ok|uh+|um+|hmm+|\.+)[.!?]?$/i.test(
     clean
   );

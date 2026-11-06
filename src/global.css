@@ -129,8 +129,9 @@
 }
 
 [data-slot="popover-content"] {
+  /* Answers stay a little more solid than the bar so long text reads easily. */
   background-color: rgb(
-    from var(--popover) r g b / var(--opacity, 1)
+    from var(--popover) r g b / min(1, calc(var(--opacity, 1) + 0.15))
   ) !important;
   backdrop-filter: var(--backdrop-blur, none);
 }
@@ -208,8 +209,26 @@ body {
   white-space: pre-wrap !important;
 }
 
-/* See-through overlay: a soft shadow keeps text readable on any background. */
+/* Glass overlay: see-through, with crisp readable text on any background. */
 #app-card,
 [data-radix-popper-content-wrapper] {
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+  -webkit-font-smoothing: antialiased;
+  /* Secondary text brighter than usual: readable over light pages too. */
+  --muted-foreground: oklch(0.86 0 0);
+}
+#app-card textarea::placeholder,
+#app-card input::placeholder,
+[data-radix-popper-content-wrapper] input::placeholder {
+  color: rgb(255 255 255 / 0.62);
+}
+/* Inner fields/pills: light glass instead of solid blocks. */
+#app-card textarea,
+#app-card input {
+  background-color: rgb(255 255 255 / 0.06) !important;
+  border-color: rgb(255 255 255 / 0.12) !important;
+}
+#app-card [role="tablist"] {
+  background-color: rgb(255 255 255 / 0.06);
+  border-color: rgb(255 255 255 / 0.12);
 }
