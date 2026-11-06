@@ -130,8 +130,7 @@ pub fn run() {
             init(app.app_handle());
             #[cfg(target_os = "macos")]
             {
-                let (pre, sck) = capture::screen_permission_state();
-                eprintln!("[startup] screen recording: preflight={pre} screencapturekit={:?}", sck);
+                eprintln!("[startup] screen recording allowed: {}", capture::screen_permission_preflight());
             }
             let app_handle = app.handle();
             if app_handle.get_webview_window("dashboard").is_none() {

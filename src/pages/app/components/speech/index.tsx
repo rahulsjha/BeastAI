@@ -1,3 +1,4 @@
+import { requestScreenPermissionOnce } from "@/lib/screen-permission-once";
 import { useState, useCallback, useEffect } from "react";
 import {
   Button,
@@ -132,7 +133,7 @@ export const SystemAudio = (props: useSystemAudioType) => {
 
         const hasPermission = await checkScreenRecordingPermission();
         if (!hasPermission) {
-          await requestScreenRecordingPermission();
+          await requestScreenPermissionOnce(requestScreenRecordingPermission);
           setIsCapturingScreenshot(false);
           return;
         }

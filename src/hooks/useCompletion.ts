@@ -1,3 +1,4 @@
+import { requestScreenPermissionOnce } from "@/lib/screen-permission-once";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useWindowResize } from "./useWindow";
 import { useGlobalShortcuts } from "@/hooks";
@@ -996,11 +997,10 @@ export const useCompletion = () => {
         const hasPermission = await checkScreenRecordingPermission();
 
         if (!hasPermission) {
-          // Request permission
-          await requestScreenRecordingPermission();
-
-          // Wait a moment and check again
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Ask macOS once per session (not on every screenshot), then re-check.
+          if (await requestScreenPermissionOnce(requestScreenRecordingPermission)) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          }
 
           const hasPermissionNow = await checkScreenRecordingPermission();
 
@@ -1008,7 +1008,7 @@ export const useCompletion = () => {
             setState((prev) => ({
               ...prev,
               error:
-                "Screen Recording permission required. Please enable it by going to System Settings > Privacy & Security > Screen & System Audio Recording. If you don't see Pluely in the list, click the '+' button to add it. If it's already listed, make sure it's enabled. Then restart the app.",
+                "Screen Recording is off for Pluely. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Pluely.",
             }));
             setIsScreenshotLoading(false);
             screenshotInitiatedByThisContext.current = false;

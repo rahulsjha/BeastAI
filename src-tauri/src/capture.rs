@@ -280,14 +280,26 @@ pub(crate) fn screen_permission_state() -> (bool, Result<(), String>) {
 }
 
 #[cfg(target_os = "macos")]
+static ASKED_SCREEN_PERMISSION: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Silent check (never shows a prompt) — used at startup for the log.
+#[cfg(target_os = "macos")]
+pub(crate) fn screen_permission_preflight() -> bool {
+    unsafe { CGPreflightScreenCaptureAccess() }
+}
+
+#[cfg(target_os = "macos")]
 fn ensure_screen_permission() -> Result<(), String> {
     let (preflight, sck) = screen_permission_state();
     eprintln!("[capture] permission preflight={preflight} screencapturekit={:?}", sck);
     if preflight || sck.is_ok() {
         return Ok(());
     }
-    unsafe { CGRequestScreenCaptureAccess() };
-    Err("Screen Recording permission is off for this Pluely build. Open System Settings → Privacy & Security → Screen & System Audio Recording, remove Pluely (–), add it again (+ → /Applications/Pluely.app) and switch it on, then quit and reopen Pluely.".to_string())
+    // Show the system prompt at most once per app session.
+    if !ASKED_SCREEN_PERMISSION.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        unsafe { CGRequestScreenCaptureAccess() };
+    }
+    Err("Screen Recording is off for Pluely. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Pluely.".to_string())
 }
 
 #[tauri::command]
