@@ -30,6 +30,8 @@ export interface UseCompletionReturn {
   response: string;
   /** The question the current response answers (typed or transcribed) */
   lastQuestion: string;
+  /** Images sent with the last question. */
+  lastImages: string[];
   /** Function to update the response text */
   setResponse: (value: string) => void;
 

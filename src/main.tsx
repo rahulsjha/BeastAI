@@ -32,6 +32,15 @@ if ((window as any).__PLUELY_WEBTEST__) {
     } else if (k === "o") {
       e.preventDefault();
       emit("custom-shortcut-triggered", { action: "solve_screen" });
+    } else if (k === "a") {
+      e.preventDefault();
+      emit("start-audio-recording", {}); // ⌘⇧A mic
+    } else if (k === "m") {
+      e.preventDefault();
+      emit("toggle-system-audio", {}); // ⌘⇧M Listen
+    } else if (k === "i") {
+      e.preventDefault();
+      emit("focus-text-input", {}); // ⌘⇧I focus the question bar
     }
   });
 }

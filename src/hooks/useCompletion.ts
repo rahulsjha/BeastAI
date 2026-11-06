@@ -63,6 +63,8 @@ interface CompletionState {
   input: string;
   response: string;
   lastQuestion: string;
+  /** Images sent with the last question (shown next to "Asked:"). */
+  lastImages: string[];
   isLoading: boolean;
   error: string | null;
   attachedFiles: AttachedFile[];
@@ -96,6 +98,7 @@ export const useCompletion = () => {
     input: "",
     response: "",
     lastQuestion: "",
+    lastImages: [],
     isLoading: false,
     error: null,
     attachedFiles: [],
@@ -296,6 +299,7 @@ export const useCompletion = () => {
           error: null,
           response: "",
           lastQuestion: input,
+          lastImages: state.attachedFiles.filter((f) => f.type.startsWith("image/")).map((f) => f.base64),
         }));
 
         try {
@@ -1087,22 +1091,36 @@ export const useCompletion = () => {
   const autoSendRef = useRef(false);
   const [autoSendTick, setAutoSendTick] = useState(0);
   const captureRef = useRef<() => Promise<void>>(async () => {});
+  const captureAndSendRef = useRef<() => Promise<void>>(async () => {});
   useEffect(() => {
     let off: (() => void) | undefined;
     let cancelled = false;
     listen<{ action: string }>("custom-shortcut-triggered", (e) => {
       if (e.payload?.action !== "screenshot_enter") return;
-      autoSendRef.current = true;
-      void captureRef.current();
+      void captureAndSendRef.current();
     }).then((u) => (cancelled ? u() : (off = u)));
     return () => {
       cancelled = true;
       off?.();
     };
   }, []);
+  // 💻 / ⌘↵: grab the whole screen at once (no selection step), attach it and
+  // send it with anything typed; the answer shows the screenshot that was sent.
+  const screenshotSubmitRef = useRef<(b64: string) => Promise<void>>(async () => {});
   const captureAndSend = useCallback(async () => {
-    autoSendRef.current = true;
-    await captureRef.current();
+    setIsScreenshotLoading(true);
+    try {
+      const base64 = await invoke<string>("capture_to_base64");
+      await screenshotSubmitRef.current(base64);
+      setAutoSendTick((t) => t + 1);
+    } catch (e) {
+      setState((prev) => ({
+        ...prev,
+        error: `Screenshot failed: ${e instanceof Error ? e.message : String(e)}. Allow Screen & System Audio Recording for Pluely.`,
+      }));
+    } finally {
+      setIsScreenshotLoading(false);
+    }
   }, []);
   useEffect(() => {
     if (autoSendTick > 0) void submit();
@@ -1143,6 +1161,8 @@ export const useCompletion = () => {
     globalShortcuts.registerAudioCallback(toggleRecording);
     globalShortcuts.registerInputRef(inputRef.current);
     captureRef.current = captureScreenshot;
+    captureAndSendRef.current = captureAndSend;
+    screenshotSubmitRef.current = (b64: string) => handleScreenshotSubmit(b64);
     globalShortcuts.registerScreenshotCallback(captureScreenshot);
   }, [
     globalShortcuts.registerAudioCallback,
@@ -1156,6 +1176,7 @@ export const useCompletion = () => {
   return {
     cancelCount: cancelCountRef,
     lastQuestion: state.lastQuestion,
+    lastImages: state.lastImages,
     input: state.input,
     setInput,
     response: state.response,

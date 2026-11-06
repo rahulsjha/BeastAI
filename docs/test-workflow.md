@@ -157,3 +157,18 @@ Script: `scripts/demo/screenshot-shortcut-test.mjs` (bridge started without `PLU
 |---|---|---|
 | Concept / Code / Debug / Design | plain gradient (`testdocs/wallpaper.png`) | ✅ one line: "⚠️ Not useful — no question or relevant content in this screenshot. Attach one that shows the question, code or error." |
 | Code (control) | LeetCode problem (`testdocs/leetcode.png`) | ✅ solved normally (Valid Parentheses) |
+
+## Shortcut suite — `scripts/demo/shortcut-suite.mjs` (real key presses / mouse, real screen, LeetCode window beside the app)
+
+| Case | Result |
+|---|---|
+| ⌘↵ empty bar → whole screen sent, answer + thumbnail | ✅ |
+| 💻 click with typed text → sent with the text, answer + thumbnail | ✅ flow (no overlay, thumbnail, text sent); content check needs an unlocked screen |
+| Enter sends · Shift+Enter new line | ✅ |
+| ⌘K conversation mode on/off | ✅ |
+| ⌘⇧S Esc = cancel · double-click = whole screen attached | ✅ |
+| ⌘⇧S drag area → attach only → ✎ note → Enter | ✅ in earlier run (attach-only + answer); rerun blocked by locked screen |
+| ⌘⇧O Solve screen on → found LeetCode 20 → answered → off | ✅ (run 1) |
+| ⌘↵ on a screen with no question → "Not useful" | ✅ |
+| ⌘⇧I focus bar · ⌘⇧A mic on/off · ⌘⇧M Listen on/off | ✅ (⌘⇧M "off" was broken — stale state — fixed) |
+| ⌘\\ hide · ⌘⇧D dashboard · ⌘+arrows move | desktop app only — test after the rebuild |

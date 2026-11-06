@@ -710,9 +710,13 @@ export function useSystemAudio() {
     resizeWindow,
   ]);
 
+  // ⌘⇧M toggles Listen. Read the live state (a captured `capturing` was stale,
+  // so a second press started again instead of stopping).
+  const capturingRef = useRef(capturing);
+  capturingRef.current = capturing;
   useEffect(() => {
     globalShortcuts.registerSystemAudioCallback(async () => {
-      if (capturing) {
+      if (capturingRef.current) {
         await stopCapture();
       } else {
         await startCapture();

@@ -22,6 +22,7 @@ export const Input = ({
   reset,
   input,
   lastQuestion,
+  lastImages,
   setInput,
   handleKeyPress,
   handlePaste,
@@ -175,6 +176,23 @@ export const Input = ({
                 <p className="text-[11px] text-muted-foreground mb-2 whitespace-pre-wrap">
                   <span className="font-semibold">Asked:</span> {lastQuestion}
                 </p>
+              )}
+              {/* The screenshot(s) sent with this question — click to view full size */}
+              {(isLoading || response) && lastImages?.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {lastImages.map((b64, i) => (
+                    <a
+                      key={i}
+                      href={`data:image/png;base64,${b64}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block h-16 w-28 overflow-hidden rounded border border-input/60"
+                      title="Screenshot sent with this question (click to open)"
+                    >
+                      <img src={`data:image/png;base64,${b64}`} alt="Sent screenshot" className="h-full w-full object-cover object-top" />
+                    </a>
+                  ))}
+                </div>
               )}
               {isLoading && (
                 <div className="flex items-center gap-2 my-4 text-muted-foreground animate-pulse select-none">

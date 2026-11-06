@@ -36,16 +36,23 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 
 ## Shortcuts
 
-| Keys | Action |
-|---|---|
-| **⌘↵** (Ctrl+Enter) | Screenshot & send — select an area, it's sent at once and the answer opens |
-| **⌘⇧S** (Ctrl+Shift+S) | Screenshot & attach — select an area; it waits in the tray (add a ✎ note, more files) until you press Enter |
-| **⌘⇧O** (Ctrl+Shift+O) | Start / stop **Solve screen** monitoring |
-| ⌘⇧A | Mic on/off · ⌘⇧M Listen · ⌘⇧I focus the question bar · ⌘\\ show/hide |
+| Keys | What it does | Where |
+|---|---|---|
+| **⌘↵** (Ctrl+Enter) | **Screenshot & send** — grabs the whole screen at once, sends it with anything typed, answer opens (thumbnail next to "Asked:") | everywhere (desktop: from any app) |
+| 💻 button | Same as ⌘↵ | — |
+| **⌘⇧S** | **Screenshot & attach** — drag an area (double-click = whole screen, Esc = cancel); waits in the tray for a ✎ note / more files; Enter sends | everywhere |
+| **⌘⇧O** | Solve screen on / off | everywhere |
+| **⌘⇧A** | Mic on / off (ask by voice) | everywhere |
+| **⌘⇧M** | Listen on / off | everywhere |
+| **⌘⇧I** | Put the cursor in the question bar | everywhere |
+| **Enter** / **Shift+Enter** | Send / new line (in the question bar) | — |
+| **⌘K** | Conversation mode on / off (in the answer) | — |
+| **Esc** | Close the answer / cancel a screenshot | — |
+| ⌘\\ | Show / hide Pluely | desktop app only |
+| ⌘⇧D | Open Dev Space (settings) | desktop app only |
+| ⌘ + arrows | Move the bar | desktop app only |
 
-**Listen speed:** the answer starts ~1.5s after the speaker stops (0.6s silence → Groq Whisper ~0.5s → fast Groq answer). Listen always answers with the fast model, in the current mode's style. While listening, the modes and all buttons stay in the header; Auto-detect ⇄ Manual switches immediately.
-
-No tab-sharing pop-ups anywhere: screens are captured with screenshots. **Listen** hears the meeting: in the desktop app straight from the computer's audio; in the browser through the system default microphone (it hears the meeting from your speakers).
+All keys can be changed in Dev Space → Shortcuts.
 
 ## Solve screen (any website)
 
