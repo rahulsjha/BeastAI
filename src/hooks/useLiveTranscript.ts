@@ -230,7 +230,7 @@ export function useLiveTranscript(opts: {
         setError(
           "Couldn't capture the computer's audio: " +
             (e instanceof Error ? e.message : String(e)) +
-            ". Allow Pluely in Privacy & Security → Screen & System Audio Recording."
+            ". Allow Beast in Privacy & Security → Screen & System Audio Recording."
         );
       }
       return;

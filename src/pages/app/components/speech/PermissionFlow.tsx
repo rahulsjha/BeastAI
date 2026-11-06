@@ -105,7 +105,7 @@ export const PermissionFlow = ({
     requesting: {
       icon: <LoaderIcon className="w-5 h-5 animate-spin" />,
       title: "Waiting for Permission",
-      description: `Enable Pluely in System Settings (${checkAttempts}/20)`,
+      description: `Enable Beast in System Settings (${checkAttempts}/20)`,
       bgColor: "bg-orange-50",
       borderColor: "border-orange-200",
       textColor: "text-orange-800",
@@ -165,8 +165,8 @@ export const PermissionFlow = ({
                   <li>Open System Settings</li>
                   <li>Go to Privacy & Security</li>
                   <li>Select Screen &amp; System Audio Recording</li>
-                  <li>Enable Pluely (this lets Listen hear everyone in your meeting app)</li>
-                  <li>Restart Pluely if it was already open</li>
+                  <li>Enable Beast (this lets Listen hear everyone in your meeting app)</li>
+                  <li>Restart Beast if it was already open</li>
                 </ol>
               )}
             </div>

@@ -436,7 +436,7 @@ pub async fn extract_screen_question() -> Result<ExtractQuestionResult, String> 
     let shot = format!("{}/pluely_question_screen.png", tmp.trim_end_matches('/'));
     let cap = Command::new("screencapture").arg("-x").arg(&shot).status();
     if cap.map(|s| !s.success()).unwrap_or(true) {
-        return Ok(fail("Screen capture failed. Allow Pluely in Screen & System Audio Recording.".into(), None));
+        return Ok(fail("Screen capture failed. Allow Beast in Screen & System Audio Recording.".into(), None));
     }
     let image = std::fs::read(&shot).ok().map(|b| general_purpose::STANDARD.encode(&b));
     let mut cmd = base_command(&bin);

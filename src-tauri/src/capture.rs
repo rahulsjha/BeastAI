@@ -299,7 +299,7 @@ fn ensure_screen_permission() -> Result<(), String> {
     if !ASKED_SCREEN_PERMISSION.swap(true, std::sync::atomic::Ordering::SeqCst) {
         unsafe { CGRequestScreenCaptureAccess() };
     }
-    Err("Screen Recording is off for Pluely. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Pluely.".to_string())
+    Err("Screen Recording is off for Beast. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Beast.".to_string())
 }
 
 #[tauri::command]
