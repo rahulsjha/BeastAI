@@ -261,8 +261,28 @@ pub async fn capture_selected_area(
     Ok(base64_str)
 }
 
+#[cfg(target_os = "macos")]
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    fn CGPreflightScreenCaptureAccess() -> bool;
+    fn CGRequestScreenCaptureAccess() -> bool;
+}
+
+/// Without Screen Recording permission macOS still returns an image, but only
+/// the wallpaper (no app windows) — so check first and say what to do.
+#[cfg(target_os = "macos")]
+fn ensure_screen_permission() -> Result<(), String> {
+    if unsafe { CGPreflightScreenCaptureAccess() } {
+        return Ok(());
+    }
+    unsafe { CGRequestScreenCaptureAccess() };
+    Err("Screen Recording permission is off for this Pluely build. Open System Settings → Privacy & Security → Screen & System Audio Recording, remove Pluely (–), add it again (+ → /Applications/Pluely.app) and switch it on, then quit and reopen Pluely.".to_string())
+}
+
 #[tauri::command]
 pub async fn capture_to_base64(window: tauri::WebviewWindow) -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    ensure_screen_permission()?;
     let monitor_fallback = window
         .current_monitor()
         .ok()
