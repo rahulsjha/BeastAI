@@ -64,11 +64,31 @@ export const DEFAULT_SHORTCUT_ACTIONS: ShortcutAction[] = [
   {
     id: "screenshot",
     name: "Screenshot",
-    description: "Capture screenshot",
+    description: "Capture screenshot (drag to select an area)",
     defaultKey: {
       macos: "cmd+shift+s",
       windows: "ctrl+shift+s",
       linux: "ctrl+shift+s",
+    },
+  },
+  {
+    id: "screenshot_enter",
+    name: "Screenshot & send",
+    description: "Capture an area and send it right away (with anything typed); the answer opens",
+    defaultKey: {
+      macos: "cmd+enter",
+      windows: "ctrl+enter",
+      linux: "ctrl+enter",
+    },
+  },
+  {
+    id: "solve_screen",
+    name: "Solve screen",
+    description: "Start/stop monitoring the screen and answering new questions",
+    defaultKey: {
+      macos: "cmd+shift+o",
+      windows: "ctrl+shift+o",
+      linux: "ctrl+shift+o",
     },
   },
 ];

@@ -30,6 +30,8 @@ export interface UseCompletionReturn {
   response: string;
   /** The question the current response answers (typed or transcribed) */
   lastQuestion: string;
+  /** Images sent with the last question. */
+  lastImages: string[];
   /** Function to update the response text */
   setResponse: (value: string) => void;
 
@@ -43,15 +45,19 @@ export interface UseCompletionReturn {
   /** Array of currently attached files */
   attachedFiles: any[];
   /** Function to add a file to attachments */
-  addFile: (file: File) => Promise<void>;
+  addFile: (file: File, label?: string) => Promise<void>;
   /** Function to remove a file by its ID */
   removeFile: (fileId: string) => void;
   /** Function to clear all attached files */
   clearFiles: () => void;
+  /** Sets the user's message about one attachment. */
+  setFileNote: (fileId: string, note: string) => void;
 
   // Completion actions
   /** Function to submit the completion request, optionally with speech text */
-  submit: (speechText?: string) => Promise<void>;
+  submit: (speechText?: string, opts?: { mode?: string }) => Promise<void>;
+  /** Increments every time an answer is cancelled. */
+  cancelCount: { current: number };
   /** Function to cancel the current completion request */
   cancel: () => void;
   /** Function to reset the completion state (clears input, response, error, files) */
@@ -127,6 +133,10 @@ export interface UseCompletionReturn {
   inputRef: RefObject<HTMLInputElement | null>;
   /** Function to capture a screenshot */
   captureScreenshot: () => Promise<void>;
+  /** Capture an area, then send it at once (with anything typed) and show the answer. */
+  captureAndSend: () => Promise<void>;
+  /** Add the whole screen to the tray without sending. */
+  captureFullScreen: () => Promise<void>;
   /** Whether a screenshot is currently loading */
   isScreenshotLoading: boolean;
 }

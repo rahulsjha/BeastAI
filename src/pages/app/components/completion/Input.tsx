@@ -1,5 +1,5 @@
+import { useState } from "react";
 import { Loader2, XIcon } from "lucide-react";
-import { useEffect } from "react";
 import {
   Popover,
   PopoverContent,
@@ -13,7 +13,9 @@ import {
 import { UseCompletionReturn } from "@/types";
 import { MessageHistory } from "./MessageHistory";
 
-const MAX_INPUT_HEIGHT = 140; // px (~6 lines); the input sits in its own row below the header, so it can grow downward
+// The question bar keeps one fixed height. Long or multi-line questions scroll
+// inside it instead of growing the bar; the full text shows as "Asked:" above
+// the answer.
 
 export const Input = ({
   isPopoverOpen,
@@ -21,6 +23,7 @@ export const Input = ({
   reset,
   input,
   lastQuestion,
+  lastImages,
   setInput,
   handleKeyPress,
   handlePaste,
@@ -37,15 +40,20 @@ export const Input = ({
   isHidden,
   keepEngaged,
   setKeepEngaged,
+  submit,
+  attachedFiles,
+  captureFullScreen,
+  captureScreenshot,
+  isScreenshotLoading,
 }: UseCompletionReturn & { isHidden: boolean }) => {
+  const [followUp, setFollowUp] = useState("");
+  const sendFollowUp = () => {
+    const t = followUp.trim();
+    if (isLoading || (!t && !attachedFiles.length)) return;
+    setFollowUp("");
+    void submit(t || undefined);
+  };
   // Auto-grow the textarea with its content (and shrink back when cleared).
-  useEffect(() => {
-    const el = inputRef?.current as unknown as HTMLTextAreaElement | null;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT) + "px";
-  }, [input, inputRef]);
-
   return (
     <div className="relative flex-1">
       <Popover
@@ -60,7 +68,7 @@ export const Input = ({
           <div className="relative select-none">
             <textarea
               ref={inputRef as unknown as React.Ref<HTMLTextAreaElement>}
-              placeholder="Ask me anything…  (Enter to send, Shift+Enter for a new line)"
+              placeholder="Ask anything…  ↵ send · ⇧↵ new line"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
@@ -71,7 +79,7 @@ export const Input = ({
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              className={`placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/50 dark:border-input/80 flex min-h-9 w-full min-w-0 resize-none overflow-y-auto rounded-xl border bg-transparent px-3 py-2 text-base leading-snug shadow-xs outline-none transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring/60 focus-visible:ring-ring dark:focus-visible:ring-ring/60 focus-visible:ring-[2px] ${
+              className={`placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-primary/50 dark:border-input/80 flex h-9 max-h-9 w-full min-w-0 resize-none overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words rounded-xl border bg-transparent px-3 py-2 text-base leading-snug shadow-xs outline-none transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring/60 focus-visible:ring-ring dark:focus-visible:ring-ring/60 focus-visible:ring-[2px] ${
                 currentConversationId && conversationHistory.length > 0
                   ? "pr-14"
                   : "pr-2"
@@ -169,7 +177,7 @@ export const Input = ({
             </div>
           </div>
 
-          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-7rem)]">
+          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-16.5rem)] min-h-[180px]">
             <div className="p-4">
               {error && (
                 <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
@@ -182,6 +190,23 @@ export const Input = ({
                   <span className="font-semibold">Asked:</span> {lastQuestion}
                 </p>
               )}
+              {/* The screenshot(s) sent with this question — click to view full size */}
+              {(isLoading || response) && lastImages?.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {lastImages.map((b64, i) => (
+                    <a
+                      key={i}
+                      href={`data:image/png;base64,${b64}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block h-16 w-28 overflow-hidden rounded border border-input/60"
+                      title="Screenshot sent with this question (click to open)"
+                    >
+                      <img src={`data:image/png;base64,${b64}`} alt="Sent screenshot" className="h-full w-full object-cover object-top" />
+                    </a>
+                  ))}
+                </div>
+              )}
               {isLoading && (
                 <div className="flex items-center gap-2 my-4 text-muted-foreground animate-pulse select-none">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -193,7 +218,7 @@ export const Input = ({
               {/* Conversation History - Separate scroll, no auto-scroll */}
               {keepEngaged && conversationHistory.length > 1 && (
                 <div className="space-y-3 pt-3">
-                  {conversationHistory
+                  {[...conversationHistory]
                     .sort((a, b) => b?.timestamp - a?.timestamp)
                     .map((message, index) => {
                       if (!isLoading && index === 0) {
@@ -230,6 +255,32 @@ export const Input = ({
               )}
             </div>
           </ScrollArea>
+          {/* Follow-up in the same conversation: text and/or more screenshots */}
+          <div className="border-t border-input/50 p-2 flex items-center gap-1.5">
+            <input
+              value={followUp}
+              onChange={(e) => setFollowUp(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  sendFollowUp();
+                }
+              }}
+              placeholder={attachedFiles.length ? `Follow-up about the ${attachedFiles.length} attached…` : "Ask a follow-up in this conversation…"}
+              className="h-8 min-w-0 flex-1 rounded-md border border-input/50 bg-background/40 px-2 text-xs outline-none focus:border-ring/60"
+              aria-label="Follow-up question"
+            />
+            <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" disabled={isScreenshotLoading} onClick={() => void captureFullScreen()} title="Add the whole screen to this follow-up">
+              + Screen
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" disabled={isScreenshotLoading} onClick={() => void captureScreenshot()} title="Add an area to this follow-up (⌘⇧S)">
+              + Area
+            </Button>
+            <Button size="sm" className="h-8 px-3 text-[10px]" disabled={isLoading || (!followUp.trim() && !attachedFiles.length)} onClick={sendFollowUp}>
+              Send{attachedFiles.length ? ` (${attachedFiles.length})` : ""}
+            </Button>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

@@ -54,6 +54,13 @@ tauri-plugin-posthog = "0.2.4"
 tauri-plugin-machine-uid = "0.1.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
+# System-audio capture via ScreenCaptureKit (pure-Rust bindings; no Xcode/Swift needed)
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSError", "NSArray", "NSString", "NSObject"] }
+objc2-screen-capture-kit = "0.3"
+objc2-core-media = "0.3"
+dispatch2 = "0.3"
 tauri-plugin-macos-permissions = "2"
 tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2" }
 

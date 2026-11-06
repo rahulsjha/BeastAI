@@ -7,6 +7,42 @@ import { Button } from "@/components";
 import { useApp } from "@/contexts";
 import { floatArrayToWav } from "@/lib/utils";
 import { shouldUsePluelyAPI } from "@/lib/functions/pluely.api";
+import { invoke } from "@tauri-apps/api/core";
+import { useEffect } from "react";
+import { resumeAllAudio } from "@/lib/audio-context-tracker";
+import { cleanTranscript, isNoiseTranscript } from "@/lib/functions/transcript-filter";
+
+// Mic pipeline diagnostics → app log ("[frontend] mic: …" in the tauri dev output).
+const micLog = (msg: string) => {
+  console.debug("[mic]", msg);
+  invoke("log_frontend", { message: `mic: ${msg}` }).catch(() => {});
+};
+
+// In development React mounts effects twice, which can leave two VAD
+// instances alive; both fire onSpeechEnd for the same clip. Drop the copy.
+let lastClip = { sig: "", at: 0 };
+const isDuplicateClip = (audio: Float32Array) => {
+  const sig = `${audio.length}:${audio[0]}:${audio[audio.length >> 1]}`;
+  const now = Date.now();
+  const dup = sig === lastClip.sig && now - lastClip.at < 3000;
+  lastClip = { sig, at: now };
+  return dup;
+};
+
+// Audio-level diagnostics, logged every ~2s while listening.
+const levelStats = { frames: 0, maxProb: 0, maxRms: 0, last: 0 };
+const trackFrame = (prob: number, frame: Float32Array) => {
+  levelStats.frames++;
+  levelStats.maxProb = Math.max(levelStats.maxProb, prob);
+  let sum = 0;
+  for (let i = 0; i < frame.length; i++) sum += frame[i] * frame[i];
+  levelStats.maxRms = Math.max(levelStats.maxRms, Math.sqrt(sum / (frame.length || 1)));
+  const now = Date.now();
+  if (now - levelStats.last > 2000) {
+    micLog(`audio: ${levelStats.frames} frames, loudest rms ${levelStats.maxRms.toFixed(4)}, top speech score ${levelStats.maxProb.toFixed(2)}`);
+    Object.assign(levelStats, { frames: 0, maxProb: 0, maxRms: 0, last: now });
+  }
+};
 
 interface AutoSpeechVADProps {
   submit: UseCompletionReturn["submit"];
@@ -27,7 +63,7 @@ const AutoSpeechVADInternal = ({
   const audioConstraints: MediaTrackConstraints =
     microphoneDeviceId && microphoneDeviceId !== "default"
       ? { deviceId: { exact: microphoneDeviceId } }
-      : {};
+      : { deviceId: { exact: "default" } }; // system default mic, not the first (maybe virtual) device
 
   const vad = useMicVAD({
     // Serve the VAD model, audio worklet, and onnxruntime WASM from the app
@@ -36,9 +72,14 @@ const AutoSpeechVADInternal = ({
     baseAssetPath: "/vad/",
     onnxWASMBasePath: "/vad/",
     userSpeakingThreshold: 0.6,
+    preSpeechPadFrames: 10,
+    onFrameProcessed: (probs: { isSpeech: number }, frame: Float32Array) =>
+      trackFrame(probs.isSpeech, frame),
     startOnLoad: true,
     additionalAudioConstraints: audioConstraints,
     onSpeechEnd: async (audio) => {
+      if (isDuplicateClip(audio)) return;
+      micLog(`speech ended (${(audio.length / 16000).toFixed(1)}s of audio)`);
       try {
         // convert float32array to blob
         const audioBlob = floatArrayToWav(audio, 16000, "wav");
@@ -72,6 +113,7 @@ const AutoSpeechVADInternal = ({
         }
 
         setIsTranscribing(true);
+        micLog(`transcribing with ${selectedSttProvider.provider || "default"}`);
 
         // Use the fetchSTT function for all providers
         transcription = await fetchSTT({
@@ -80,18 +122,18 @@ const AutoSpeechVADInternal = ({
           audio: audioBlob,
         });
 
-        // Whisper emits filler phrases on silence/noise; don't send those.
-        const clean = transcription?.trim() ?? "";
-        const isNoise =
-          clean.replace(/[^a-z]/gi, "").length < 3 ||
-          /^(thank(s| you)( for watching)?|you|bye|okay|uh|um)[.!]?$/i.test(clean);
-        if (clean && !isNoise) {
+        micLog(`transcript: "${(transcription || "").slice(0, 120)}"`);
+        // Same noise rules as the Live transcript (fillers, repeats, hallucinations).
+        const clean = cleanTranscript(transcription ?? "");
+        if (clean && !isNoiseTranscript(clean)) {
+          micLog("question sent");
           submit(clean);
         } else if (clean) {
-          console.debug("[VAD] ignored noise transcription:", clean);
+          micLog(`ignored noise: "${clean.slice(0, 60)}"`);
         }
       } catch (error) {
         console.error("Failed to transcribe audio:", error);
+        micLog(`ERROR transcribing: ${error instanceof Error ? error.message : String(error)}`);
         setState((prev: any) => ({
           ...prev,
           error:
@@ -102,6 +144,27 @@ const AutoSpeechVADInternal = ({
       }
     },
   });
+
+  // Keep the audio engine running while listening (WKWebView starts it suspended).
+  useEffect(() => {
+    if (!vad.listening) return;
+    let n = 0;
+    const tick = async () => {
+      const states = await resumeAllAudio();
+      if (n++ < 3) micLog(`audio engine: ${states.join(", ") || "none"}`);
+    };
+    tick();
+    const t = setInterval(tick, 2000);
+    return () => clearInterval(t);
+  }, [vad.listening]);
+
+  useEffect(() => {
+    if (vad.errored) micLog(`ERROR voice detector failed to start: ${vad.errored}`);
+    else if (!vad.loading) micLog(vad.listening ? "listening (mic open)" : "paused");
+  }, [vad.errored, vad.loading, vad.listening]);
+  useEffect(() => {
+    if (vad.userSpeaking) micLog("speech detected");
+  }, [vad.userSpeaking]);
 
   return (
     <>

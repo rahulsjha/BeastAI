@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interviewer Simulator</title>
+<style>
+  :root { --bg:#16161a; --fg:#e8e8ea; --muted:#8a8a93; --card:#212127; --accent:#f5b544; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui, sans-serif; }
+  h1 { font-size:18px; margin:0 0 4px; } p { color:var(--muted); margin:0 0 16px; }
+  .row { display:flex; gap:10px; align-items:center; background:var(--card); border-radius:10px; padding:8px 12px; margin:6px 0; }
+  .row.playing { outline:2px solid var(--accent); }
+  .tag { font-size:11px; color:var(--muted); width:150px; flex-shrink:0; }
+  button { background:#333; color:var(--fg); border:0; border-radius:8px; padding:6px 10px; cursor:pointer; }
+  #log { color:var(--muted); font-size:12px; margin-top:16px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+  <h1>🎧 Interviewer Simulator</h1>
+  <p>Test-only page. Share <b>this tab</b> (with “Also share tab audio”) from Pluely's Live transcript → Interviewer. The test runner plays clips here via a BroadcastChannel.</p>
+  <div id="list"></div>
+  <div id="log"></div>
+<script>
+  const ch = new BroadcastChannel("pluely-sim");
+  const log = (m) => { document.getElementById("log").textContent = new Date().toLocaleTimeString() + "  " + m + "\n" + document.getElementById("log").textContent; };
+  let items = [];
+  const audio = new Audio();
+  window.simAudio = audio; // the test driver "unlocks" this element once with a user gesture
+  // Test mode: route the clip audio into a MediaStream only (never to the speakers),
+  // so the app's Interviewer source gets it and the mic can't hear it.
+  let simStream = null;
+  window.getSimStream = () => {
+    if (simStream) return simStream;
+    const ctx = new AudioContext();
+    const src = ctx.createMediaElementSource(audio);
+    const dest = ctx.createMediaStreamDestination();
+    src.connect(dest); // not connected to ctx.destination → silent locally
+    window.__simCtx = ctx;
+    simStream = dest.stream;
+    return simStream;
+  };
+  window.unlockAudio = async () => { audio.src = "/sim/silence.m4a"; audio.volume = 0.01; await audio.play(); audio.pause(); audio.volume = 1; return "unlocked"; };
+  function play(id) {
+    const it = items.find((x) => x.id === id);
+    if (!it) return ch.postMessage({ type: "error", id, error: "unknown id" });
+    document.querySelectorAll(".row").forEach((r) => r.classList.toggle("playing", r.dataset.id === id));
+    window.__simCtx?.resume?.();
+    audio.src = "/sim/" + id + ".m4a";
+    audio.onended = () => { ch.postMessage({ type: "ended", id, at: Date.now() }); log("ended " + id); };
+    audio.play().then(() => { ch.postMessage({ type: "started", id, at: Date.now() }); log("playing " + id + ": " + it.text); })
+      .catch((e) => { log("ERROR " + id + ": " + e); ch.postMessage({ type: "error", id, error: String(e) }); });
+  }
+  ch.onmessage = (e) => { if (e.data?.type === "play") play(e.data.id); if (e.data?.type === "ping") ch.postMessage({ type: "pong" }); };
+  fetch("/sim/script.json").then((r) => r.json()).then((d) => {
+    items = d;
+    document.getElementById("list").innerHTML = d.map((it) =>
+      `<div class="row" data-id="${it.id}"><span class="tag">${it.mode} · ${it.kind}</span><span style="flex:1">${it.text}</span><button onclick="play('${it.id}')">▶</button></div>`).join("");
+    ch.postMessage({ type: "ready", count: d.length });
+  });
+</script>
+</body>
+</html>

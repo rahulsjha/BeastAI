@@ -1,8 +1,12 @@
+import { requestScreenPermissionOnce } from "@/lib/screen-permission-once";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useWindowResize } from "./useWindow";
 import { useGlobalShortcuts } from "@/hooks";
 import { MAX_FILES } from "@/config";
 import { useApp } from "@/contexts";
+import { getModeDef, type ModeKey } from "@/config/modes";
+import { downscalePng } from "@/lib/image-resize";
+import { addQA } from "@/lib/storage/qa-history";
 import {
   fetchAIResponse,
   saveConversation,
@@ -26,7 +30,13 @@ interface AttachedFile {
   base64: string;
   size: number;
   text?: string;
+  label?: string; // e.g. Before / After / Trace (Debug mode)
+  note?: string; // the user's message about this specific attachment
 }
+
+// The screenshot button always lets the user drag-select the area to capture
+// (full-screen grabs are used only by Solve screen).
+const SCREENSHOT_FULL_SCREEN = false;
 
 // Documents we can parse to text (no image/vision needed).
 const isTextDocument = (file: File): boolean => {
@@ -55,6 +65,8 @@ interface CompletionState {
   input: string;
   response: string;
   lastQuestion: string;
+  /** Images sent with the last question (shown next to "Asked:"). */
+  lastImages: string[];
   isLoading: boolean;
   error: string | null;
   attachedFiles: AttachedFile[];
@@ -64,18 +76,31 @@ interface CompletionState {
 
 export const useCompletion = () => {
   const {
-    selectedAIProvider,
+    selectedAIProvider: storedAIProvider,
     allAiProviders,
-    systemPrompt,
+    systemPrompt: storedSystemPrompt,
     screenshotConfiguration,
     setScreenshotConfiguration,
+    currentMode,
   } = useApp();
+
+  // The selected interview mode is the source of truth for routing: every
+  // question uses that mode's model, keys and prompt at send time, so an async
+  // reload of saved settings can never send it to the previous mode's model.
+  const modeDef = getModeDef(currentMode as ModeKey);
+  const modeProvider = modeDef
+    ? { provider: modeDef.aiProvider, variables: modeDef.aiVariables }
+    : storedAIProvider;
+  const modeSystemPrompt = modeDef?.systemPrompt ?? storedSystemPrompt;
+  const selectedAIProvider = modeProvider;
+  const systemPrompt = modeSystemPrompt;
   const globalShortcuts = useGlobalShortcuts();
 
   const [state, setState] = useState<CompletionState>({
     input: "",
     response: "",
     lastQuestion: "",
+    lastImages: [],
     isLoading: false,
     error: null,
     attachedFiles: [],
@@ -102,6 +127,7 @@ export const useCompletion = () => {
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  const cancelCountRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const currentRequestIdRef = useRef<string | null>(null);
 
@@ -113,17 +139,27 @@ export const useCompletion = () => {
     setState((prev) => ({ ...prev, response: value }));
   }, []);
 
-  const addFile = useCallback(async (file: File) => {
+  const addFile = useCallback(async (file: File, label?: string) => {
     try {
-      const parseAsText = isTextDocument(file);
-      const base64 = parseAsText ? "" : await fileToBase64(file);
-      const text = parseAsText ? await file.text() : undefined;
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+      const parseAsText = isPdf || isTextDocument(file);
+      const isImage = !parseAsText && file.type.startsWith("image/");
+      const raw = parseAsText ? "" : await fileToBase64(file);
+      // Images are sent as PNG ≤1568px (fast to send, still readable).
+      const base64 = isImage ? await downscalePng(raw, undefined, file.type) : raw;
+      const text = isPdf
+        ? await (await import("@/lib/pdf-text")).pdfToText(file)
+        : parseAsText
+          ? await file.text()
+          : undefined;
       const attachedFile: AttachedFile = {
-        id: Date.now().toString(),
+        // Unique even when several files are added in the same millisecond.
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         name: file.name,
-        type: file.type || (parseAsText ? "text/plain" : ""),
+        label,
+        type: isImage ? "image/png" : file.type || (isPdf ? "application/pdf" : parseAsText ? "text/plain" : ""),
         base64,
-        size: file.size,
+        size: isImage ? Math.round((base64.length * 3) / 4) : file.size,
         text,
       };
 
@@ -143,13 +179,35 @@ export const useCompletion = () => {
     }));
   }, []);
 
+  const setFileNote = useCallback((fileId: string, note: string) => {
+    setState((prev) => ({
+      ...prev,
+      attachedFiles: prev.attachedFiles.map((f) => (f.id === fileId ? { ...f, note } : f)),
+    }));
+  }, []);
+
   const clearFiles = useCallback(() => {
     setState((prev) => ({ ...prev, attachedFiles: [] }));
   }, []);
 
   const submit = useCallback(
-    async (speechText?: string) => {
-      const input = speechText || state.input;
+    async (speechText?: string, opts?: { mode?: string }) => {
+      // Attachments can be sent without a message; use a sensible default.
+      const typed = speechText || state.input;
+      const input = typed.trim()
+        ? typed
+        : state.attachedFiles.length
+          ? (opts?.mode ?? currentMode) === "debug"
+            ? "Debug this using the attached evidence."
+            : "Answer using the attached screenshots and documents."
+          : typed;
+      const submitStartedAt = Date.now();
+      // A queued job can ask for its own mode without changing the UI mode.
+      const overrideDef = opts?.mode ? getModeDef(opts.mode as ModeKey) : undefined;
+      const selectedAIProvider = overrideDef
+        ? { provider: overrideDef.aiProvider, variables: overrideDef.aiVariables }
+        : modeProvider;
+      const systemPrompt = overrideDef?.systemPrompt ?? modeSystemPrompt;
 
       if (!input.trim()) {
         return;
@@ -161,6 +219,9 @@ export const useCompletion = () => {
           input: speechText,
         }));
       }
+
+      // The attachments go with this question: empty the tray right away.
+      if (state.attachedFiles.length) setState((prev) => ({ ...prev, attachedFiles: [] }));
 
       // Generate unique request ID
       const requestId = generateRequestId();
@@ -176,7 +237,10 @@ export const useCompletion = () => {
 
       try {
         // Prepare message history for the AI
-        const messageHistory = state.conversationHistory.map((msg) => ({
+        // Always send history oldest → newest (never rely on display order).
+        const messageHistory = [...state.conversationHistory]
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map((msg) => ({
           role: msg.role,
           content: msg.content,
         }));
@@ -185,15 +249,25 @@ export const useCompletion = () => {
         const imagesBase64: string[] = [];
         const docSections: string[] = [];
         if (state.attachedFiles.length > 0) {
+          const imageLabels: string[] = [];
           state.attachedFiles.forEach((file) => {
             if (file.type.startsWith("image/")) {
               imagesBase64.push(file.base64);
+              const kind = file.label ? `${file.label.toUpperCase()} screenshot` : "screenshot";
+              imageLabels.push(file.note?.trim() ? `${kind} — user's note: "${file.note.trim()}"` : kind);
             } else if (file.text) {
-              docSections.push(
-                `--- Document: ${file.name} ---\n${file.text}`
-              );
+              const head = file.label ? `${file.label} (${file.name})` : `Document: ${file.name}`;
+              const note = file.note?.trim() ? `\nUser's note about this document: ${file.note.trim()}` : "";
+              docSections.push(`--- ${head} ---${note}\n${file.text}`);
             }
           });
+          // Tell the model which image is which (e.g. Before vs After).
+          if (imageLabels.some((l) => l !== "screenshot")) { // labels or notes present
+            docSections.unshift(
+              "Attached images, in order: " +
+                imageLabels.map((l, i) => `image ${i + 1} = ${l}`).join("; ") + "."
+            );
+          }
         }
         // Prepend parsed document text to the question so the model can use it.
         const userMessageWithDocs = docSections.length
@@ -230,6 +304,7 @@ export const useCompletion = () => {
           error: null,
           response: "",
           lastQuestion: input,
+          lastImages: state.attachedFiles.filter((f) => f.type.startsWith("image/")).map((f) => f.base64),
         }));
 
         try {
@@ -242,7 +317,10 @@ export const useCompletion = () => {
             userMessage: userMessageWithDocs,
             imagesBase64,
             signal,
-          })) {
+            // Debug keeps top quality: screenshots go to Claude Opus (lean CLI start),
+            // not the fast Groq vision path used by the other modes.
+            noFastVision: (opts?.mode ?? currentMode) === "debug",
+          } as any)) {
             // Only update if this is still the current request
             if (currentRequestIdRef.current !== requestId) {
               return; // Request was superseded, stop processing
@@ -285,6 +363,17 @@ export const useCompletion = () => {
 
         // Save the conversation after successful completion
         if (fullResponse) {
+          if (!/^\s*Claude CLI error:/.test(fullResponse)) {
+            addQA({
+              question: input,
+              answer: fullResponse,
+              mode: opts?.mode ?? currentMode,
+              at: Date.now(),
+              durationMs: Date.now() - submitStartedAt,
+              hadImage: state.attachedFiles.some((f) => f.type.startsWith("image/")),
+              hadDocs: state.attachedFiles.some((f) => !f.type.startsWith("image/")),
+            });
+          }
           await saveCurrentConversation(
             input,
             fullResponse,
@@ -311,9 +400,8 @@ export const useCompletion = () => {
     [
       state.input,
       state.attachedFiles,
-      selectedAIProvider,
+      currentMode,
       allAiProviders,
-      systemPrompt,
       state.conversationHistory,
     ]
   );
@@ -324,6 +412,7 @@ export const useCompletion = () => {
       abortControllerRef.current = null;
     }
     currentRequestIdRef.current = null;
+    cancelCountRef.current += 1; // lets the answer queue tell "cancelled" from "done"
     setState((prev) => ({ ...prev, isLoading: false }));
   }, []);
 
@@ -554,7 +643,7 @@ export const useCompletion = () => {
     files.forEach((file) => {
       // Accept images (for vision models) and parsable text documents.
       if (
-        (file.type.startsWith("image/") || isTextDocument(file)) &&
+        (file.type.startsWith("image/") || isTextDocument(file) || file.type === "application/pdf" || /\.pdf$/i.test(file.name)) &&
         state.attachedFiles.length < MAX_FILES
       ) {
         addFile(file);
@@ -566,7 +655,8 @@ export const useCompletion = () => {
   };
 
   const handleScreenshotSubmit = useCallback(
-    async (base64: string, prompt?: string) => {
+    async (rawBase64: string, prompt?: string) => {
+      const base64 = await downscalePng(rawBase64);
       if (state.attachedFiles.length >= MAX_FILES) {
         setState((prev) => ({
           ...prev,
@@ -600,7 +690,10 @@ export const useCompletion = () => {
 
           try {
             // Prepare message history for the AI
-            const messageHistory = state.conversationHistory.map((msg) => ({
+            // Always send history oldest → newest (never rely on display order).
+        const messageHistory = [...state.conversationHistory]
+          .sort((a, b) => a.timestamp - b.timestamp)
+          .map((msg) => ({
               role: msg.role,
               content: msg.content,
             }));
@@ -673,6 +766,7 @@ export const useCompletion = () => {
 
             // Save the conversation after successful completion
             if (fullResponse) {
+              addQA({ question: prompt, answer: fullResponse, mode: currentMode, at: Date.now(), hadImage: true });
               await saveCurrentConversation(prompt, fullResponse, [
                 attachedFile,
               ]);
@@ -726,9 +820,8 @@ export const useCompletion = () => {
     [
       state.attachedFiles.length,
       state.conversationHistory,
-      selectedAIProvider,
+      currentMode,
       allAiProviders,
-      systemPrompt,
       saveCurrentConversation,
       inputRef,
     ]
@@ -742,7 +835,8 @@ export const useCompletion = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (!state.isLoading && state.input.trim()) {
+      if (e.metaKey || e.ctrlKey) return; // ⌘↵ = screenshot shortcut, not send
+      if (!state.isLoading && (state.input.trim() || state.attachedFiles.length)) {
         submit();
       }
     }
@@ -757,6 +851,20 @@ export const useCompletion = () => {
       const hasImages = Array.from(items).some((item) =>
         item.type.startsWith("image/")
       );
+
+      // A long paste (stack trace, logs, a file's contents) becomes an
+      // attachment instead of flooding the question bar.
+      const pastedText = e.clipboardData?.getData("text") ?? "";
+      if (!hasImages && (pastedText.length > 600 || pastedText.split("\n").length > 12)) {
+        e.preventDefault();
+        const looksLikeTrace = /traceback|exception|error|at .+\(.+:\d+\)|^\s+at /im.test(pastedText);
+        await addFile(
+          new File([pastedText], `${looksLikeTrace ? "trace" : "pasted"}-${new Date().toTimeString().slice(0, 8).replace(/:/g, "")}.txt`, {
+            type: "text/plain",
+          })
+        );
+        return;
+      }
 
       // If we have images, prevent default text pasting and process images
       if (hasImages) {
@@ -889,11 +997,10 @@ export const useCompletion = () => {
         const hasPermission = await checkScreenRecordingPermission();
 
         if (!hasPermission) {
-          // Request permission
-          await requestScreenRecordingPermission();
-
-          // Wait a moment and check again
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Ask macOS once per session (not on every screenshot), then re-check.
+          if (await requestScreenPermissionOnce(requestScreenRecordingPermission)) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          }
 
           const hasPermissionNow = await checkScreenRecordingPermission();
 
@@ -901,7 +1008,7 @@ export const useCompletion = () => {
             setState((prev) => ({
               ...prev,
               error:
-                "Screen Recording permission required. Please enable it by going to System Settings > Privacy & Security > Screen & System Audio Recording. If you don't see Pluely in the list, click the '+' button to add it. If it's already listed, make sure it's enabled. Then restart the app.",
+                "Screen Recording is off for Pluely. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Pluely.",
             }));
             setIsScreenshotLoading(false);
             screenshotInitiatedByThisContext.current = false;
@@ -911,7 +1018,7 @@ export const useCompletion = () => {
         hasCheckedPermissionRef.current = true;
       }
 
-      if (config.enabled) {
+      if (SCREENSHOT_FULL_SCREEN && config.enabled) {
         const base64 = await invoke("capture_to_base64");
 
         if (config.mode === "auto") {
@@ -935,7 +1042,7 @@ export const useCompletion = () => {
       isProcessingScreenshotRef.current = false;
       screenshotInitiatedByThisContext.current = false;
     } finally {
-      if (config.enabled) {
+      if (SCREENSHOT_FULL_SCREEN && config.enabled) {
         setIsScreenshotLoading(false);
       }
     }
@@ -959,12 +1066,13 @@ export const useCompletion = () => {
         const config = screenshotConfigRef.current;
 
         try {
-          if (config.mode === "auto") {
-            // Auto mode: Submit directly to AI with the configured prompt
-            await handleScreenshotSubmit(base64 as string, config.autoPrompt);
-          } else if (config.mode === "manual") {
-            // Manual mode: Add to attached files without prompt
-            await handleScreenshotSubmit(base64 as string);
+          // Always attach (so notes, mode routing and the queue apply). With ⌘↵
+          // it is then sent straight away, together with anything typed.
+          void config;
+          await handleScreenshotSubmit(base64 as string);
+          if (autoSendRef.current) {
+            autoSendRef.current = false;
+            setAutoSendTick((t) => t + 1);
           }
         } catch (error) {
           console.error("Error processing selection:", error);
@@ -987,8 +1095,65 @@ export const useCompletion = () => {
     };
   }, [handleScreenshotSubmit]);
 
+  // ⌘↵ / Ctrl+Enter: capture an area, then send it right away and show the answer.
+  const autoSendRef = useRef(false);
+  const [autoSendTick, setAutoSendTick] = useState(0);
+  const captureRef = useRef<() => Promise<void>>(async () => {});
+  const captureAndSendRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    let cancelled = false;
+    listen<{ action: string }>("custom-shortcut-triggered", (e) => {
+      if (e.payload?.action !== "screenshot_enter") return;
+      void captureAndSendRef.current();
+    }).then((u) => (cancelled ? u() : (off = u)));
+    return () => {
+      cancelled = true;
+      off?.();
+    };
+  }, []);
+  // 💻 / ⌘↵: grab the whole screen at once (no selection step), attach it and
+  // send it with anything typed; the answer shows the screenshot that was sent.
+  const screenshotSubmitRef = useRef<(b64: string) => Promise<void>>(async () => {});
+  // "+ Screen": add the whole screen to the tray without sending (for questions
+  // spread over several screens; send them all together afterwards).
+  const captureFullScreen = useCallback(async () => {
+    setIsScreenshotLoading(true);
+    try {
+      const base64 = await invoke<string>("capture_to_base64");
+      await screenshotSubmitRef.current(base64);
+    } catch (e) {
+      setState((prev) => ({
+        ...prev,
+        error: `Screenshot failed: ${e instanceof Error ? e.message : String(e)}. Allow Screen & System Audio Recording for Pluely.`,
+      }));
+    } finally {
+      setIsScreenshotLoading(false);
+    }
+  }, []);
+  const captureAndSend = useCallback(async () => {
+    setIsScreenshotLoading(true);
+    try {
+      const base64 = await invoke<string>("capture_to_base64");
+      await screenshotSubmitRef.current(base64);
+      setAutoSendTick((t) => t + 1);
+    } catch (e) {
+      setState((prev) => ({
+        ...prev,
+        error: `Screenshot failed: ${e instanceof Error ? e.message : String(e)}. Allow Screen & System Audio Recording for Pluely.`,
+      }));
+    } finally {
+      setIsScreenshotLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    if (autoSendTick > 0) void submit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSendTick]);
+
   useEffect(() => {
     const unlisten = listen("capture-closed", () => {
+      autoSendRef.current = false;
       setIsScreenshotLoading(false);
       isProcessingScreenshotRef.current = false;
       screenshotInitiatedByThisContext.current = false;
@@ -1019,6 +1184,9 @@ export const useCompletion = () => {
   useEffect(() => {
     globalShortcuts.registerAudioCallback(toggleRecording);
     globalShortcuts.registerInputRef(inputRef.current);
+    captureRef.current = captureScreenshot;
+    captureAndSendRef.current = captureAndSend;
+    screenshotSubmitRef.current = (b64: string) => handleScreenshotSubmit(b64);
     globalShortcuts.registerScreenshotCallback(captureScreenshot);
   }, [
     globalShortcuts.registerAudioCallback,
@@ -1030,7 +1198,9 @@ export const useCompletion = () => {
   ]);
 
   return {
+    cancelCount: cancelCountRef,
     lastQuestion: state.lastQuestion,
+    lastImages: state.lastImages,
     input: state.input,
     setInput,
     response: state.response,
@@ -1041,6 +1211,7 @@ export const useCompletion = () => {
     addFile,
     removeFile,
     clearFiles,
+    setFileNote,
     submit,
     cancel,
     reset,
@@ -1069,6 +1240,8 @@ export const useCompletion = () => {
     onRemoveAllFiles,
     inputRef,
     captureScreenshot,
+    captureAndSend,
+    captureFullScreen,
     isScreenshotLoading,
     keepEngaged,
     setKeepEngaged,

@@ -10,6 +10,18 @@
   var BRIDGE = "http://localhost:8787";
   var cbs = {};
   var cbId = 1;
+  // Event bus: lets browser engines emit the same events the Rust backend does.
+  var listeners = {}; // event -> [handlerId]
+  function emit(event, payload) {
+    (listeners[event] || []).slice().forEach(function (h) {
+      try { cbs[h] && cbs[h]({ event: event, id: h, payload: payload }); } catch (e) { console.error(e); }
+    });
+  }
+  window.__webtestEmit = emit;
+  function browserListen() {
+    if (!window.__browserListen) throw new Error("browser Listen engine not loaded");
+    return window.__browserListen;
+  }
 
   function post(path, body) {
     return fetch(BRIDGE + path, {
@@ -38,6 +50,9 @@
     if (cmd === "capture_to_base64") {
       return post("/screenshot", {}).then((r) => r.image);
     }
+    if (cmd === "extract_screen_question") {
+      return post("/extract-question", {});
+    }
     if (cmd === "debug_analyze_screen") {
       return post("/debug", {});
     }
@@ -61,8 +76,33 @@
       return Promise.resolve([1, Date.now() % 1000000000]);
     }
     if (cmd.indexOf("plugin:event|") === 0) {
-      if (cmd.endsWith("listen")) return Promise.resolve(cbId); // rid
+      if (cmd.endsWith("|listen")) {
+        var ev = args && args.event; var h = args && args.handler;
+        if (ev && h != null) (listeners[ev] = listeners[ev] || []).push(h);
+        return Promise.resolve(h); // eventId = handler id
+      }
+      if (cmd.endsWith("|unlisten")) {
+        var ue = args && args.event; var uid = args && args.eventId;
+        if (ue && listeners[ue]) listeners[ue] = listeners[ue].filter(function (x) { return x !== uid; });
+        return Promise.resolve(null);
+      }
+      if (cmd.endsWith("|emit")) { emit(args && args.event, args && args.payload); return Promise.resolve(null); }
       return Promise.resolve(null);
+    }
+    // ----- Listen (system audio): served by the browser engine -----
+    if (cmd === "start_system_audio_capture") {
+      return browserListen().start(emit, args && args.vadConfig).then(function () { return "started"; });
+    }
+    if (cmd === "stop_system_audio_capture") return browserListen().stop(emit).then(function () { return "stopped"; });
+    if (cmd === "start_screen_capture") {
+      if (!window.__browserCrop) return Promise.reject(new Error("area selection not loaded"));
+      window.__browserCrop.start(emit);
+      return Promise.resolve(null);
+    }
+    if (cmd === "manual_stop_continuous") return browserListen().manualStop(emit).then(function () { return null; });
+    if (cmd === "get_vad_config") {
+      return Promise.resolve({ enabled: true, hop_size: 1024, sensitivity_rms: 0.012, peak_threshold: 0.035, silence_chunks: 27,
+        min_speech_chunks: 7, pre_speech_chunks: 12, noise_gate_threshold: 0.003, max_recording_duration_secs: 180 });
     }
     if (cmd.indexOf("plugin:") === 0) return Promise.resolve(null);
     // everything else: no-op

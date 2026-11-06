@@ -106,6 +106,9 @@ pub fn run() {
             api::check_license_status,
             api::get_activity,
             claude_cli::claude_cli_response,
+            claude_cli::log_frontend,
+            claude_cli::claude_cli_stream,
+            claude_cli::extract_screen_question,
             claude_cli::claude_cli_status,
             claude_cli::debug_analyze_screen,
             speaker::start_system_audio_capture,
@@ -125,6 +128,10 @@ pub fn run() {
             window::setup_main_window(app).expect("Failed to setup main window");
             #[cfg(target_os = "macos")]
             init(app.app_handle());
+            #[cfg(target_os = "macos")]
+            {
+                eprintln!("[startup] screen recording allowed: {}", capture::screen_permission_preflight());
+            }
             let app_handle = app.handle();
             if app_handle.get_webview_window("dashboard").is_none() {
                 if let Err(e) = window::create_dashboard_window(&app_handle) {
@@ -242,10 +249,10 @@ fn init(app_handle: &AppHandle) {
         }
     }));
 
-    // Set the window to float level
+    // Overlay level: above other apps, including full-screen ones (status level).
     #[allow(non_upper_case_globals)]
-    const NSFloatWindowLevel: i32 = 4;
-    panel.set_level(NSFloatWindowLevel);
+    const NSStatusWindowLevel: i32 = 25;
+    panel.set_level(NSStatusWindowLevel);
 
     #[allow(non_upper_case_globals)]
     const NSWindowStyleMaskNonActivatingPanel: i32 = 1 << 7;
@@ -254,8 +261,16 @@ fn init(app_handle: &AppHandle) {
     #[allow(deprecated)]
     panel.set_collection_behaviour(
         NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary
-            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces,
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorStationary
+            | NSWindowCollectionBehavior::NSWindowCollectionBehaviorIgnoresCycle,
     );
+
+    // Stay visible when another app is active (NSPanel hides on deactivate by
+    // default), float like an overlay and work over modal dialogs.
+    panel.set_hides_on_deactivate(false);
+    panel.set_floating_panel(true);
+    panel.set_works_when_modal(true);
 
     panel.set_delegate(delegate);
 }

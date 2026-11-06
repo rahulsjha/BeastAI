@@ -8,14 +8,10 @@ export const Screenshot = ({
   screenshotConfiguration,
   attachedFiles,
   isLoading,
-  captureScreenshot,
+  captureAndSend,
   isScreenshotLoading,
 }: UseCompletionReturn) => {
   const { supportsImages } = useApp();
-  const captureMode = screenshotConfiguration.enabled
-    ? "Screenshot"
-    : "Selection";
-  const processingMode = screenshotConfiguration.mode;
 
   const isDisabled =
     attachedFiles.length >= MAX_FILES ||
@@ -30,9 +26,9 @@ export const Screenshot = ({
       title={
         !supportsImages
           ? "Screenshot not supported by current AI provider"
-          : `${captureMode} mode (${processingMode}) - ${attachedFiles.length}/${MAX_FILES} files`
+          : "Screenshot: select an area — it's sent and answered right away (⌘↵). ⌘⇧S only attaches it."
       }
-      onClick={captureScreenshot}
+      onClick={captureAndSend}
       disabled={isDisabled}
     >
       {isScreenshotLoading ? (

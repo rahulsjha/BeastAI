@@ -4,7 +4,7 @@ import {
   SPEECH_TO_TEXT_PROVIDERS,
   STORAGE_KEYS,
 } from "@/config";
-import { MODES, DEFAULT_MODE, type ModeKey } from "@/config/modes";
+import { DEFAULT_MODE, getModeDef, type ModeKey } from "@/config/modes";
 import { getPlatform, safeLocalStorage, trackAppStart } from "@/lib";
 import { getShortcutsConfig } from "@/lib/storage";
 import {
@@ -563,7 +563,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Apply an interview mode: configures the AI model, voice provider, and system
   // prompt in one step, and persists them — so the user never touches Dev Space.
   const applyMode = (mode: ModeKey) => {
-    const def = MODES[mode];
+    const def = getModeDef(mode);
     if (!def) return;
 
     setCurrentMode(mode);

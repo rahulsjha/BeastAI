@@ -18,8 +18,9 @@ export interface CustomizableState {
 }
 
 export const DEFAULT_CUSTOMIZABLE_STATE: CustomizableState = {
-  appIcon: { isVisible: true },
-  alwaysOnTop: { isEnabled: false },
+  // Overlay defaults: no Dock icon (needed to float over full-screen apps) and always on top.
+  appIcon: { isVisible: false },
+  alwaysOnTop: { isEnabled: true },
   autostart: { isEnabled: true },
   cursor: { type: "invisible" },
 };
@@ -35,6 +36,15 @@ export const getCustomizableState = (): CustomizableState => {
     }
 
     const parsedState = JSON.parse(stored);
+
+    // One-time move to the overlay defaults (older builds saved "not on top" +
+    // Dock icon, which put the bar behind other apps).
+    if (!localStorage.getItem("customizable_overlay_v2")) {
+      localStorage.setItem("customizable_overlay_v2", "1");
+      parsedState.alwaysOnTop = DEFAULT_CUSTOMIZABLE_STATE.alwaysOnTop;
+      parsedState.appIcon = DEFAULT_CUSTOMIZABLE_STATE.appIcon;
+      localStorage.setItem(STORAGE_KEYS.CUSTOMIZABLE, JSON.stringify(parsedState));
+    }
 
     return {
       appIcon: parsedState.appIcon || DEFAULT_CUSTOMIZABLE_STATE.appIcon,

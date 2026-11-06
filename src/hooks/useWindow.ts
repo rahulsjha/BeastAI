@@ -10,16 +10,31 @@ const isAnyPopoverOpen = (): boolean => {
   return popoverContents.length > 0;
 };
 
+// Height the window needs for the visible card (header + question bar + any
+// inline panel such as Live transcript or History). The window used to be a
+// fixed 54px when no popover was open, which cut off everything below the header.
+const MIN_HEIGHT = 54;
+const MAX_HEIGHT = 820;
+const POPOVER_HEIGHT = 600;
+const contentHeight = (): number => {
+  const card = document.getElementById("app-card");
+  if (!card) return MIN_HEIGHT;
+  return Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.ceil(card.getBoundingClientRect().height) + 6));
+};
+
+let lastHeight = -1;
+
 export const useWindowResize = () => {
   const resizeWindow = useCallback(async (expanded: boolean) => {
     try {
       const window = getCurrentWebviewWindow();
-
-      if (!expanded && isAnyPopoverOpen()) {
-        return;
-      }
-
-      const newHeight = expanded ? 600 : 54;
+      const popover = expanded || isAnyPopoverOpen();
+      // Popovers (answer panel etc.) need room below the card; otherwise fit the card.
+      const newHeight = popover
+        ? Math.min(MAX_HEIGHT, Math.max(POPOVER_HEIGHT, contentHeight()))
+        : contentHeight();
+      if (newHeight === lastHeight) return;
+      lastHeight = newHeight;
 
       await invoke("set_window_height", {
         window,
@@ -61,6 +76,16 @@ export const useWindowResize = () => {
       }
     });
 
+    // Re-fit whenever the card's own size changes (question bar, transcript,
+    // history, queue …), not only when popovers open or close.
+    const cardObserver = new ResizeObserver(() => resizeWindow(false));
+    const attachCard = () => {
+      const card = document.getElementById("app-card");
+      if (card) cardObserver.observe(card);
+      return !!card;
+    };
+    if (!attachCard()) setTimeout(attachCard, 500);
+
     // Observe the body for changes to detect popover open/close
     observer.observe(document.body, {
       childList: true,
@@ -76,6 +101,7 @@ export const useWindowResize = () => {
       document.removeEventListener("mousedown", handleMouseDown);
       document.removeEventListener("mouseup", handleMouseUp);
       observer.disconnect();
+      cardObserver.disconnect();
     };
   }, [resizeWindow]);
 

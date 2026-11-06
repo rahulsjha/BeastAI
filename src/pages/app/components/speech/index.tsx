@@ -1,3 +1,4 @@
+import { requestScreenPermissionOnce } from "@/lib/screen-permission-once";
 import { useState, useCallback, useEffect } from "react";
 import {
   Button,
@@ -35,6 +36,7 @@ export const SystemAudio = (props: useSystemAudioType) => {
     lastTranscription,
     lastAIResponse,
     error,
+    clearError,
     setupRequired,
     startCapture,
     stopCapture,
@@ -131,7 +133,7 @@ export const SystemAudio = (props: useSystemAudioType) => {
 
         const hasPermission = await checkScreenRecordingPermission();
         if (!hasPermission) {
-          await requestScreenRecordingPermission();
+          await requestScreenPermissionOnce(requestScreenRecordingPermission);
           setIsCapturingScreenshot(false);
           return;
         }
@@ -179,6 +181,8 @@ export const SystemAudio = (props: useSystemAudioType) => {
         if (capturing && !open) {
           return;
         }
+        // Closing after a failed start clears the message and resets the bar.
+        if (!open && !capturing) clearError?.();
         setIsPopoverOpen(open);
       }}
     >
@@ -196,7 +200,35 @@ export const SystemAudio = (props: useSystemAudioType) => {
         </Button>
       </PopoverTrigger>
 
-      {(capturing || setupRequired || error) && (
+      {/* Failed to start (e.g. browser version / no permission): just a small
+          message, not the full Listen panel. */}
+      {!capturing && !setupRequired && error && (
+        <PopoverContent
+          align="start"
+          side="bottom"
+          className="w-[360px] max-w-[calc(100vw-1rem)] p-0 border shadow-lg border-input/50"
+          sideOffset={8}
+        >
+          <div className="flex items-start gap-2 p-3">
+            <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+            <p className="flex-1 text-xs leading-snug">{error}</p>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 shrink-0"
+              onClick={() => {
+                clearError?.();
+                setIsPopoverOpen(false);
+              }}
+              title="Close"
+            >
+              <XIcon className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </PopoverContent>
+      )}
+
+      {(capturing || setupRequired) && (
         <PopoverContent
           align="end"
           side="bottom"

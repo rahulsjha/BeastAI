@@ -261,8 +261,51 @@ pub async fn capture_selected_area(
     Ok(base64_str)
 }
 
+#[cfg(target_os = "macos")]
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    fn CGPreflightScreenCaptureAccess() -> bool;
+    fn CGRequestScreenCaptureAccess() -> bool;
+}
+
+/// Without Screen Recording permission macOS still returns an image, but only
+/// the wallpaper (no app windows) — so check first and say what to do.
+#[cfg(target_os = "macos")]
+pub(crate) fn screen_permission_state() -> (bool, Result<(), String>) {
+    let preflight = unsafe { CGPreflightScreenCaptureAccess() };
+    // ScreenCaptureKit refuses to list displays without the permission, so it is
+    // a reliable second opinion (the preflight call can say "no" after a grant).
+    let sck = crate::speaker::sck::system_audio_available().map_err(|e| e.to_string());
+    (preflight, sck)
+}
+
+#[cfg(target_os = "macos")]
+static ASKED_SCREEN_PERMISSION: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Silent check (never shows a prompt) — used at startup for the log.
+#[cfg(target_os = "macos")]
+pub(crate) fn screen_permission_preflight() -> bool {
+    unsafe { CGPreflightScreenCaptureAccess() }
+}
+
+#[cfg(target_os = "macos")]
+fn ensure_screen_permission() -> Result<(), String> {
+    let (preflight, sck) = screen_permission_state();
+    eprintln!("[capture] permission preflight={preflight} screencapturekit={:?}", sck);
+    if preflight || sck.is_ok() {
+        return Ok(());
+    }
+    // Show the system prompt at most once per app session.
+    if !ASKED_SCREEN_PERMISSION.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        unsafe { CGRequestScreenCaptureAccess() };
+    }
+    Err("Screen Recording is off for Pluely. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Pluely.".to_string())
+}
+
 #[tauri::command]
 pub async fn capture_to_base64(window: tauri::WebviewWindow) -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    ensure_screen_permission()?;
     let monitor_fallback = window
         .current_monitor()
         .ok()

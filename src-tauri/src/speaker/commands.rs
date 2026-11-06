@@ -35,7 +35,7 @@ impl Default for VadConfig {
             hop_size: 1024,
             sensitivity_rms: 0.012, // Much less sensitive - only real speech
             peak_threshold: 0.035,  // Higher threshold - filters clicks/noise
-            silence_chunks: 45,     // ~1.0s of silence before stopping
+            silence_chunks: 27,     // ~0.6s of silence ends a phrase (fast answers)
             min_speech_chunks: 7,   // ~0.16s - captures short answers
             pre_speech_chunks: 12,  // ~0.27s - enough to catch word start
             noise_gate_threshold: 0.003, // Stronger noise filtering
@@ -80,7 +80,20 @@ pub async fn start_system_audio_capture(
     })?;
 
     let stream = input.stream();
-    let sr = stream.sample_rate();
+    // Wait for the capture thread to report its real sample rate. Reading it too
+    // early gave the 16 kHz placeholder while ScreenCaptureKit delivers 48 kHz,
+    // so every clip played 3x too slow and transcribed as gibberish.
+    let mut sr = stream.sample_rate();
+    for _ in 0..50 {
+        if sr != 0 {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        sr = stream.sample_rate();
+    }
+    if sr == 0 {
+        sr = 48_000;
+    }
 
     // Validate sample rate
     if !(8000..=96000).contains(&sr) {
@@ -503,6 +516,13 @@ pub async fn manual_stop_continuous(app: AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn check_system_audio_access(_app: AppHandle) -> Result<bool, String> {
+    // System audio is captured with ScreenCaptureKit: needs the
+    // "Screen & System Audio Recording" permission (no virtual device).
+    #[cfg(target_os = "macos")]
+    {
+        return Ok(super::sck::system_audio_available().is_ok());
+    }
+    #[allow(unreachable_code)]
     match SpeakerInput::new() {
         Ok(_) => Ok(true),
         Err(e) => {
@@ -518,7 +538,7 @@ pub async fn request_system_audio_access(app: AppHandle) -> Result<(), String> {
     {
         app.shell()
             .command("open")
-            .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"])
+            .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"])
             .spawn()
             .map_err(|e| {
                 error!("Failed to open system preferences: {}", e);
@@ -604,7 +624,7 @@ pub fn get_audio_sample_rate(_app: AppHandle) -> Result<u32, String> {
     })?;
 
     let stream = input.stream();
-    let sr = stream.sample_rate();
+    let sr = match stream.sample_rate() { 0 => 48_000, r => r };
 
     Ok(sr)
 }

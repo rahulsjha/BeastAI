@@ -19,7 +19,7 @@ type ThemeProviderState = {
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
-  transparency: 10,
+  transparency: 50,
   onSetTransparency: () => null,
 };
 
@@ -35,8 +35,15 @@ export function ThemeProvider({
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
   const [transparency, setTransparency] = useState<number>(() => {
+    // Glass default: 50% see-through. Older builds saved 10 (almost solid) —
+    // move to the new default once; the Dev Space slider still changes it.
+    if (!localStorage.getItem("transparency_glass_v1")) {
+      localStorage.setItem("transparency_glass_v1", "1");
+      const old = localStorage.getItem(STORAGE_KEYS.TRANSPARENCY);
+      if (!old || old === "10") localStorage.setItem(STORAGE_KEYS.TRANSPARENCY, "50");
+    }
     const stored = localStorage.getItem(STORAGE_KEYS.TRANSPARENCY);
-    return stored ? parseInt(stored, 10) : 10;
+    return stored ? parseInt(stored, 10) : 50;
   });
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -99,7 +106,7 @@ export function ThemeProvider({
 
     // Apply backdrop filter when transparency is active
     if (transparency > 0) {
-      root.style.setProperty("--backdrop-blur", "blur(12px)");
+      root.style.setProperty("--backdrop-blur", "blur(24px) saturate(150%)");
     } else {
       root.style.setProperty("--backdrop-blur", "none");
     }
