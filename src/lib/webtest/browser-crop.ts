@@ -72,8 +72,13 @@ export async function start(emit: Emit) {
   };
   window.addEventListener("keydown", onKey, true);
   // Esc in full screen is taken by the browser (it leaves full screen): treat that as cancel.
+  // Only a real exit counts: the first switch into full screen can fire a
+  // change event before the page is actually full screen.
+  // An exit within the first second is the system bouncing us out (e.g. the
+  // window isn't frontmost): keep picking inside the page instead of cancelling.
+  const shownAt = Date.now();
   const onFsChange = () => {
-    if (!document.fullscreenElement) finish();
+    if (!document.fullscreenElement && Date.now() - shownAt > 1000) finish();
   };
   document.addEventListener("fullscreenchange", onFsChange);
 

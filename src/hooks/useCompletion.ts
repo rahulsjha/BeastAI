@@ -4,6 +4,7 @@ import { useGlobalShortcuts } from "@/hooks";
 import { MAX_FILES } from "@/config";
 import { useApp } from "@/contexts";
 import { getModeDef, type ModeKey } from "@/config/modes";
+import { downscalePng } from "@/lib/image-resize";
 import { addQA } from "@/lib/storage/qa-history";
 import {
   fetchAIResponse,
@@ -647,7 +648,8 @@ export const useCompletion = () => {
   };
 
   const handleScreenshotSubmit = useCallback(
-    async (base64: string, prompt?: string) => {
+    async (rawBase64: string, prompt?: string) => {
+      const base64 = await downscalePng(rawBase64);
       if (state.attachedFiles.length >= MAX_FILES) {
         setState((prev) => ({
           ...prev,

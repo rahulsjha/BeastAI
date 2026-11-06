@@ -31,7 +31,7 @@ const tray = () => ev(`return __tray()`);
 const answer = async (ms = 150000) => { const t0 = Date.now(); let last = "", st = Date.now();
   while (Date.now() - t0 < ms) { await sleep(400); const a = await ev(`return window.__T.answer()`); if (a !== last) { last = a; st = Date.now(); }
     if (a && !/Generating response/.test(a) && a.split("Asked:")[1]?.trim().length > 60 && Date.now() - st > 3000) break; }
-  return { secs: +((Date.now() - t0) / 1000).toFixed(1), text: (last.split("Asked:")[1] || "").replace(/\s+/g, " ").trim().slice(0, 220) }; };
+  return { secs: +((Date.now() - t0) / 1000).toFixed(1), text: (last.split("Asked:")[1] || "").replace(/\s+/g, " ").trim().slice(0, 2000) }; };
 const R = {}; const ok = (name, pass, detail) => { R[name] = { pass, detail }; log(`${pass ? "✅" : "❌"} ${name} — ${JSON.stringify(detail).slice(0, 300)}`); };
 const reset = async () => { await ev(`await __T.newChat(); document.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true})); return 1`); await sleep(600); };
 

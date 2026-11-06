@@ -168,8 +168,8 @@ export const setConceptStyle = (style: ConceptStyle) => {
 };
 
 const SHORT_CONCEPT_PROMPT =
-  "You answer concept questions in a live interview. Reply with ONLY a plain definition in at most 3 short lines " +
-  "(about 50 words). No headings, no lists, no code, no diagrams, no examples, no preamble. " +
+  "You answer concept questions in a live interview. Reply with ONLY a plain definition: at most 3 short sentences " +
+  "and at most 50 words in total (also when the question comes from a screenshot). No headings, no lists, no code, no diagrams, no examples, no preamble. " +
   "Reply in the same language as the question. If the question is unclear, give the most likely meaning's definition. " +
   NOT_USEFUL_RULE;
 
