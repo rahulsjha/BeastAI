@@ -80,7 +80,20 @@ pub async fn start_system_audio_capture(
     })?;
 
     let stream = input.stream();
-    let sr = stream.sample_rate();
+    // Wait for the capture thread to report its real sample rate. Reading it too
+    // early gave the 16 kHz placeholder while ScreenCaptureKit delivers 48 kHz,
+    // so every clip played 3x too slow and transcribed as gibberish.
+    let mut sr = stream.sample_rate();
+    for _ in 0..50 {
+        if sr != 0 {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        sr = stream.sample_rate();
+    }
+    if sr == 0 {
+        sr = 48_000;
+    }
 
     // Validate sample rate
     if !(8000..=96000).contains(&sr) {
@@ -611,7 +624,7 @@ pub fn get_audio_sample_rate(_app: AppHandle) -> Result<u32, String> {
     })?;
 
     let stream = input.stream();
-    let sr = stream.sample_rate();
+    let sr = match stream.sample_rate() { 0 => 48_000, r => r };
 
     Ok(sr)
 }

@@ -44,14 +44,15 @@ async function emitClip(emit: Emit, samples: Float32Array) {
   emit("speech-detected", await blobToBase64(floatArrayToWav(samples, 16000, "wav")));
 }
 
-export async function start(emit: Emit, vadConfig: VadConfig) {
+export async function start(emit: Emit, vadConfig: VadConfig, opts: { echoCancellation?: boolean } = {}) {
   await stop(emit, { silent: true });
   try {
-    // System default mic; echo cancellation off to keep the speakers' meeting audio.
-    stream = await getDefaultMic({ echoCancellation: false, noiseSuppression: true, autoGainControl: true });
+    // System default mic. Echo cancellation off (default) keeps the meeting audio
+    // coming from the speakers; on = only your own voice.
+    stream = await getDefaultMic({ echoCancellation: !!opts.echoCancellation, noiseSuppression: true, autoGainControl: true });
   } catch (e) {
     throw new Error(
-      "Microphone access is needed for Listen in the browser: " + (e instanceof Error ? e.message : String(e))
+      "Microphone access is needed for Listen: " + (e instanceof Error ? e.message : String(e))
     );
   }
   emit("capture-started", 16000);

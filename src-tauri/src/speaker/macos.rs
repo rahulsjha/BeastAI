@@ -88,7 +88,8 @@ impl SpeakerInput {
         let rb = HeapRb::<f32>::new(16000 * 8); // ~8s at 16kHz, grows as needed
         let (producer, consumer) = rb.split();
         let waker_state = Arc::new(Mutex::new(WakerState { waker: None }));
-        let current_sample_rate = Arc::new(AtomicU32::new(16000));
+        // 0 until the capture thread reports the real rate (ScreenCaptureKit: 48 kHz).
+        let current_sample_rate = Arc::new(AtomicU32::new(0));
         let stop = Arc::new(AtomicBool::new(false));
 
         let want = self.device_id.clone();

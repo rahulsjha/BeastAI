@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useWindowResize, useGlobalShortcuts } from ".";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import * as listenEngine from "@/lib/listen-engine";
 import { useApp } from "@/contexts";
 import { fetchSTT, fetchAIResponse } from "@/lib/functions";
 import { LISTEN_FAST_PROVIDER } from "@/config/modes";
@@ -274,6 +275,7 @@ export function useSystemAudio() {
                 timeoutPromise,
               ]);
 
+              void invoke("log_frontend", { message: `[listen] heard: ${transcription.trim().slice(0, 160) || "(nothing)"}` }).catch(() => undefined);
               if (transcription.trim()) {
                 setLastTranscription(transcription);
                 setError("");
@@ -296,6 +298,7 @@ export function useSystemAudio() {
               }
             } catch (sttError: any) {
               console.error("STT Error:", sttError);
+              void invoke("log_frontend", { message: `[listen] transcription failed: ${sttError?.message || sttError}` }).catch(() => undefined);
               setError(sttError.message || "Failed to transcribe audio");
               setIsPopoverOpen(true);
             }
@@ -441,7 +444,7 @@ export function useSystemAudio() {
           : null;
 
       // Start a new continuous recording session
-      await invoke<string>("start_system_audio_capture", {
+      await listenEngine.start({
         vadConfig: vadConfig,
         deviceId: deviceId,
       });
@@ -457,7 +460,7 @@ export function useSystemAudio() {
       if (!isContinuousMode || !isRecordingInContinuousMode) return;
 
       // Stop the capture without processing
-      await invoke<string>("stop_system_audio_capture");
+      await listenEngine.stop();
 
       // Reset states
       setRecordingProgress(0);
@@ -561,12 +564,10 @@ export function useSystemAudio() {
     try {
       setError("");
 
-      const hasAccess = await invoke<boolean>("check_system_audio_access");
-      if (!hasAccess) {
-        setSetupRequired(true);
-        setIsPopoverOpen(true);
-        return;
-      }
+      const hasAccess = await invoke<boolean>("check_system_audio_access").catch(() => false);
+      void invoke("log_frontend", { message: `[listen] start requested (computer-audio access: ${hasAccess})` }).catch(() => undefined);
+      // No computer-audio permission is not a stop: the Listen engine then
+      // listens through the microphone (your words + speakers).
 
       const isContinuous = !vadConfig.enabled;
 
@@ -593,7 +594,7 @@ export function useSystemAudio() {
 
       // VAD mode: Start recording immediately
       // Stop any existing capture
-      await invoke<string>("stop_system_audio_capture");
+      await listenEngine.stop();
 
       const deviceId =
         selectedAudioDevices.output.id !== "default"
@@ -601,7 +602,7 @@ export function useSystemAudio() {
           : null;
 
       // Start capture with VAD config
-      await invoke<string>("start_system_audio_capture", {
+      await listenEngine.start({
         vadConfig: vadConfig,
         deviceId: deviceId,
       });
@@ -626,7 +627,7 @@ export function useSystemAudio() {
       }
 
       // Stop the audio capture
-      await invoke<string>("stop_system_audio_capture");
+      await listenEngine.stop();
 
       // Reset ALL states
       setCapturing(false);
@@ -658,7 +659,7 @@ export function useSystemAudio() {
       setIsProcessing(true);
 
       // Trigger manual stop event
-      await invoke("manual_stop_continuous");
+      await listenEngine.manualStop();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(`Failed to manually stop: ${errorMessage}`);
@@ -716,6 +717,7 @@ export function useSystemAudio() {
   capturingRef.current = capturing;
   useEffect(() => {
     globalShortcuts.registerSystemAudioCallback(async () => {
+      void invoke("log_frontend", { message: `[listen] ⌘⇧M pressed (listening now: ${capturingRef.current})` }).catch(() => undefined);
       if (capturingRef.current) {
         await stopCapture();
       } else {
@@ -729,7 +731,7 @@ export function useSystemAudio() {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      invoke("stop_system_audio_capture").catch(() => {});
+      listenEngine.stop().catch(() => {});
     };
   }, []);
 
@@ -820,10 +822,10 @@ export function useSystemAudio() {
     if (!changed) return;
     (async () => {
       try {
-        await invoke<string>("stop_system_audio_capture");
+        await listenEngine.stop();
         if (vadConfig.enabled) {
           const deviceId = selectedAudioDevices.output.id !== "default" ? selectedAudioDevices.output.id : null;
-          await invoke<string>("start_system_audio_capture", { vadConfig, deviceId });
+          await listenEngine.start({ vadConfig, deviceId });
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
