@@ -76,13 +76,19 @@ fn base_command(bin: &str) -> Command {
 /// Answer-only mode: deny action tools so the model replies in text instead of
 /// trying to write or run files (which in print mode gets denied and left the
 /// answer with empty code blocks).
-const DENIED_TOOLS: &str = "Bash Write Edit NotebookEdit WebFetch WebSearch Task Agent";
 const ANSWER_ONLY_PROMPT: &str = "You are answering inside a live-interview overlay. Never write files or run code or commands. Do read any files or images referenced with @ (they are the user's screenshots and documents) and use them. Write the full answer, including complete code, directly in your reply.";
 
 fn answer_only(cmd: &mut Command) {
-    cmd.arg("--disallowedTools")
-        .arg(DENIED_TOOLS)
-        .arg("--append-system-prompt")
+    // Lean start: no tools (images passed as @files are still read), no MCP
+    // servers, no user/project settings or hooks, and a short system prompt
+    // instead of the large default one. Same model and effort; first words
+    // arrive ~3-4s sooner (measured: 9.1s -> 4.8s for an Opus debug screenshot).
+    cmd.arg("--tools")
+        .arg("")
+        .arg("--strict-mcp-config")
+        .arg("--setting-sources")
+        .arg("")
+        .arg("--system-prompt")
         .arg(ANSWER_ONLY_PROMPT);
 }
 

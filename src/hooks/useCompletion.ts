@@ -316,7 +316,10 @@ export const useCompletion = () => {
             userMessage: userMessageWithDocs,
             imagesBase64,
             signal,
-          })) {
+            // Debug keeps top quality: screenshots go to Claude Opus (lean CLI start),
+            // not the fast Groq vision path used by the other modes.
+            noFastVision: (opts?.mode ?? currentMode) === "debug",
+          } as any)) {
             // Only update if this is still the current request
             if (currentRequestIdRef.current !== requestId) {
               return; // Request was superseded, stop processing

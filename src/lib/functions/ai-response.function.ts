@@ -363,6 +363,72 @@ export async function* fetchAIResponse(params: {
     // If reading fails before any answer text, fall back to Claude below.
     const visionProvider = AI_PROVIDERS.find((p) => p.id === FAST_VISION_PROVIDER.provider);
     const textProvider = AI_PROVIDERS.find((p) => p.id === LISTEN_FAST_PROVIDER.provider);
+    const readScreen = async (): Promise<string> => {
+      let out = "";
+      for await (const c of fetchAIResponse({
+        ...params,
+        systemPrompt: SCREEN_READ_PROMPT,
+        userMessage:
+          imagesBase64.length > 1
+            ? `Transcribe each of the ${imagesBase64.length} screenshots, under "Screenshot 1:", "Screenshot 2:" …`
+            : "Transcribe the screenshot.",
+        history: [],
+        provider: visionProvider as any,
+        selectedProvider: FAST_VISION_PROVIDER as any,
+        noFastVision: true,
+      } as any)) {
+        out += c;
+      }
+      return out.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    };
+
+    // Debug (top quality): Claude Opus answers screenshots. The fast reader runs
+    // alongside it; if the screen has nothing relevant (two reads agree), Opus is
+    // stopped and the one-line "Not useful" shows. No extra wait otherwise.
+    const onlyDefault = /^(Answer using the attached screenshots and documents\.|Debug this using the attached evidence\.)/.test(
+      (userMessage || "").trim()
+    );
+    if (
+      imagesBase64.length > 0 &&
+      (params as any).noFastVision &&
+      !(params as any).noNoneCheck &&
+      selectedProvider?.provider === CLAUDE_CLI_PROVIDER_ID &&
+      visionProvider &&
+      FAST_VISION_PROVIDER.variables.api_key &&
+      onlyDefault &&
+      !/\[Attached document/i.test(userMessage)
+    ) {
+      const ctrl = new AbortController();
+      signal?.addEventListener("abort", () => ctrl.abort());
+      const opus = (fetchClaudeCliResponse as any)({
+        systemPrompt: enhancedSystemPrompt,
+        userMessage,
+        history,
+        model: selectedProvider.variables?.model || selectedProvider.variables?.MODEL,
+        signal: ctrl.signal,
+        imagesBase64,
+      }) as AsyncGenerator<string>;
+      const firstChunk = opus.next(); // starts Opus right away
+      firstChunk.catch(() => undefined);
+      const isNone = await (async () => {
+        try {
+          const t = await readScreen();
+          if (!/^NONE\b/.test(t)) return false;
+          return /^NONE\b/.test(await readScreen());
+        } catch {
+          return false;
+        }
+      })();
+      if (isNone) {
+        ctrl.abort();
+        yield NOT_USEFUL_LINE;
+        return;
+      }
+      const first = await firstChunk;
+      if (!first.done && first.value) yield first.value;
+      if (!first.done) yield* opus;
+      return;
+    }
     if (
       imagesBase64.length > 0 &&
       !(params as any).noFastVision &&
@@ -372,24 +438,6 @@ export async function* fetchAIResponse(params: {
       imagesBase64.length <= 5 &&
       imagesBase64.every((b) => b.length < 3_800_000)
     ) {
-      const readScreen = async (): Promise<string> => {
-        let out = "";
-        for await (const c of fetchAIResponse({
-          ...params,
-          systemPrompt: SCREEN_READ_PROMPT,
-          userMessage:
-            imagesBase64.length > 1
-              ? `Transcribe each of the ${imagesBase64.length} screenshots, under "Screenshot 1:", "Screenshot 2:" …`
-              : "Transcribe the screenshot.",
-          history: [],
-          provider: visionProvider as any,
-          selectedProvider: FAST_VISION_PROVIDER as any,
-          noFastVision: true,
-        } as any)) {
-          out += c;
-        }
-        return out.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-      };
       let screenText = "";
       try {
         screenText = await readScreen();
