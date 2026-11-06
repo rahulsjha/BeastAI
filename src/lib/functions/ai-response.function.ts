@@ -180,10 +180,14 @@ export const CLAUDE_CLI_PROVIDER_ID = "claude-cli";
 // starts (empty history) so context does not leak between chats.
 let claudeCliSessionId: string | null = null;
 let claudeCliTurns = 0;
+// How many history messages the CLI session has already seen (turns answered by
+// Groq — screenshots, Concept — are not in the session and get replayed).
+let claudeCliSeen = 0;
 
 export function resetClaudeCliSession(): void {
   claudeCliSessionId = null;
   claudeCliTurns = 0;
+  claudeCliSeen = 0;
 }
 
 // Claude CLI streaming function. The CLI returns the whole answer at once
@@ -214,14 +218,23 @@ async function* fetchClaudeCliResponse(params: {
       globalThis.crypto?.randomUUID?.() ??
       `pluely-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     claudeCliTurns = 0;
+    claudeCliSeen = 0;
   }
 
   const resume = claudeCliTurns > 0;
+  const missed = history.slice(claudeCliSeen);
+  const catchUp = missed.length
+    ? "Earlier in this conversation:\n\n" +
+      missed
+        .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${String(m.content).slice(0, 6000)}`)
+        .join("\n\n") +
+      "\n\nNow the user asks:\n"
+    : "";
   // Include the system prompt only when opening the session; on resume the
   // session already holds it, which keeps each follow-up small and fast.
   const prompt = resume
-    ? userMessage
-    : [systemPrompt?.trim(), userMessage].filter(Boolean).join("\n\n");
+    ? catchUp + userMessage
+    : [systemPrompt?.trim(), catchUp + userMessage].filter(Boolean).join("\n\n");
 
   // Stream the answer: text pieces arrive as they're generated.
   const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -318,6 +331,7 @@ async function* fetchClaudeCliResponse(params: {
       yield `Claude CLI error: ${failure}`;
     } else {
       claudeCliTurns += 1;
+      claudeCliSeen = history.length + 2;
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

@@ -135,6 +135,8 @@ export interface UseCompletionReturn {
   captureScreenshot: () => Promise<void>;
   /** Capture an area, then send it at once (with anything typed) and show the answer. */
   captureAndSend: () => Promise<void>;
+  /** Add the whole screen to the tray without sending. */
+  captureFullScreen: () => Promise<void>;
   /** Whether a screenshot is currently loading */
   isScreenshotLoading: boolean;
 }

@@ -1115,6 +1115,22 @@ export const useCompletion = () => {
   // 💻 / ⌘↵: grab the whole screen at once (no selection step), attach it and
   // send it with anything typed; the answer shows the screenshot that was sent.
   const screenshotSubmitRef = useRef<(b64: string) => Promise<void>>(async () => {});
+  // "+ Screen": add the whole screen to the tray without sending (for questions
+  // spread over several screens; send them all together afterwards).
+  const captureFullScreen = useCallback(async () => {
+    setIsScreenshotLoading(true);
+    try {
+      const base64 = await invoke<string>("capture_to_base64");
+      await screenshotSubmitRef.current(base64);
+    } catch (e) {
+      setState((prev) => ({
+        ...prev,
+        error: `Screenshot failed: ${e instanceof Error ? e.message : String(e)}. Allow Screen & System Audio Recording for Pluely.`,
+      }));
+    } finally {
+      setIsScreenshotLoading(false);
+    }
+  }, []);
   const captureAndSend = useCallback(async () => {
     setIsScreenshotLoading(true);
     try {
@@ -1225,6 +1241,7 @@ export const useCompletion = () => {
     inputRef,
     captureScreenshot,
     captureAndSend,
+    captureFullScreen,
     isScreenshotLoading,
     keepEngaged,
     setKeepEngaged,

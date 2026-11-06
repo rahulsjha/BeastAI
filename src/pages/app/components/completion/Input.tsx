@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Loader2, XIcon } from "lucide-react";
 import {
   Popover,
@@ -39,7 +40,19 @@ export const Input = ({
   isHidden,
   keepEngaged,
   setKeepEngaged,
+  submit,
+  attachedFiles,
+  captureFullScreen,
+  captureScreenshot,
+  isScreenshotLoading,
 }: UseCompletionReturn & { isHidden: boolean }) => {
+  const [followUp, setFollowUp] = useState("");
+  const sendFollowUp = () => {
+    const t = followUp.trim();
+    if (isLoading || (!t && !attachedFiles.length)) return;
+    setFollowUp("");
+    void submit(t || undefined);
+  };
   // Auto-grow the textarea with its content (and shrink back when cleared).
   return (
     <div className="relative flex-1">
@@ -164,7 +177,7 @@ export const Input = ({
             </div>
           </div>
 
-          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-7rem)]">
+          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-16.5rem)] min-h-[180px]">
             <div className="p-4">
               {error && (
                 <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
@@ -242,6 +255,32 @@ export const Input = ({
               )}
             </div>
           </ScrollArea>
+          {/* Follow-up in the same conversation: text and/or more screenshots */}
+          <div className="border-t border-input/50 p-2 flex items-center gap-1.5">
+            <input
+              value={followUp}
+              onChange={(e) => setFollowUp(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  sendFollowUp();
+                }
+              }}
+              placeholder={attachedFiles.length ? `Follow-up about the ${attachedFiles.length} attached…` : "Ask a follow-up in this conversation…"}
+              className="h-8 min-w-0 flex-1 rounded-md border border-input/50 bg-background/40 px-2 text-xs outline-none focus:border-ring/60"
+              aria-label="Follow-up question"
+            />
+            <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" disabled={isScreenshotLoading} onClick={() => void captureFullScreen()} title="Add the whole screen to this follow-up">
+              + Screen
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" disabled={isScreenshotLoading} onClick={() => void captureScreenshot()} title="Add an area to this follow-up (⌘⇧S)">
+              + Area
+            </Button>
+            <Button size="sm" className="h-8 px-3 text-[10px]" disabled={isLoading || (!followUp.trim() && !attachedFiles.length)} onClick={sendFollowUp}>
+              Send{attachedFiles.length ? ` (${attachedFiles.length})` : ""}
+            </Button>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

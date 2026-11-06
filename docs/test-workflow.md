@@ -172,3 +172,13 @@ Script: `scripts/demo/screenshot-shortcut-test.mjs` (bridge started without `PLU
 | ⌘↵ on a screen with no question → "Not useful" | ✅ |
 | ⌘⇧I focus bar · ⌘⇧A mic on/off · ⌘⇧M Listen on/off | ✅ (⌘⇧M "off" was broken — stale state — fixed) |
 | ⌘\\ hide · ⌘⇧D dashboard · ⌘+arrows move | desktop app only — test after the rebuild |
+
+## Several screenshots, follow-ups, Debug on Opus — `scripts/demo/followup-test.mjs`, `scripts/demo/debug-quality-test.mjs`
+
+| Case | Result |
+|---|---|
+| F1 ⌘⇧S + "+ Screen" → "Send 2" (LeetCode + buggy code) | ✅ both answered (first words 3.7s) |
+| F2 text follow-up in the answer box ("complexity of both") | ✅ same conversation (thread 2 → 4) — fixed: Opus now gets the earlier Groq-answered turns |
+| F3 follow-up with a new screenshot (MCQ) from the answer box | ✅ "A) Operation code" (1.6s) |
+| F4 Debug screenshot (Opus) → follow-up "full fixed file with defaultdict" | ✅ Opus keeps context |
+| Debug KeyError screenshot / buggy code / screenshot + trace / blank | ✅ first words 2.0–2.8s / 5.2s / 9.3s / 1.2s ("Not useful") |

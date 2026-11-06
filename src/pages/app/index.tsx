@@ -187,6 +187,10 @@ const App = () => {
               onRemove={completion.removeFile}
               onClear={completion.clearFiles}
               onNote={completion.setFileNote}
+              onAddScreen={completion.captureFullScreen}
+              onAddArea={completion.captureScreenshot}
+              onSend={() => void completion.submit()}
+              busy={completion.isLoading || completion.isScreenshotLoading}
             />
           )}
 

@@ -25,11 +25,21 @@ export function AttachmentTray({
   onRemove,
   onClear,
   onNote,
+  onAddScreen,
+  onAddArea,
+  onSend,
+  busy,
 }: {
   files: Attached[];
   onRemove: (id: string) => void;
   onClear: () => void;
   onNote?: (id: string, note: string) => void;
+  /** Add the whole screen / an area to the tray (no send). */
+  onAddScreen?: () => void;
+  onAddArea?: () => void;
+  /** Send everything in the tray now (with anything typed). */
+  onSend?: () => void;
+  busy?: boolean;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -115,9 +125,24 @@ export function AttachmentTray({
             </div>
           );
         })}
+        {onAddScreen && (
+          <Button size="sm" variant="outline" className="h-6 shrink-0 px-2 text-[10px]" disabled={busy} onClick={onAddScreen} title="Add the whole screen (not sent yet)">
+            + Screen
+          </Button>
+        )}
+        {onAddArea && (
+          <Button size="sm" variant="outline" className="h-6 shrink-0 px-2 text-[10px]" disabled={busy} onClick={onAddArea} title="Add an area (⌘⇧S)">
+            + Area
+          </Button>
+        )}
         {files.length > 1 && (
           <Button size="sm" variant="ghost" className="h-6 shrink-0 px-2 text-[10px]" onClick={onClear}>
             Clear all
+          </Button>
+        )}
+        {onSend && (
+          <Button size="sm" className="h-6 shrink-0 px-2 text-[10px]" disabled={busy} onClick={onSend} title="Send all of these together (Enter)">
+            Send {files.length}
           </Button>
         )}
       </div>

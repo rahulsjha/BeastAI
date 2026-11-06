@@ -71,6 +71,12 @@ Click **Solve screen** (next to the question bar, in Design / Code / Concept). I
 - If a screenshot has no question or nothing interview-relevant, the reply is one line: **"⚠️ Not useful … attach one that shows the question, code or error."**
 - **✎ Note per file** (every mode): add a message about one attachment — e.g. "this is the question my interviewer pasted", "ignore this one", "use my resume for the behavioral answer". The note is sent together with that file.
 
+## Several screenshots & follow-ups
+
+- **One question over several screens** (long problem, scroll + capture): ⌘⇧S (drag, or double-click = whole screen) adds the first; then the tray shows **+ Screen** (whole screen), **+ Area** (drag) and **Send N** — all are sent together and each screen is read.
+- **Follow-up box** at the bottom of every answer: type a follow-up and/or add **+ Screen / + Area**, then **Send**. It continues the same conversation (the thread badge counts up); earlier turns are remembered even when they were answered by a different model.
+- Debug screenshots are answered by **Claude Opus** (top quality; first words ~2–3s for a simple screen, ~5–9s for complex ones). Blank/irrelevant screens get "Not useful" in ~1s.
+
 ## Asking questions
 
 - **Type** in the question bar: `Enter` sends, `Shift+Enter` adds a line. The bar keeps one fixed height; long text scrolls inside it.
