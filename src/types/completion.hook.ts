@@ -6,6 +6,7 @@ import {
   ChangeEvent,
   ClipboardEvent,
 } from "react";
+import type { ChatMessage } from "./completion";
 // import {
 //   AttachedFile,
 //   ChatMessage,
@@ -81,11 +82,17 @@ export interface UseCompletionReturn {
   /** ID of the currently active conversation, null for new conversation */
   currentConversationId: string | null;
   /** Array of messages in the current conversation */
-  conversationHistory: any[];
+  conversationHistory: ChatMessage[];
   /** Function to load an existing conversation */
   loadConversation: (conversation: any) => void;
   /** Function to start a new conversation (clears current state) */
   startNewConversation: () => void;
+  /** Reopen an earlier conversation to add more text or screenshots to it. */
+  continueConversation: (
+    id: string | undefined,
+    fallback?: { question: string; answer: string; at: number }
+  ) => Promise<boolean>;
+  closeThread: () => void;
 
   // UI state management
   /** Whether the message history modal/panel is open */

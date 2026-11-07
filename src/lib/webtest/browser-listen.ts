@@ -70,6 +70,7 @@ export async function start(emit: Emit, vadConfig: VadConfig, opts: { echoCancel
     } as any);
     vad.start();
     void resumeAllAudio();
+    (window as any).__listenVad = vad; // test hook (browser test build only)
     return;
   }
 

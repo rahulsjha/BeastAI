@@ -7,6 +7,7 @@ import { useApp } from "@/contexts";
 import { getModeDef, type ModeKey } from "@/config/modes";
 import { downscalePng } from "@/lib/image-resize";
 import { addQA } from "@/lib/storage/qa-history";
+import { attachmentsForHistory, cacheConversation, getCachedConversation } from "@/lib/conversation-cache";
 import {
   fetchAIResponse,
   saveConversation,
@@ -51,6 +52,7 @@ interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: number;
+  attachedFiles?: AttachedFile[];
 }
 
 interface ChatConversation {
@@ -113,6 +115,8 @@ export const useCompletion = () => {
   const [isFilesPopoverOpen, setIsFilesPopoverOpen] = useState(false);
   const [isScreenshotLoading, setIsScreenshotLoading] = useState(false);
   const [keepEngaged, setKeepEngaged] = useState(false);
+  // An earlier conversation reopened from History: show its thread until closed.
+  const [threadOpen, setThreadOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isProcessingScreenshotRef = useRef(false);
   const screenshotConfigRef = useRef(screenshotConfiguration);
@@ -363,8 +367,14 @@ export const useCompletion = () => {
 
         // Save the conversation after successful completion
         if (fullResponse) {
+          const conversationId = await saveCurrentConversation(
+            input,
+            fullResponse,
+            state.attachedFiles
+          );
           if (!/^\s*Claude CLI error:/.test(fullResponse)) {
             addQA({
+              conversationId,
               question: input,
               answer: fullResponse,
               mode: opts?.mode ?? currentMode,
@@ -374,11 +384,7 @@ export const useCompletion = () => {
               hadDocs: state.attachedFiles.some((f) => !f.type.startsWith("image/")),
             });
           }
-          await saveCurrentConversation(
-            input,
-            fullResponse,
-            state.attachedFiles
-          );
+
           // Clear input and attached files after saving
           setState((prev) => ({
             ...prev,
@@ -422,6 +428,7 @@ export const useCompletion = () => {
       return;
     }
     cancel();
+    setThreadOpen(false);
     setState((prev) => ({
       ...prev,
       input: "",
@@ -460,6 +467,7 @@ export const useCompletion = () => {
   }, []);
 
   const startNewConversation = useCallback(() => {
+    setThreadOpen(false);
     setState((prev) => ({
       ...prev,
       currentConversationId: null,
@@ -476,8 +484,8 @@ export const useCompletion = () => {
     async (
       userMessage: string,
       assistantResponse: string,
-      _attachedFiles: AttachedFile[]
-    ) => {
+      attachedFiles: AttachedFile[]
+    ): Promise<string | undefined> => {
       // Validate inputs
       if (!userMessage || !assistantResponse) {
         console.error("Cannot save conversation: missing message content");
@@ -493,6 +501,8 @@ export const useCompletion = () => {
         role: "user",
         content: userMessage,
         timestamp,
+        // Small thumbnails of the screenshots (and document names) sent with it.
+        attachedFiles: await attachmentsForHistory(attachedFiles),
       };
 
       const assistantMsg: ChatMessage = {
@@ -530,6 +540,7 @@ export const useCompletion = () => {
         updatedAt: timestamp,
       };
 
+      cacheConversation(conversation);
       try {
         await saveConversation(conversation);
 
@@ -538,13 +549,16 @@ export const useCompletion = () => {
           currentConversationId: conversationId,
           conversationHistory: newMessages,
         }));
+        return conversationId;
       } catch (error) {
+        // The local copy is saved; keep the thread going so follow-ups have context.
         console.error("Failed to save conversation:", error);
-        // Show error to user
         setState((prev) => ({
           ...prev,
-          error: "Failed to save conversation. Please try again.",
+          currentConversationId: conversationId,
+          conversationHistory: newMessages,
         }));
+        return conversationId;
       }
     },
     [state.currentConversationId, state.conversationHistory]
@@ -766,10 +780,10 @@ export const useCompletion = () => {
 
             // Save the conversation after successful completion
             if (fullResponse) {
-              addQA({ question: prompt, answer: fullResponse, mode: currentMode, at: Date.now(), hadImage: true });
-              await saveCurrentConversation(prompt, fullResponse, [
+              const conversationId = await saveCurrentConversation(prompt, fullResponse, [
                 attachedFile,
               ]);
+              addQA({ conversationId, question: prompt, answer: fullResponse, mode: currentMode, at: Date.now(), hadImage: true });
               // Clear input after saving
               setState((prev) => ({
                 ...prev,
@@ -891,7 +905,48 @@ export const useCompletion = () => {
     [state.attachedFiles.length, addFile]
   );
 
+  // Reopen any earlier conversation (History → Continue) and keep adding to it.
+  const continueConversation = useCallback(
+    async (id: string | undefined, fallback?: { question: string; answer: string; at: number }) => {
+      let conv: ChatConversation | null = null;
+      if (id) {
+        try {
+          conv = await getConversationById(id);
+        } catch {
+          /* fall back to the local copy */
+        }
+        if (!conv || !conv.messages?.length) conv = getCachedConversation(id);
+      }
+      // Older answers saved before conversations were linked: rebuild a one-question thread.
+      if (!conv && fallback) {
+        const t = fallback.at;
+        conv = {
+          id: id || generateConversationId("chat"),
+          title: fallback.question.slice(0, 60),
+          createdAt: t,
+          updatedAt: t,
+          messages: [
+            { id: generateMessageId("user", t), role: "user", content: fallback.question, timestamp: t },
+            { id: generateMessageId("assistant", t + MESSAGE_ID_OFFSET), role: "assistant", content: fallback.answer, timestamp: t + MESSAGE_ID_OFFSET },
+          ],
+        };
+        cacheConversation(conv);
+      }
+      if (!conv) {
+        setState((prev) => ({ ...prev, error: "That conversation is no longer saved." }));
+        return false;
+      }
+      loadConversation(conv);
+      setState((prev) => ({ ...prev, lastQuestion: "", lastImages: [] }));
+      setThreadOpen(true);
+      setTimeout(() => document.getElementById("followup-input")?.focus(), 150);
+      return true;
+    },
+    [loadConversation]
+  );
+
   const isPopoverOpen =
+    threadOpen ||
     state.isLoading ||
     state.response !== "" ||
     state.error !== null ||
@@ -1224,6 +1279,8 @@ export const useCompletion = () => {
     conversationHistory: state.conversationHistory,
     loadConversation,
     startNewConversation,
+    continueConversation,
+    closeThread: () => setThreadOpen(false),
     messageHistoryOpen,
     setMessageHistoryOpen,
     screenshotConfiguration,

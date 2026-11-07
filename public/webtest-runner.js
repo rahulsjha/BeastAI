@@ -15,7 +15,7 @@
     },
     enter() { this.ta().dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", code: "Enter", bubbles: true })); },
     panel() {
-      const h = [...document.querySelectorAll("h3")].find((x) => /AI Response|Conversation Mode/.test(x.textContent));
+      const h = document.getElementById("answer-title") || [...document.querySelectorAll("h3")].find((x) => /AI Response|Conversation/.test(x.textContent));
       return h ? h.parentElement.parentElement.parentElement : null;
     },
     loading() { return /Generating response/.test(document.body.innerText); },

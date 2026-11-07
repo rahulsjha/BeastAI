@@ -11,7 +11,8 @@ import { Screenshot } from "./components/completion/Screenshot";
 import { Files } from "./components/completion/Files";
 import { useApp, useCompletion } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
-import { CaptionsIcon, HistoryIcon, SparklesIcon } from "lucide-react";
+import { CaptionsIcon, HistoryIcon, KeyboardIcon, SparklesIcon } from "lucide-react";
+import { ShortcutsPanel } from "./components/help/ShortcutsPanel";
 import { HistoryPanel } from "./components/history/HistoryPanel";
 import { SolveScreen } from "./components/SolveScreen";
 import { AnswerQueue } from "./components/transcript/AnswerQueue";
@@ -32,6 +33,7 @@ const App = () => {
   const capturing = systemAudio?.capturing;
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
   // Questions are answered one at a time, in order, each in the mode it was
@@ -127,6 +129,15 @@ const App = () => {
                 >
                   <HistoryIcon className="h-4 w-4" />
                 </Button>
+                <Button
+                  size="icon"
+                  variant={helpOpen ? "default" : "outline"}
+                  className="cursor-pointer"
+                  title="Shortcuts & controls — test each shortcut, hide or quit Beast"
+                  onClick={() => setHelpOpen((o) => !o)}
+                >
+                  <KeyboardIcon className="h-4 w-4" />
+                </Button>
                 <div className="flex-1" />
                 <Button
                   size={"icon"}
@@ -181,7 +192,8 @@ const App = () => {
           )}
 
           {/* What will be sent with the next question (screenshots, documents) */}
-          {(
+          {/* While an answer is open, its follow-up box shows (and sends) these instead. */}
+          {!completion.isPopoverOpen && (
             <AttachmentTray
               files={completion.attachedFiles}
               onRemove={completion.removeFile}
@@ -215,7 +227,22 @@ const App = () => {
           )}
 
           {/* History — every previous question and answer */}
-          {historyOpen && <HistoryPanel onClose={() => setHistoryOpen(false)} />}
+          {historyOpen && (
+            <HistoryPanel
+              onClose={() => setHistoryOpen(false)}
+              onContinue={async (item) => {
+                const ok = await completion.continueConversation(item.conversationId, {
+                  question: item.question,
+                  answer: item.answer,
+                  at: item.at,
+                });
+                if (ok) setHistoryOpen(false);
+              }}
+            />
+          )}
+
+          {/* Shortcuts & controls — every shortcut, Try buttons, ✓ when a key press works, Hide / Quit */}
+          {helpOpen && <ShortcutsPanel onClose={() => setHelpOpen(false)} />}
 
 
         </Card>

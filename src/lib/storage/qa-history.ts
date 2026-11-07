@@ -6,6 +6,7 @@ const MAX_ITEMS = 500;
 
 export interface QAItem {
   id: string;
+  conversationId?: string; // the conversation it belongs to (History → Continue)
   question: string;
   answer: string;
   mode: string; // interview mode key (e.g. "coding")

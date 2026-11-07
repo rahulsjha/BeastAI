@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, CopyButton, Markdown } from "@/components";
 import { MODES } from "@/config/modes";
-import { Trash2Icon, XIcon } from "lucide-react";
+import { MessageSquarePlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { clearQA, deleteQA, loadQA, type QAItem } from "@/lib/storage/qa-history";
 import { TranscriptHistory } from "../transcript/TranscriptHistory";
 
@@ -20,7 +20,14 @@ const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digi
  * History: every past question and answer (any mode, typed / voice / screenshot /
  * transcript), searchable and filterable by mode, plus saved transcript sessions.
  */
-export function HistoryPanel({ onClose }: { onClose: () => void }) {
+export function HistoryPanel({
+  onClose,
+  onContinue,
+}: {
+  onClose: () => void;
+  /** Reopen this question's conversation to add more text or screenshots. */
+  onContinue?: (item: QAItem) => void;
+}) {
   const [items, setItems] = useState<QAItem[]>(() => loadQA());
   const [tab, setTab] = useState<"qa" | "sessions">("qa");
   const [query, setQuery] = useState("");
@@ -141,6 +148,21 @@ export function HistoryPanel({ onClose }: { onClose: () => void }) {
                         <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
                           {(i.durationMs / 1000).toFixed(1)}s
                         </span>
+                      )}
+                      {onContinue && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-5 shrink-0 gap-1 px-1.5 text-[10px]"
+                          title="Continue this conversation: ask a follow-up or add more screenshots"
+                          data-continue
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            onContinue(i);
+                          }}
+                        >
+                          <MessageSquarePlusIcon className="h-3 w-3" /> Continue
+                        </Button>
                       )}
                       <Button
                         size="icon"
