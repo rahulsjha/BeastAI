@@ -3,6 +3,7 @@
 // Usage: node scripts/demo/build-gallery.mjs <recordedOutDir>
 import fs from "node:fs";
 import path from "node:path";
+import { execSync } from "node:child_process";
 
 const SRC = process.argv[2];
 const DST = path.resolve("docs/demos");
@@ -14,6 +15,18 @@ for (const s of slugs) for (const ext of ["mp4", "gif", "jpg"]) {
   if (fs.existsSync(f)) fs.copyFileSync(f, path.join(DST, `${s}.${ext}`));
 }
 fs.writeFileSync(path.join(DST, "demos.json"), JSON.stringify(meta, null, 2));
+
+// Animated card thumbnails for the README feature grid: a ~7s loop from the
+// busiest part of each video (starting 35% in), 560px wide, 6 fps.
+const THUMBS = path.resolve("docs/assets/thumbs");
+fs.mkdirSync(THUMBS, { recursive: true });
+for (const s of slugs) {
+  const mp4 = path.join(DST, `${s}.mp4`);
+  if (!fs.existsSync(mp4)) continue;
+  const dur = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of csv=p=0 "${mp4}"`).toString());
+  const start = Math.max(0, Math.min(dur * 0.35, dur - 7)).toFixed(2);
+  execSync(`ffmpeg -y -loglevel error -ss ${start} -t 7 -i "${mp4}" -vf "fps=6,scale=560:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4" "${path.join(THUMBS, s + ".gif")}"`);
+}
 
 const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const strip = (t) => esc(String(t).replace(/<\/?b>/g, "\u0001")).replace(/\u0001([^\u0001]*)\u0001/g, "<b>$1</b>");

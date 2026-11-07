@@ -7,6 +7,8 @@
 
 <h3 align="center">An always-on-top AI assistant that reads the question on your screen<br/>or hears it in the meeting — and answers in seconds.</h3>
 
+<p align="center"><b>Free and open source</b> — an alternative to paid interview copilots.<br/>Bring your own free Groq key; Code and Debug run on <b>Claude Opus</b> through the Claude Code login you already have.</p>
+
 <p align="center">
   <a href="#-quick-start"><img alt="macOS" src="https://img.shields.io/badge/macOS-13%2B-000000?style=for-the-badge&logo=apple&logoColor=white" /></a>
   <a href="https://v2.tauri.app"><img alt="Tauri 2" src="https://img.shields.io/badge/Tauri-2-24C8DB?style=for-the-badge&logo=tauri&logoColor=white" /></a>
@@ -88,6 +90,16 @@ Keys live only in `.env.local`. History stays on your machine. Nothing is upload
 </tr>
 </table>
 
+### Beast vs. paid interview copilots
+
+| | **Beast** | Typical paid copilot |
+|:--|:--:|:--:|
+| Price | **Free** — your own Groq key + Claude subscription | Monthly subscription |
+| Source code | **Open (GPL-3.0)** — read every line | Closed |
+| Models | **Claude Opus** for code & debug, **Groq** for sub-second answers | Vendor's choice |
+| Your history | **On your Mac only** | Vendor's servers |
+| Solve-screen watcher, follow-ups with screenshots, shortcut tester | ✅ | Varies |
+
 <br/>
 
 ## 🧩 Features
@@ -96,24 +108,24 @@ Click any card to jump to its video and step-by-step guide.
 
 <table>
 <tr>
-<td align="center" width="33%"><a href="#1-modes"><img src="docs/assets/thumbs/01-modes.jpg" alt="Modes" /><br/><b>1 · Modes</b></a><br/><sub>Design · Code · Concept · Debug</sub></td>
-<td align="center" width="33%"><a href="#2-screenshot--send"><img src="docs/assets/thumbs/02-screenshot-send.jpg" alt="Screenshot and send" /><br/><b>2 · Screenshot &amp; send</b></a><br/><sub>💻 or ⌘↵ — whole screen, answered at once</sub></td>
-<td align="center" width="33%"><a href="#3-area-screenshot"><img src="docs/assets/thumbs/03-area-screenshot.jpg" alt="Area screenshot" /><br/><b>3 · Area screenshot</b></a><br/><sub>⌘⇧S — drag, add a note, send</sub></td>
+<td align="center" width="33%"><a href="#1-modes"><img src="docs/assets/thumbs/01-modes.gif" alt="Modes" /><br/><b>1 · Modes</b></a><br/><sub>Design · Code · Concept · Debug</sub></td>
+<td align="center" width="33%"><a href="#2-screenshot--send"><img src="docs/assets/thumbs/02-screenshot-send.gif" alt="Screenshot and send" /><br/><b>2 · Screenshot &amp; send</b></a><br/><sub>💻 or ⌘↵ — whole screen, answered at once</sub></td>
+<td align="center" width="33%"><a href="#3-area-screenshot"><img src="docs/assets/thumbs/03-area-screenshot.gif" alt="Area screenshot" /><br/><b>3 · Area screenshot</b></a><br/><sub>⌘⇧S — drag, add a note, send</sub></td>
 </tr>
 <tr>
-<td align="center"><a href="#4-follow-ups"><img src="docs/assets/thumbs/04-followups.jpg" alt="Follow-ups" /><br/><b>4 · Follow-ups</b></a><br/><sub>More text, screens &amp; files in one thread</sub></td>
-<td align="center"><a href="#5-history--continue"><img src="docs/assets/thumbs/05-history-continue.jpg" alt="History and Continue" /><br/><b>5 · History &amp; Continue</b></a><br/><sub>Find any answer, pick up where you left off</sub></td>
-<td align="center"><a href="#6-not-useful"><img src="docs/assets/thumbs/06-not-useful.jpg" alt="Not useful" /><br/><b>6 · “Not useful”</b></a><br/><sub>No question on screen? No guessing.</sub></td>
+<td align="center"><a href="#4-follow-ups"><img src="docs/assets/thumbs/04-followups.gif" alt="Follow-ups" /><br/><b>4 · Follow-ups</b></a><br/><sub>More text, screens &amp; files in one thread</sub></td>
+<td align="center"><a href="#5-history--continue"><img src="docs/assets/thumbs/05-history-continue.gif" alt="History and Continue" /><br/><b>5 · History &amp; Continue</b></a><br/><sub>Find any answer, pick up where you left off</sub></td>
+<td align="center"><a href="#6-not-useful"><img src="docs/assets/thumbs/06-not-useful.gif" alt="Not useful" /><br/><b>6 · “Not useful”</b></a><br/><sub>No question on screen? No guessing.</sub></td>
 </tr>
 <tr>
-<td align="center"><a href="#7-debug"><img src="docs/assets/thumbs/07-debug.jpg" alt="Debug" /><br/><b>7 · Debug</b></a><br/><sub>Root cause → fix → before vs after</sub></td>
-<td align="center"><a href="#8-design-mcq-any-language"><img src="docs/assets/thumbs/08-design-mcq-language.jpg" alt="Design, MCQ, any language" /><br/><b>8 · Design, MCQ, any language</b></a><br/><sub>Full system design · right option · Hindi in, Hindi out</sub></td>
-<td align="center"><a href="#9-solve-screen"><img src="docs/assets/thumbs/09-solve-screen.jpg" alt="Solve screen" /><br/><b>9 · Solve screen</b></a><br/><sub>⌘⇧O — watches and answers new questions</sub></td>
+<td align="center"><a href="#7-debug"><img src="docs/assets/thumbs/07-debug.gif" alt="Debug" /><br/><b>7 · Debug</b></a><br/><sub>Root cause → fix → before vs after</sub></td>
+<td align="center"><a href="#8-design-mcq-any-language"><img src="docs/assets/thumbs/08-design-mcq-language.gif" alt="Design, MCQ, any language" /><br/><b>8 · Design, MCQ, any language</b></a><br/><sub>Full system design · right option · Hindi in, Hindi out</sub></td>
+<td align="center"><a href="#9-solve-screen"><img src="docs/assets/thumbs/09-solve-screen.gif" alt="Solve screen" /><br/><b>9 · Solve screen</b></a><br/><sub>⌘⇧O — watches and answers new questions</sub></td>
 </tr>
 <tr>
-<td align="center"><a href="#10-documents"><img src="docs/assets/thumbs/10-documents.jpg" alt="Documents" /><br/><b>10 · Documents</b></a><br/><sub>Résumé, notes, PDFs, logs</sub></td>
-<td align="center"><a href="#11-listen--live-transcript"><img src="docs/assets/thumbs/11-listen.jpg" alt="Listen" /><br/><b>11 · Listen &amp; transcript</b></a><br/><sub>⌘⇧M — hears the meeting, answers live</sub></td>
-<td align="center"><a href="#12-shortcuts-panel"><img src="docs/assets/thumbs/12-shortcuts-stop.jpg" alt="Shortcuts panel" /><br/><b>12 · Shortcuts panel</b></a><br/><sub>Test every shortcut · hide · quit</sub></td>
+<td align="center"><a href="#10-documents"><img src="docs/assets/thumbs/10-documents.gif" alt="Documents" /><br/><b>10 · Documents</b></a><br/><sub>Résumé, notes, PDFs, logs</sub></td>
+<td align="center"><a href="#11-listen--live-transcript"><img src="docs/assets/thumbs/11-listen.gif" alt="Listen" /><br/><b>11 · Listen &amp; transcript</b></a><br/><sub>⌘⇧M — hears the meeting, answers live</sub></td>
+<td align="center"><a href="#12-shortcuts-panel"><img src="docs/assets/thumbs/12-shortcuts-stop.gif" alt="Shortcuts panel" /><br/><b>12 · Shortcuts panel</b></a><br/><sub>Test every shortcut · hide · quit</sub></td>
 </tr>
 </table>
 
@@ -505,8 +517,49 @@ Browser test scripts drive the real UI through Chrome's debugging port — see `
 | `shortcuts-panel-test.mjs` | ⌨️ panel: every row ticks, Try, Quit confirm — 13 checks |
 | `feature-demos.mjs` + `build-gallery.mjs` | Record the 12 demo videos and build the [demo gallery](docs/demos/index.html) |
 
+## ❓ FAQ
+
+<details><summary><b>Can the other side see Beast when I share my screen?</b></summary>
+
+No. The window is marked as protected content, so macOS leaves it out of screen sharing and recordings — Zoom, Meet, Teams and QuickTime see the apps behind it. Beast also hides itself from its own screenshots.
+</details>
+
+<details><summary><b>Which API keys do I need? What does it cost?</b></summary>
+
+One free [Groq key](https://console.groq.com/keys) for the fast answers. Code and Debug use the Claude Code CLI you are already logged into, so there is no Anthropic key and no extra bill beyond your existing Claude plan.
+</details>
+
+<details><summary><b>Does it work on Windows or Linux?</b></summary>
+
+Beast is built and tested on macOS (system-audio capture and the overlay use macOS APIs). The browser test version runs anywhere, without global shortcuts or system audio.
+</details>
+
+<details><summary><b>Where is my data stored?</b></summary>
+
+History, transcripts and conversations live in a local SQLite database on your Mac. Only the question itself (text, screenshot or audio) is sent to the model that answers it.
+</details>
+
+## 🗺 Roadmap
+
+- [x] Screenshot → answer in ~2–3 s, in every mode
+- [x] Listen with live transcript and answer queue
+- [x] Follow-ups with screenshots and files, History → Continue
+- [x] Shortcuts panel with live ✓ tester
+- [ ] Signed `.dmg` in GitHub Releases
+- [ ] Windows build
+- [ ] Choose any model per mode from the settings
+
+## ⭐ Star history
+
+<a href="https://star-history.com/#rahulsjha/BeastAI&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=rahulsjha/BeastAI&type=Date&theme=dark" />
+    <img alt="Star history chart" src="https://api.star-history.com/svg?repos=rahulsjha/BeastAI&type=Date" width="100%" />
+  </picture>
+</a>
+
 ## 🙏 Credits & licence
 
-Beast is a fork of **[Pluely](https://github.com/iamsrikanthnani/pluely)** by Srikanth Nani, released under the **[GNU GPL v3](LICENSE)**.
+Beast is a fork of **[Pluely](https://pluely.com)** by Srikanth Nani, released under the **[GNU GPL v3](LICENSE)**.
 
-<p align="center"><sub>If Beast helps you, a ⭐ helps others find it.</sub></p>
+<p align="center"><b>If Beast helps you land the job, give it a ⭐ — it helps others find it.</b></p>
