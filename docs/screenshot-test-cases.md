@@ -1,6 +1,6 @@
 # Screenshot test cases
 
-Every way a screenshot can get into Pluely, every mode it can be answered in, what is on the screen, and what should happen.
+Every way a screenshot can get into Beast, every mode it can be answered in, what is on the screen, and what should happen.
 
 ## 1. Three ways to run the tests
 
@@ -8,7 +8,7 @@ Every way a screenshot can get into Pluely, every mode it can be answered in, wh
 |---|---|---|---|
 | **A. Direct screen capture** (real screen) | Your actual screen, whatever is in front | Bridge started **without** `PLUELY_TEST_SCREEN`; page `localhost:1420/?webtest=1`; open the question (LeetCode, an error…) in a window beside the app | Real behaviour: what you would see in an interview |
 | **B. Fixed test screen** | Always the same image file | Bridge started with `PLUELY_TEST_SCREEN=/path/to/image.png` | Repeatable cases: the same input every run (coding, MCQ, design, error, blank) |
-| **C. Desktop app** | Real screen; Pluely itself is invisible to capture | Built app, global shortcuts | Final check: shortcuts from any app, native selection overlay |
+| **C. Desktop app** | Real screen; Beast itself is invisible to capture | Built app, global shortcuts | Final check: shortcuts from any app, native selection overlay |
 
 Rules for setup A: the screen must be **unlocked and awake** (run with `caffeinate -d -u`), the test window must be **in front** (not on another Space), and nobody touches the mouse or keyboard during the run.
 
@@ -45,7 +45,7 @@ Rules for setup A: the screen must be **unlocked and awake** (run with `caffeina
 | S10 | Dark-mode editor / light page | Read correctly either way |
 | S11 | Question in Hindi (or another language) | Answer in the same language |
 | S12 | Two different questions on screen | Both answered, or the main one + a note about the other |
-| S13 | Pluely's own answer on screen | Not answered again (desktop: Pluely is invisible to capture) |
+| S13 | Beast's own answer on screen | Not answered again (desktop: Beast is invisible to capture) |
 
 ## 4. What is typed with it
 
@@ -99,7 +99,7 @@ The important combinations: every method once, every content type once, every mo
 | X22 | B | each mode | M2 | S7 blank | T1 | "Not useful" in all 5 modes |
 | X23 | A | Code | M9 paste image | S1 | T1 → Enter | In tray, then answered |
 | X24 | A | Code | M10 drag & drop | S1 | T1 → Enter | In tray, then answered |
-| X25 | C | Code | M2 ⌘↵ from another app (LeetCode in Safari) | S1 | T1 | Works without switching to Pluely; Pluely not in the image |
+| X25 | C | Code | M2 ⌘↵ from another app (LeetCode in Safari) | S1 | T1 | Works without switching to Beast; Beast not in the image |
 | X26 | C | any | M3 native overlay | S1 | — | Overlay over the real screen; crop correct on Retina / 2 monitors |
 
 ## 7. Speed after the fast path (6 Nov 2026, setup B)

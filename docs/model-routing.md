@@ -1,4 +1,4 @@
-# Pluely model routing & interview modes
+# Beast model routing & interview modes
 
 How the assistant picks a model per task, with measured timings. All numbers were
 measured locally on 2026-11-01 (10 interview questions + 3 coding tasks).
