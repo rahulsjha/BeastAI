@@ -1,4 +1,4 @@
-# Pluely — Test Workflow (all features)
+# Beast — Test Workflow (all features)
 
 How every feature is tested and judged. Run it after any change that touches the UI, prompts, routing or audio.
 

@@ -1,6 +1,6 @@
 # Beast — Features guide
 
-Pluely is a small always-on-top bar (600px wide) that answers interview questions in real time. It is invisible to screen sharing.
+Beast is a small always-on-top bar (600px wide) that answers interview questions in real time. It is invisible to screen sharing.
 
 ## The header (left → right)
 
@@ -49,7 +49,7 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 | **Enter** / **Shift+Enter** | Send / new line (in the question bar) | — |
 | **⌘K** | Conversation mode on / off (in the answer) | — |
 | **Esc** | Close the answer / cancel a screenshot | — |
-| ⌘\\ | Show / hide Pluely | desktop app only |
+| ⌘\\ | Show / hide Beast | desktop app only |
 | ⌘⇧D | Open Dev Space (settings) | desktop app only |
 | ⌘ + arrows | Move the bar | desktop app only |
 

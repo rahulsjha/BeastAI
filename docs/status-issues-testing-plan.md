@@ -1,6 +1,6 @@
-# Pluely (rahulsjha fork) — Status, Issues, Testing & Plan
+# Beast (rahulsjha fork) — Status, Issues, Testing & Plan
 
-Last updated: 2026-11-03. Scope: the interview-assistant build on `rahulsjha/pluely`.
+Last updated: 2026-11-03. Scope: the interview-assistant build on `rahulsjha/BeastAI`.
 
 ---
 

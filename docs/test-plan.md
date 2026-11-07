@@ -1,4 +1,4 @@
-# Pluely Interview Assistant — Complete Test Plan
+# Beast Interview Assistant — Complete Test Plan
 
 Last updated: 2026-11-03. Use alongside `docs/status-issues-testing-plan.md` (known issues) and
 `docs/model-routing.md` (routing + prompts).
@@ -15,9 +15,9 @@ Pass/fail is binary per case. Record results in the log at the end (§10).
 | Claude CLI | `claude -p "say OK" --model haiku` | prints `OK` (subscription, no API key) |
 | Native app | `npm run tauri dev` in `~/pluely-fork` | overlay appears on **⌘\** |
 | Web-test (for me to drive) | `npm run dev` + bridge `python3 claude_bridge.py` | `http://localhost:1420/?webtest=1` renders the overlay |
-| Mic permission | System Settings → Privacy → Microphone → Pluely ON | mic icon records |
+| Mic permission | System Settings → Privacy → Microphone → Beast ON | mic icon records |
 | BlackHole (system audio) | installed; Multi-Output device = Speakers + BlackHole 2ch | appears in Listen input list |
-| Screen Recording (Debug) | System Settings → Privacy → Screen Recording → Pluely ON | `Watch screen` returns an analysis |
+| Screen Recording (Debug) | System Settings → Privacy → Screen Recording → Beast ON | `Watch screen` returns an analysis |
 
 **Three surfaces, what each proves**
 - **Backend scripts** (curl / CLI): model + STT correctness and timing. Fast, scriptable.

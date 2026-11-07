@@ -1063,7 +1063,7 @@ export const useCompletion = () => {
             setState((prev) => ({
               ...prev,
               error:
-                "Screen Recording is off for Beast. System Settings → Privacy & Security → Screen & System Audio Recording → switch Pluely on, then Quit & Reopen Beast.",
+                "Screen Recording is off for Beast. System Settings → Privacy & Security → Screen & System Audio Recording → switch Beast on, then Quit & Reopen Beast.",
             }));
             setIsScreenshotLoading(false);
             screenshotInitiatedByThisContext.current = false;

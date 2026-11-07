@@ -1,6 +1,6 @@
 # Claude CLI provider (subscription, no API key)
 
-Routes Pluely's answers through the locally installed `claude` command
+Routes Beast's answers through the locally installed `claude` command
 (Claude Code), using your own Claude subscription login instead of an API key.
 This is the same approach as Pluely's licensed "Connect a CLI" feature and
 NexQ's subscription mode.
