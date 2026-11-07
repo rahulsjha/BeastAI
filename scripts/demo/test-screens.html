@@ -1,0 +1,249 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden;font-family:-apple-system,"SF Pro Text","Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.screen{display:none;width:1440px;height:900px;position:relative}
+.mono{font-family:"SF Mono",Menlo,Consolas,monospace}
+/* browser chrome */
+.chrome{height:44px;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid var(--line)}
+.dots{display:flex;gap:8px}.dots i{width:12px;height:12px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.url{flex:1;max-width:560px;margin:0 auto;height:28px;border-radius:8px;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:13px}
+/* ---------- coding judge (dark) ---------- */
+#leetcode{--bg:#0f1117;--panel:#161a23;--line:#262b38;--text:#e6e9ef;--mute:#8b93a7;background:var(--bg);color:var(--text)}
+#leetcode .chrome{background:#11141b}#leetcode .url{background:#1b2030;color:var(--mute)}
+.nav{height:48px;display:flex;align-items:center;gap:18px;padding:0 20px;border-bottom:1px solid var(--line);background:#12151d;font-size:14px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}.logo b{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:grid;place-items:center;color:#fff;font-size:13px}
+.nav .mute{color:var(--mute)}.nav .sp{flex:1}
+.btn{padding:6px 14px;border-radius:8px;font-weight:600;font-size:13px}
+.run{background:#232938;color:#cbd2e1}.submit{background:#16a34a;color:#fff}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;height:808px}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.tabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}
+.tabs span{padding:5px 10px;border-radius:7px}.tabs .on{background:#222838;color:var(--text)}
+.prob{padding:22px 26px;font-size:15px;line-height:1.65;overflow:hidden}
+.prob h1{font-size:24px;margin-bottom:10px}
+.tags{display:flex;gap:8px;margin-bottom:18px}.tag{font-size:12px;padding:3px 10px;border-radius:999px;background:#222838;color:#aab3c5}.easy{background:#0f3d2a;color:#34d399}
+.prob p{margin-bottom:12px}.prob code{background:#232938;border-radius:5px;padding:1px 6px;font-size:13.5px}
+.ex{margin:10px 0 14px}.ex b{display:block;margin-bottom:6px}
+.exbox{border-left:3px solid #343b4f;padding:6px 14px;color:#c6ccd9;font-size:14px}
+.exbox div{margin:2px 0}.exbox span{color:var(--mute)}
+.prob ul{padding-left:20px;color:#c6ccd9}
+.code{padding:16px 0;font-size:14.5px;line-height:1.75;flex:1}
+.ln{display:flex}.ln i{width:52px;text-align:right;padding-right:18px;color:#4b5368;font-style:normal}
+.kw{color:#c792ea}.fn{color:#82aaff}.ty{color:#ffcb6b}.cm{color:#5f6b85;font-style:italic}.st{color:#c3e88d}.nu{color:#f78c6c}
+.tests{border-top:1px solid var(--line);padding:12px 16px;font-size:13px;color:var(--mute);height:190px}
+.tests .case{display:inline-block;padding:4px 10px;border-radius:7px;background:#222838;color:var(--text);margin:8px 6px 10px 0}
+.field{background:#1e2330;border-radius:8px;padding:8px 12px;color:var(--text);margin-top:6px}
+/* ---------- assessment (light) ---------- */
+.assess{--line:#e5e8ef;background:#f5f7fb;color:#111827}
+.assess .chrome{background:#eceff5}.assess .url{background:#fff;color:#6b7280;border:1px solid #e1e5ec}
+.top{height:60px;display:flex;align-items:center;padding:0 32px;gap:16px;background:#fff;border-bottom:1px solid var(--line)}
+.top .brand{font-weight:700;display:flex;gap:8px;align-items:center}.top .brand b{width:26px;height:26px;border-radius:8px;background:#4f46e5;color:#fff;display:grid;place-items:center;font-size:13px}
+.top .sp{flex:1}.timer{font-weight:600;background:#fef3c7;color:#92400e;padding:6px 12px;border-radius:8px;font-size:14px}
+.prog{height:4px;background:#e5e7eb}.prog i{display:block;height:100%;background:#4f46e5}
+.card{width:880px;margin:44px auto 0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:40px 44px;box-shadow:0 4px 24px rgba(17,24,39,.06)}
+.qn{font-size:13px;font-weight:600;color:#4f46e5;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+.card h2{font-size:28px;line-height:1.3;margin-bottom:26px}
+.opt{display:flex;align-items:center;gap:14px;border:1.5px solid #e1e5ec;border-radius:12px;padding:16px 18px;font-size:18px;margin-bottom:12px}
+.opt i{width:30px;height:30px;border-radius:50%;border:1.5px solid #c7ccd6;display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:600;color:#6b7280}
+.foot{display:flex;justify-content:space-between;margin-top:26px}.foot span{padding:12px 22px;border-radius:10px;font-weight:600}
+.prev{background:#f3f4f6;color:#374151}.next{background:#4f46e5;color:#fff}
+.req{font-size:18px;line-height:1.7;color:#374151}.req li{margin-left:22px;margin-bottom:6px}
+.answerbox{margin-top:24px;border:1.5px dashed #c7ccd6;border-radius:12px;height:210px;padding:16px;color:#9ca3af;font-size:16px}
+/* ---------- editor (dark) ---------- */
+#s5_buggy,#trace{background:#1e1f26;color:#d4d7e0}
+.win{display:flex;height:856px}
+.side{width:230px;background:#191a20;border-right:1px solid #2a2c35;padding:14px 10px;font-size:13px;color:#9097a8}
+.side div{padding:4px 10px;border-radius:6px}.side .on{background:#2a2d3a;color:#e5e7ef}
+.side .h{font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:4px 0 8px;color:#6b7180}
+.main{flex:1;display:flex;flex-direction:column}
+.ftabs{display:flex;background:#191a20;border-bottom:1px solid #2a2c35;font-size:13px}
+.ftabs span{padding:10px 18px;color:#8b91a2;border-right:1px solid #2a2c35}.ftabs .on{background:#1e1f26;color:#e5e7ef;border-top:2px solid #60a5fa}
+.ed{flex:1;padding:14px 0;font-size:16px;line-height:1.8}
+.term{height:250px;border-top:1px solid #2a2c35;background:#16171c;padding:12px 18px;font-size:14.5px;line-height:1.65}
+.term .h{font-family:-apple-system,system-ui;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#6b7180;margin-bottom:8px}
+.pr{color:#60a5fa}.er{color:#f87171}.dim{color:#6b7180}
+.status{height:24px;background:#3b82f6;color:#fff;font-size:12px;display:flex;align-items:center;gap:18px;padding:0 12px}
+/* ---------- meeting ---------- */
+#s6_concept{background:#111318;color:#e5e7eb}
+.meet{display:grid;grid-template-columns:1fr 380px;height:856px}
+.stage{padding:18px;display:grid;grid-template-rows:1fr 220px;gap:14px}
+.tile{border-radius:16px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 40%,#2b3346,#171b24)}
+.av{position:absolute;inset:0;display:grid;place-items:center}.av b{width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#ec4899);display:grid;place-items:center;font-size:56px;color:#fff;font-weight:600}
+.nm{position:absolute;left:16px;bottom:14px;background:rgba(0,0,0,.55);padding:5px 10px;border-radius:8px;font-size:14px}
+.me{width:300px;justify-self:end;background:radial-gradient(circle at 50% 40%,#24423a,#141a18)}.me .av b{width:96px;height:96px;font-size:36px;background:linear-gradient(135deg,#10b981,#0ea5e9)}
+.chat{background:#171a21;border-left:1px solid #262a33;display:flex;flex-direction:column}
+.chat .h{padding:16px 18px;font-weight:600;border-bottom:1px solid #262a33}
+.msgs{flex:1;padding:18px;display:flex;flex-direction:column;gap:16px}
+.msg .who{font-size:13px;color:#9ca3af;margin-bottom:6px}.msg .bub{background:#232733;border-radius:12px;padding:12px 14px;font-size:16px;line-height:1.5}
+.bar2{height:64px;display:flex;justify-content:center;align-items:center;gap:14px;border-top:1px solid #262a33;grid-column:1/3}
+.bar2 i{width:46px;height:46px;border-radius:50%;background:#2a2e39;display:block}.bar2 .end{background:#dc2626;width:64px;border-radius:24px}
+/* ---------- desktop ---------- */
+#wallpaper{background:radial-gradient(1200px 700px at 20% 20%,#0ea5e9 0%,transparent 60%),radial-gradient(1000px 700px at 85% 75%,#8b5cf6 0%,transparent 60%),linear-gradient(135deg,#0f766e,#4338ca)}
+.menubar{height:28px;background:rgba(255,255,255,.18);backdrop-filter:blur(20px);display:flex;align-items:center;gap:20px;padding:0 16px;color:#fff;font-size:13.5px;font-weight:500}
+.menubar .sp{flex:1}
+.dock{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:12px;padding:10px 14px;border-radius:22px;background:rgba(255,255,255,.22);backdrop-filter:blur(20px)}
+.dock i{width:54px;height:54px;border-radius:14px;display:block}
+</style></head><body>
+
+<!-- 1. coding problem -->
+<section class="screen" id="leetcode">
+  <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="url">🔒 code.example.com/problems/valid-parentheses</div></div>
+  <div class="nav"><div class="logo"><b>{}</b>CodePrep</div><span class="mute">Problems</span><span class="mute">Contest</span><span class="mute">Discuss</span><span class="sp"></span><span class="btn run">▶ Run</span><span class="btn submit">Submit</span></div>
+  <div class="split">
+    <div class="pane">
+      <div class="tabs"><span class="on">Description</span><span>Editorial</span><span>Solutions</span><span>Submissions</span></div>
+      <div class="prob">
+        <h1>20. Valid Parentheses</h1>
+        <div class="tags"><span class="tag easy">Easy</span><span class="tag">Stack</span><span class="tag">String</span></div>
+        <p>Given a string <code>s</code> containing just the characters <code>'('</code>, <code>')'</code>, <code>'{'</code>, <code>'}'</code>, <code>'['</code> and <code>']'</code>, determine if the input string is valid.</p>
+        <p>An input string is valid if:</p>
+        <ul><li>Open brackets must be closed by the same type of brackets.</li><li>Open brackets must be closed in the correct order.</li><li>Every close bracket has a corresponding open bracket of the same type.</li></ul>
+        <div class="ex"><b>Example 1:</b><div class="exbox mono"><div><span>Input:</span> s = "()"</div><div><span>Output:</span> true</div></div></div>
+        <div class="ex"><b>Example 2:</b><div class="exbox mono"><div><span>Input:</span> s = "()[]{}"</div><div><span>Output:</span> true</div></div></div>
+        <div class="ex"><b>Example 3:</b><div class="exbox mono"><div><span>Input:</span> s = "(]"</div><div><span>Output:</span> false</div></div></div>
+        <p><b>Constraints:</b></p>
+        <ul class="mono" style="font-size:13.5px"><li>1 &lt;= s.length &lt;= 10<sup>4</sup></li><li>s consists of parentheses only '()[]{}'.</li></ul>
+      </div>
+    </div>
+    <div class="pane">
+      <div class="tabs"><span class="on">Python 3</span><span>Auto</span></div>
+      <div class="code mono">
+        <div class="ln"><i>1</i><span><span class="kw">class</span> <span class="ty">Solution</span>:</span></div>
+        <div class="ln"><i>2</i><span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">isValid</span>(self, s: <span class="ty">str</span>) -&gt; <span class="ty">bool</span>:</span></div>
+        <div class="ln"><i>3</i><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># write your code here</span></span></div>
+        <div class="ln"><i>4</i><span>&nbsp;</span></div>
+      </div>
+      <div class="tests"><b style="color:#e6e9ef">Testcase</b><br><span class="case">Case 1</span><span class="case">Case 2</span><span class="case">Case 3</span><div>s =</div><div class="field mono">"()[]{}"</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. system design prompt -->
+<section class="screen assess" id="design">
+  <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="url">🔒 interviews.example.com/round/system-design</div></div>
+  <div class="top"><div class="brand"><b>I</b>Onsite interview</div><span class="sp"></span><span style="color:#6b7280;font-size:14px">System design round</span><span class="timer">⏱ 41:52</span></div>
+  <div class="prog"><i style="width:15%"></i></div>
+  <div class="card">
+    <div class="qn">System design · 45 minutes</div>
+    <h2>Design a URL shortener (like bit.ly)</h2>
+    <ul class="req"><li>100M new URLs per month, read-heavy (100:1)</li><li>Redirects must be fast (&lt; 50 ms p99)</li><li>Custom aliases and link expiry</li><li>Basic click analytics per link</li></ul>
+    <div class="answerbox">Talk through your design with the interviewer…</div>
+  </div>
+</section>
+
+<!-- 3. MCQ -->
+<section class="screen assess" id="mcq">
+  <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="url">🔒 assess.example.com/test/backend-fundamentals</div></div>
+  <div class="top"><div class="brand"><b>A</b>Online assessment</div><span class="sp"></span><span style="color:#6b7280;font-size:14px">Question 7 of 20</span><span class="timer">⏱ 18:05</span></div>
+  <div class="prog"><i style="width:35%"></i></div>
+  <div class="card">
+    <div class="qn">Question 7 · Data structures</div>
+    <h2>Which data structure gives O(1) average lookup by key?</h2>
+    <div class="opt"><i>A</i>Linked list</div><div class="opt"><i>B</i>Hash map</div><div class="opt"><i>C</i>Binary search tree</div><div class="opt"><i>D</i>Sorted array</div>
+    <div class="foot"><span class="prev">← Previous</span><span class="next">Next →</span></div>
+  </div>
+</section>
+
+<!-- 4. Hindi question -->
+<section class="screen assess" id="s11_hindi">
+  <div class="chrome"><div class="dots"><i></i><i></i><i></i></div><div class="url">🔒 assess.example.com/test/dbms-hindi</div></div>
+  <div class="top"><div class="brand"><b>A</b>ऑनलाइन परीक्षा</div><span class="sp"></span><span style="color:#6b7280;font-size:14px">प्रश्न 2 / 10</span><span class="timer">⏱ 12:40</span></div>
+  <div class="prog"><i style="width:20%"></i></div>
+  <div class="card">
+    <div class="qn">प्रश्न 2 · डेटाबेस</div>
+    <h2>डेटाबेस इंडेक्स क्या होता है और यह क्वेरी को तेज़ कैसे बनाता है?</h2>
+    <div class="answerbox">अपना उत्तर यहाँ लिखें…</div>
+    <div class="foot"><span class="prev">← पिछला</span><span class="next">अगला →</span></div>
+  </div>
+</section>
+
+<!-- 5. buggy code in editor -->
+<section class="screen" id="s5_buggy">
+  <div class="chrome" style="background:#191a20;--line:#2a2c35"><div class="dots"><i></i><i></i><i></i></div><div class="url" style="color:#9097a8;justify-content:center">binary_search.py — algorithms</div></div>
+  <div class="win">
+    <div class="side"><div class="h">Explorer</div><div>▾ algorithms</div><div class="on">&nbsp;&nbsp;binary_search.py</div><div>&nbsp;&nbsp;merge_sort.py</div><div>&nbsp;&nbsp;test_search.py</div><div>&nbsp;&nbsp;README.md</div></div>
+    <div class="main">
+      <div class="ftabs"><span class="on">binary_search.py</span><span>test_search.py</span></div>
+      <div class="ed mono">
+        <div class="ln"><i>1</i><span><span class="kw">def</span> <span class="fn">binary_search</span>(arr, target):</span></div>
+        <div class="ln"><i>2</i><span>&nbsp;&nbsp;&nbsp;&nbsp;lo, hi = <span class="nu">0</span>, <span class="fn">len</span>(arr)</span></div>
+        <div class="ln"><i>3</i><span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">while</span> lo &lt; hi:</span></div>
+        <div class="ln"><i>4</i><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mid = (lo + hi) // <span class="nu">2</span></span></div>
+        <div class="ln"><i>5</i><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> arr[mid] == target:</span></div>
+        <div class="ln"><i>6</i><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> mid</span></div>
+        <div class="ln"><i>7</i><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">elif</span> arr[mid] &lt; target:</span></div>
+        <div class="ln"><i>8</i><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lo = mid</span></div>
+        <div class="ln"><i>9</i><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">else</span>:</span></div>
+        <div class="ln"><i>10</i><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hi = mid</span></div>
+        <div class="ln"><i>11</i><span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> -<span class="nu">1</span></span></div>
+        <div class="ln"><i>12</i><span>&nbsp;</span></div>
+        <div class="ln"><i>13</i><span><span class="fn">print</span>(binary_search([<span class="nu">1</span>, <span class="nu">3</span>, <span class="nu">5</span>, <span class="nu">7</span>, <span class="nu">9</span>], <span class="nu">9</span>))&nbsp;&nbsp;<span class="cm"># never returns</span></span></div>
+      </div>
+      <div class="term mono"><div class="h">Terminal</div><div><span class="pr">~/algorithms $</span> python binary_search.py</div><div class="dim">(still running after 30 s…)</div><div>^C</div><div class="er">KeyboardInterrupt</div><div><span class="pr">~/algorithms $</span> ▍</div></div>
+      <div class="status"><span>main</span><span>Python 3.12</span><span>Ln 8, Col 21</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. stack trace -->
+<section class="screen" id="trace">
+  <div class="chrome" style="background:#191a20;--line:#2a2c35"><div class="dots"><i></i><i></i><i></i></div><div class="url" style="color:#9097a8;justify-content:center">app.py — user-service</div></div>
+  <div class="win">
+    <div class="side"><div class="h">Explorer</div><div>▾ user-service</div><div class="on">&nbsp;&nbsp;app.py</div><div>&nbsp;&nbsp;models.py</div><div>&nbsp;&nbsp;requirements.txt</div></div>
+    <div class="main">
+      <div class="ftabs"><span class="on">app.py</span><span>models.py</span></div>
+      <div class="ed mono" style="flex:0 0 330px">
+        <div class="ln"><i>14</i><span>users = {<span class="nu">1</span>: {<span class="st">"email"</span>: <span class="st">"a@x.com"</span>}, <span class="nu">2</span>: {<span class="st">"email"</span>: <span class="st">"b@x.com"</span>}}</span></div>
+        <div class="ln"><i>15</i><span>&nbsp;</span></div>
+        <div class="ln"><i>16</i><span><span class="kw">def</span> <span class="fn">get_user_email</span>(users, user_id):</span></div>
+        <div class="ln"><i>17</i><span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="cm"># users = {1: {...}, 2: {...}}</span></span></div>
+        <div class="ln"><i>18</i><span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> users[user_id][<span class="st">"email"</span>]</span></div>
+        <div class="ln"><i>19</i><span>&nbsp;</span></div>
+        <div class="ln"><i>42</i><span><span class="fn">print</span>(get_user_email(users, <span class="nu">7</span>))</span></div>
+      </div>
+      <div class="term mono" style="height:auto;flex:1"><div class="h">Terminal</div>
+        <div><span class="pr">~/user-service $</span> python app.py</div>
+        <div class="er">Traceback (most recent call last):</div>
+        <div class="er">&nbsp;&nbsp;File "app.py", line 42, in &lt;module&gt;</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;print(get_user_email(users, 7))</div>
+        <div class="er">&nbsp;&nbsp;File "app.py", line 18, in get_user_email</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;return users[user_id]["email"]</div>
+        <div class="er"><b>KeyError: 7</b></div>
+        <div><span class="pr">~/user-service $</span> ▍</div>
+      </div>
+      <div class="status" style="background:#dc2626"><span>main</span><span>⊗ 1 error</span><span>Python 3.12</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. interviewer asks in a video call -->
+<section class="screen" id="s6_concept">
+  <div class="chrome" style="background:#14161c;--line:#262a33"><div class="dots"><i></i><i></i><i></i></div><div class="url" style="color:#9097a8;background:#1d2029">🔒 meet.example.com/abc-defg-hij</div></div>
+  <div class="meet">
+    <div class="stage">
+      <div class="tile"><div class="av"><b>PS</b></div><div class="nm">Priya S. · Interviewer</div></div>
+      <div class="tile me"><div class="av"><b>You</b></div><div class="nm">You</div></div>
+    </div>
+    <div class="chat"><div class="h">In-call messages</div>
+      <div class="msgs">
+        <div class="msg"><div class="who">Priya S. · 10:02</div><div class="bub">Thanks for joining! Let's start with a quick concept question.</div></div>
+        <div class="msg"><div class="who">Priya S. · 10:03</div><div class="bub"><b>Interview question 4:</b> What is the CAP theorem? Explain each of the three properties.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. plain desktop (nothing to answer) -->
+<section class="screen" id="wallpaper">
+  <div class="menubar"><b></b><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span class="sp"></span><span>Wi-Fi</span><span>Sat 9:41 AM</span></div>
+  <div class="dock"><i style="background:linear-gradient(#60a5fa,#2563eb)"></i><i style="background:linear-gradient(#f9fafb,#d1d5db)"></i><i style="background:linear-gradient(#34d399,#059669)"></i><i style="background:linear-gradient(#fbbf24,#f97316)"></i><i style="background:linear-gradient(#f472b6,#db2777)"></i><i style="background:linear-gradient(#a78bfa,#7c3aed)"></i><i style="background:linear-gradient(#94a3b8,#475569)"></i></div>
+</section>
+
+<script>
+const id = (location.hash || "#leetcode").slice(1);
+document.getElementById(id).style.display = "block";
+</script>
+</body></html>

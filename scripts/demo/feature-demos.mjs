@@ -4,6 +4,7 @@
 //
 // Needs: dev server on :1420, test Chrome with --remote-debugging-port=9333,
 // the bridge started with PLUELY_TEST_SCREEN=<SCREEN_FILE>, ffmpeg.
+// Test screens: render scripts/demo/test-screens.html#<id> with headless Chrome (1440x900 @2x).
 // Usage: node scripts/demo/feature-demos.mjs <screensDir> <screenFile> <outDir> [demo ...]
 import fs from "node:fs";
 import path from "node:path";
@@ -204,7 +205,7 @@ demo("03-area-screenshot", "Area screenshot: ⌘⇧S",
   async () => {
     await showScreen("leetcode"); await mode("Code"); await ev(`document.activeElement?.blur(); return 1`);
     await step(0); await keycap(["⌘", "⇧", "S"]); await key("S", "KeyS", 83, CMD | SHIFT); await sleep(3500);
-    await step(1); await drag(90, 150, 760, 520); await sleep(1500);
+    await step(1); await drag(14, 82, 596, 700); await sleep(1500);
     await step(2); await sleep(2200);
     await step(3); await click(`document.querySelector('[title="Add a message about this file"]') || document.querySelector("svg.lucide-pencil")?.closest("button")`); await sleep(400);
     await typeText("Only give the approach and the code, no dry run"); await enter(); await sleep(900);

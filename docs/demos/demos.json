@@ -1,6 +1,6 @@
 {
   "01-modes": {
-    "secs": "29",
+    "secs": "24",
     "title": "Modes: Design · Code · Concept · Debug",
     "why": "Pick how Beast should answer. Concept has Full and ⚡ Short (a 3-line definition, fastest).",
     "steps": [
@@ -23,7 +23,7 @@
     ]
   },
   "03-area-screenshot": {
-    "secs": "34",
+    "secs": "37",
     "title": "Area screenshot: ⌘⇧S",
     "why": "Drag over just the part you want. It waits in the tray so you can add a note or more screenshots, then Enter sends.",
     "steps": [
@@ -35,7 +35,7 @@
     ]
   },
   "04-followups": {
-    "secs": "58",
+    "secs": "60",
     "title": "Follow-ups: more text, screenshots and files in the same conversation",
     "why": "Every answer has a follow-up box. Add a screenshot, an area or a file, type a question, and it continues the same thread.",
     "steps": [
@@ -48,7 +48,7 @@
     ]
   },
   "05-history-continue": {
-    "secs": "34",
+    "secs": "36",
     "title": "History: find any answer and continue it",
     "why": "Every question and answer is saved on this computer. Search, filter by mode, copy, or press Continue to keep going.",
     "steps": [
@@ -59,7 +59,7 @@
     ]
   },
   "06-not-useful": {
-    "secs": "16",
+    "secs": "17",
     "title": "Nothing to answer? “Not useful”",
     "why": "If the screenshot has no question, code or error, Beast says so in one line instead of guessing.",
     "steps": [
@@ -69,7 +69,7 @@
     ]
   },
   "07-debug": {
-    "secs": "33",
+    "secs": "34",
     "title": "Debug mode (Claude Code CLI)",
     "why": "Debug answers come from Claude Opus through your logged-in Claude Code CLI, for the best quality.",
     "steps": [
@@ -80,7 +80,7 @@
     ]
   },
   "08-design-mcq-language": {
-    "secs": "47",
+    "secs": "50",
     "title": "Design rounds, multiple choice, any language",
     "why": "The same screenshot flow handles system design prompts, MCQs (correct option + why) and questions in Hindi or other languages.",
     "steps": [
@@ -90,7 +90,7 @@
     ]
   },
   "09-solve-screen": {
-    "secs": "51",
+    "secs": "53",
     "title": "Solve screen: ⌘⇧O watches and answers new questions",
     "why": "Turn it on and Beast checks the screen every few seconds. Each new question is answered once, in the right mode.",
     "steps": [
