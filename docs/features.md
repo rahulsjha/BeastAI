@@ -1,4 +1,4 @@
-# Pluely — Features guide
+# Beast — Features guide
 
 Pluely is a small always-on-top bar (600px wide) that answers interview questions in real time. It is invisible to screen sharing.
 
@@ -9,10 +9,11 @@ Pluely is a small always-on-top bar (600px wide) that answers interview question
 | 🎧 **Listen** | Hears the meeting and answers its questions. Desktop app: the computer's audio directly (no BlackHole, no tab sharing). Browser: through the default mic. |
 | **Design · Code · Concept · Debug** | Interview mode. Picks the model, answer format and voice settings in one click (see *Modes*). |
 | 🎤 **Mic** | Ask by voice. Speak, pause, and the question is transcribed and answered. Noise ("thank you", "yes yes") is ignored. |
-| 💻 **Screenshot** (⌘↵) | Drag to select an area; it's **sent right away** (with anything you typed) and the answer opens. ⌘⇧S only attaches it, so you can add a note or more files first. |
+| 💻 **Screenshot** (⌘↵) | Grabs the **whole screen** and **sends it right away** (with anything you typed); the answer opens. ⌘⇧S lets you drag an area and only attaches it, so you can add a note or more files first. |
 | 📎 **Attach** | Attach images or text documents (`.md`, `.txt`, code). Their content is used in the answer. |
 | 💬 **Live transcript** | Speaker-labelled transcript of You and the Interviewer, with auto-answer and the answer queue. |
 | 🕘 **History** | Every past question and answer, searchable. |
+| ⌨️ **Shortcuts & controls** | Every shortcut with Try buttons and a ✓ when a key press works; Hide / Quit Beast. |
 | ✨ **Dev Space** | Opens the settings/dashboard window. |
 | ⠿ | Drag handle to move the bar. |
 
@@ -54,6 +55,18 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 
 All keys can be changed in Dev Space → Shortcuts.
 
+### Testing shortcuts and stopping Beast (⌨️ button)
+
+The ⌨️ button in the header opens **Shortcuts & controls**:
+
+- Every shortcut with its current keys and a one-line explanation.
+- **Try** runs the action, just like pressing the keys.
+- Press the real keys (from any app) and the row gets a green ✓ with the time, so you know the shortcut reached Beast. The header counts how many have worked (e.g. 9/9).
+- **Stop Beast**: Hide (⌘\\, keeps running) and **Quit Beast** (asks Yes / Cancel first).
+- Terminal commands, click to copy: `osascript -e 'quit app "Beast"'`, `pkill -x Beast`, `pkill -9 -x Beast`, `pgrep -lx Beast`, `open -a Beast`. (⌘Q usually doesn't work: Beast has no Dock icon.)
+
+Browser test: `node scripts/demo/shortcuts-panel-test.mjs <outDir>` (13 checks).
+
 ## Solve screen (any website)
 
 Click **Solve screen** (next to the question bar, in Design / Code / Concept). It keeps reading your screen every few seconds:
@@ -74,7 +87,7 @@ Click **Solve screen** (next to the question bar, in Design / Code / Concept). I
 ## Several screenshots & follow-ups
 
 - **One question over several screens** (long problem, scroll + capture): ⌘⇧S (drag, or double-click = whole screen) adds the first; then the tray shows **+ Screen** (whole screen), **+ Area** (drag) and **Send N** — all are sent together and each screen is read.
-- **Follow-up box** at the bottom of every answer: type a follow-up and/or add **+ Screen / + Area**, then **Send**. It continues the same conversation (the thread badge counts up); earlier turns are remembered even when they were answered by a different model.
+- **Follow-up box** at the bottom of every answer: type a follow-up and/or add **+ Screen / + Area / 📎 files** (shown as chips until sent), then **Send**. Earlier questions stay visible above as Q1, Q2 … with their screenshot thumbnails; the title shows "Conversation · N questions". **+ New** starts fresh; **✕** ends the conversation. **History → Continue** reopens any past conversation. It continues the same conversation (the thread badge counts up); earlier turns are remembered even when they were answered by a different model.
 - Debug screenshots are answered by **Claude Opus** (top quality; first words ~2–3s for a simple screen, ~5–9s for complex ones). Blank/irrelevant screens get "Not useful" in ~1s.
 
 ## Asking questions

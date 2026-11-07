@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Loader2, XIcon } from "lucide-react";
+import { useRef, useState } from "react";
+import { Loader2, PaperclipIcon, PlusIcon, XIcon } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -45,8 +45,30 @@ export const Input = ({
   captureFullScreen,
   captureScreenshot,
   isScreenshotLoading,
+  addFile,
+  removeFile,
 }: UseCompletionReturn & { isHidden: boolean }) => {
   const [followUp, setFollowUp] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const followUpFileRef = useRef<HTMLInputElement>(null);
+  // Earlier turns of this conversation (the latest one is shown below them as the answer).
+  const sorted = [...conversationHistory].sort((a, b) => a.timestamp - b.timestamp);
+  const latestShown = !isLoading && !!response;
+  const earlier = latestShown ? sorted.slice(0, Math.max(0, sorted.length - 2)) : sorted;
+  const turns: { q?: (typeof sorted)[number]; a?: (typeof sorted)[number] }[] = [];
+  for (const m of earlier) {
+    if (m.role === "user") turns.push({ q: m });
+    else if (m.role === "assistant") {
+      if (turns.length && !turns[turns.length - 1].a) turns[turns.length - 1].a = m;
+      else turns.push({ a: m });
+    }
+  }
+  const questionCount = sorted.filter((m) => m.role === "user").length + (isLoading ? 1 : 0);
+  const endConversation = () => {
+    setKeepEngaged(false);
+    startNewConversation();
+    setFollowUp("");
+  };
   const sendFollowUp = () => {
     const t = followUp.trim();
     if (isLoading || (!t && !attachedFiles.length)) return;
@@ -116,11 +138,19 @@ export const Input = ({
           side="bottom"
           className="w-screen p-0 border shadow-lg overflow-hidden"
           sideOffset={8}
+          // Keep the conversation open while you add screenshots, files or use the bar;
+          // it closes only with ✕ or Esc.
+          onInteractOutside={(e) => e.preventDefault()}
+          onFocusOutside={(e) => e.preventDefault()}
         >
           <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
             <div className="flex flex-row gap-1 items-center">
-              <h3 className="font-semibold text-xs select-none">
-                {keepEngaged ? "Conversation Mode" : "AI Response"}
+              <h3 className="font-semibold text-xs select-none" id="answer-title">
+                {keepEngaged
+                  ? "Conversation Mode"
+                  : questionCount > 1
+                  ? `Conversation · ${questionCount} questions`
+                  : "AI Response"}
               </h3>
               <div className="text-[10px] text-muted-foreground/70">
                 (Use arrow keys to scroll)
@@ -148,28 +178,35 @@ export const Input = ({
                   }}
                 />
               </div>
+              {conversationHistory.length > 0 && !isLoading && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 gap-1 px-2 text-[10px]"
+                  onClick={endConversation}
+                  title="Start a new conversation (the next question won't continue this one)"
+                >
+                  <PlusIcon className="h-3 w-3" /> New
+                </Button>
+              )}
               <CopyButton content={response} />
               <Button
+                id="answer-close"
                 size="icon"
                 variant="ghost"
                 onClick={() => {
                   if (isLoading) {
                     cancel();
-                  } else if (keepEngaged) {
-                    // When keepEngaged is on, close everything and start new conversation
-                    setKeepEngaged(false);
-                    startNewConversation();
                   } else {
-                    reset();
+                    // Close = this conversation is finished; reopen it any time from History → Continue.
+                    endConversation();
                   }
                 }}
                 className="cursor-pointer"
                 title={
                   isLoading
                     ? "Cancel loading"
-                    : keepEngaged
-                    ? "Close and start new conversation"
-                    : "Clear conversation"
+                    : "Close (end this conversation — reopen it from History → Continue)"
                 }
               >
                 <XIcon />
@@ -182,6 +219,68 @@ export const Input = ({
               {error && (
                 <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
                   <strong>Error:</strong> {error}
+                </div>
+              )}
+              {/* Earlier questions in this conversation, oldest first */}
+              {!keepEngaged && turns.length > 0 && (
+                <div id="conversation-thread" className="mb-3 space-y-2">
+                  {turns.map((t, i) => {
+                    const key = t.q?.id || t.a?.id || String(i);
+                    const open = expanded[key];
+                    const imgs = (t.q?.attachedFiles || []).filter((f) => f.type.startsWith("image/") && f.base64);
+                    const docs = (t.q?.attachedFiles || []).filter((f) => !f.type.startsWith("image/"));
+                    return (
+                      <div key={key} data-turn={i + 1} className="rounded-lg border border-input/40 bg-muted/20 p-2">
+                        <div className="flex items-start gap-2 text-[11px]">
+                          <span className="shrink-0 rounded bg-primary/15 px-1.5 py-px font-semibold">Q{i + 1}</span>
+                          <span className="min-w-0 flex-1 whitespace-pre-wrap text-muted-foreground">{t.q?.content}</span>
+                          {t.q && (
+                            <span className="shrink-0 text-[10px] text-muted-foreground/70">
+                              {new Date(t.q.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                        </div>
+                        {(imgs.length > 0 || docs.length > 0) && (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {imgs.map((f) => (
+                              <img
+                                key={f.id}
+                                src={`data:${f.type};base64,${f.base64}`}
+                                alt="Earlier screenshot"
+                                className="h-12 w-20 rounded border border-input/60 object-cover object-top"
+                              />
+                            ))}
+                            {docs.map((f) => (
+                              <span key={f.id} className="rounded border border-input/50 px-1.5 py-0.5 text-[10px]">{f.name}</span>
+                            ))}
+                          </div>
+                        )}
+                        {t.a && (
+                          <div className={`mt-1.5 text-sm ${open ? "" : "max-h-24 overflow-hidden [mask-image:linear-gradient(to_bottom,black_60%,transparent)]"}`}>
+                            <Markdown>{t.a.content}</Markdown>
+                          </div>
+                        )}
+                        {t.a && (
+                          <button
+                            className="mt-1 text-[10px] text-sky-300 hover:underline"
+                            onClick={() => setExpanded((e) => ({ ...e, [key]: !open }))}
+                          >
+                            {open ? "Show less" : "Show full answer"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {(isLoading || response) && (
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <span className="h-px flex-1 bg-input/50" /> Latest <span className="h-px flex-1 bg-input/50" />
+                    </div>
+                  )}
+                  {!isLoading && !response && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Type below, or add screenshots / files, to continue this conversation.
+                    </p>
+                  )}
                 </div>
               )}
               {/* What was asked (typed, or transcribed from the mic) */}
@@ -256,8 +355,37 @@ export const Input = ({
             </div>
           </ScrollArea>
           {/* Follow-up in the same conversation: text and/or more screenshots */}
+          {attachedFiles.length > 0 && (
+            <div id="followup-pending" className="flex flex-wrap items-center gap-1.5 border-t border-input/50 px-2 pt-2">
+              <span className="text-[10px] text-muted-foreground">Will be added to this conversation:</span>
+              {attachedFiles.map((f) => (
+                <span key={f.id} className="relative inline-flex items-center gap-1 rounded border border-input/60 bg-background/40 pr-1 text-[10px]">
+                  {f.type.startsWith("image/") ? (
+                    <img src={`data:${f.type};base64,${f.base64}`} alt="Pending" className="h-8 w-12 rounded-l object-cover object-top" />
+                  ) : (
+                    <span className="px-1.5 py-1">{f.name}</span>
+                  )}
+                  <button onClick={() => removeFile(f.id)} title="Remove" className="text-muted-foreground hover:text-foreground">
+                    <XIcon className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           <div className="border-t border-input/50 p-2 flex items-center gap-1.5">
             <input
+              ref={followUpFileRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.txt,.md,.csv,.json,.log,.py,.js,.ts,.tsx,.java,.go,.rs,.c,.cpp,.sql,.sh,.html,.css"
+              className="hidden"
+              onChange={async (e) => {
+                for (const f of Array.from(e.target.files || [])) await addFile(f);
+                e.target.value = "";
+              }}
+            />
+            <input
+              id="followup-input"
               value={followUp}
               onChange={(e) => setFollowUp(e.target.value)}
               onKeyDown={(e) => {
@@ -277,7 +405,10 @@ export const Input = ({
             <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" disabled={isScreenshotLoading} onClick={() => void captureScreenshot()} title="Add an area to this follow-up (⌘⇧S)">
               + Area
             </Button>
-            <Button size="sm" className="h-8 px-3 text-[10px]" disabled={isLoading || (!followUp.trim() && !attachedFiles.length)} onClick={sendFollowUp}>
+            <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" onClick={() => followUpFileRef.current?.click()} title="Attach images or files to this follow-up">
+              <PaperclipIcon className="h-3 w-3" />
+            </Button>
+            <Button id="followup-send" size="sm" className="h-8 px-3 text-[10px]" disabled={isLoading || (!followUp.trim() && !attachedFiles.length)} onClick={sendFollowUp}>
               Send{attachedFiles.length ? ` (${attachedFiles.length})` : ""}
             </Button>
           </div>

@@ -19,6 +19,19 @@ if ((window as any).__PLUELY_WEBTEST__) {
     if (!(e.metaKey || e.ctrlKey)) return;
     const emit = (window as any).__webtestEmit;
     if (!emit) return;
+    // Desktop-only shortcuts: report them so the Shortcuts panel can tick them.
+    const used = (action: string) => emit("shortcut-used", { action });
+    const typing = /^(INPUT|TEXTAREA)$/.test((e.target as HTMLElement)?.tagName || "");
+    if (!e.shiftKey && (e.key === "\\" || (e.key.startsWith("Arrow") && !typing))) {
+      e.preventDefault();
+      used(e.key === "\\" ? "toggle_window" : "move_window");
+      return;
+    }
+    if (e.shiftKey && e.key.toLowerCase() === "d") {
+      e.preventDefault();
+      used("toggle_dashboard");
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey && !e.altKey) {
       e.preventDefault();
       emit("custom-shortcut-triggered", { action: "screenshot_enter" }); // capture + send

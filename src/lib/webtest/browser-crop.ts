@@ -7,7 +7,10 @@ type Emit = (event: string, payload?: unknown) => void;
 export async function start(emit: Emit) {
   // Go full screen first (needs the shortcut's user gesture), so the frozen
   // screen picture lines up 1:1 with the real screen — like the native overlay.
-  const fs = document.documentElement.requestFullscreen?.().catch(() => undefined);
+  // (Demo recordings set __DEMO_NO_FS: the picker then stays inside the page.)
+  const fs = (window as any).__DEMO_NO_FS
+    ? undefined
+    : document.documentElement.requestFullscreen?.().catch(() => undefined);
   const res = await fetch("http://localhost:8787/screenshot", { method: "POST", body: "{}" });
   const { image } = (await res.json()) as { image: string };
   const img = new Image();

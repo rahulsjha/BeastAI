@@ -98,6 +98,7 @@ pub fn setup_global_shortcuts<R: Runtime>(
 
 /// Handle shortcut action based on action_id
 pub fn handle_shortcut_action<R: Runtime>(app: &AppHandle<R>, action_id: &str) {
+    report_shortcut_used(app, action_id);
     match action_id {
         "toggle_dashboard" => handle_toggle_dashboard(app),
         "toggle_window" => handle_toggle_window(app),
@@ -124,7 +125,15 @@ pub fn handle_shortcut_action<R: Runtime>(app: &AppHandle<R>, action_id: &str) {
     }
 }
 
+/// Tell the overlay a global shortcut fired (the Shortcuts panel ticks it ✓).
+fn report_shortcut_used<R: Runtime>(app: &AppHandle<R>, action_id: &str) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.emit("shortcut-used", json!({ "action": action_id }));
+    }
+}
+
 pub fn start_move_window<R: Runtime>(app: &AppHandle<R>, direction: &str) {
+    report_shortcut_used(app, "move_window");
     {
         let license_state = app.state::<LicenseState>();
         if !license_state.is_active() {
@@ -670,6 +679,12 @@ fn handle_move_window<R: Runtime>(app: &AppHandle<R>, direction: &str) {
     } else {
         eprintln!("Main window not found");
     }
+}
+
+/// Tauri command: hide or show the overlay (same as the ⌘\ shortcut)
+#[tauri::command]
+pub fn toggle_main_window(app_handle: tauri::AppHandle) {
+    handle_toggle_window(&app_handle);
 }
 
 /// Tauri command to exit the application
