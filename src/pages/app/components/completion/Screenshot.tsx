@@ -8,7 +8,7 @@ export const Screenshot = ({
   screenshotConfiguration,
   attachedFiles,
   isLoading,
-  captureAndSend,
+  captureFullScreen,
   isScreenshotLoading,
 }: UseCompletionReturn) => {
   const { supportsImages } = useApp();
@@ -26,9 +26,10 @@ export const Screenshot = ({
       title={
         !supportsImages
           ? "Screenshot not supported by current AI provider"
-          : "Screenshot: select an area — it's sent and answered right away (⌘↵). ⌘⇧S only attaches it."
+          : "Screenshot: captures the screen, then lets you send it or add more screenshots / text first. (⌘↵ captures and sends at once.)"
       }
-      onClick={captureAndSend}
+      id="screenshot-button"
+      onClick={() => void captureFullScreen()}
       disabled={isDisabled}
     >
       {isScreenshotLoading ? (

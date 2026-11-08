@@ -11,7 +11,7 @@ import {
   Trash2Icon,
   XIcon,
 } from "lucide-react";
-import { useLiveTranscript, type Speaker } from "@/hooks/useLiveTranscript";
+import { type Speaker, type LiveTranscriptEngine } from "@/hooks/useLiveTranscript";
 import type { AnswerJob } from "@/hooks/useAnswerQueue";
 import { AnswerQueue } from "./AnswerQueue";
 
@@ -76,21 +76,21 @@ function SourceButton({
  * questions with one click (or automatically).
  */
 export function LiveTranscript({
+  t,
   onAnswer,
   onClose,
   jobs = [],
   onRemoveJob,
   onClearFinished,
-  getMode,
 }: {
+  /** The always-on listening engine (owned by the app page, runs with the panel closed too). */
+  t: LiveTranscriptEngine;
   onAnswer: (question: string, entryId: number | undefined, source: "auto" | "manual", mode?: string) => void;
-  getMode?: () => string;
   onClose: () => void;
   jobs?: AnswerJob[];
   onRemoveJob: (id: number) => void;
   onClearFinished: () => void;
 }) {
-  const t = useLiveTranscript({ onQuestion: (q, id, mode) => onAnswer(q, id, "auto", mode), getMode });
   const answering = jobs.some((j) => j.status === "answering");
   const waitingCount = jobs.filter((j) => j.status === "waiting").length;
   const jobFor = (entryId: number) => [...jobs].reverse().find((j) => j.entryId === entryId);

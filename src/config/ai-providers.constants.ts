@@ -18,7 +18,7 @@ export const AI_PROVIDERS = [
   -H "Content-Type: application/json" \\
   -H "User-Agent: Mozilla/5.0" \\
   -H "Authorization: Bearer {{API_KEY}}" \\
-  -d '{"model":"{{MODEL}}","messages":[{"role":"system","content":"{{SYSTEM_PROMPT}}"},{"role":"user","content":[{"type":"text","text":"{{TEXT}}"}]}]}'`,
+  -d '{"model":"{{MODEL}}","reasoning_effort":"low","messages":[{"role":"system","content":"{{SYSTEM_PROMPT}}"},{"role":"user","content":[{"type":"text","text":"{{TEXT}}"}]}]}'`,
     responseContentPath: "choices[0].message.content",
     streaming: true,
   },

@@ -4,7 +4,7 @@ import { useWindowResize } from "./useWindow";
 import { useGlobalShortcuts } from "@/hooks";
 import { MAX_FILES } from "@/config";
 import { useApp } from "@/contexts";
-import { getModeDef, type ModeKey } from "@/config/modes";
+import { getModeDef, type ModeKey, FAST_TEXT_PROVIDER } from "@/config/modes";
 import { downscalePng } from "@/lib/image-resize";
 import { addQA } from "@/lib/storage/qa-history";
 import { attachmentsForHistory, cacheConversation, getCachedConversation } from "@/lib/conversation-cache";
@@ -195,7 +195,7 @@ export const useCompletion = () => {
   }, []);
 
   const submit = useCallback(
-    async (speechText?: string, opts?: { mode?: string }) => {
+    async (speechText?: string, opts?: { mode?: string; fast?: boolean }) => {
       // Attachments can be sent without a message; use a sensible default.
       const typed = speechText || state.input;
       const input = typed.trim()
@@ -208,9 +208,14 @@ export const useCompletion = () => {
       const submitStartedAt = Date.now();
       // A queued job can ask for its own mode without changing the UI mode.
       const overrideDef = opts?.mode ? getModeDef(opts.mode as ModeKey) : undefined;
-      const selectedAIProvider = overrideDef
+      let selectedAIProvider = overrideDef
         ? { provider: overrideDef.aiProvider, variables: overrideDef.aiVariables }
         : modeProvider;
+      // Spoken questions (Auto): answer with fast Groq even in Code/Debug, so the
+      // answer starts in ~1-3s instead of ~6-14s. Same mode prompt and layout.
+      if (opts?.fast && selectedAIProvider?.provider === "claude-cli" && FAST_TEXT_PROVIDER.variables.api_key) {
+        selectedAIProvider = { provider: FAST_TEXT_PROVIDER.provider, variables: FAST_TEXT_PROVIDER.variables };
+      }
       const systemPrompt = overrideDef?.systemPrompt ?? modeSystemPrompt;
 
       if (!input.trim()) {
@@ -1242,7 +1247,6 @@ export const useCompletion = () => {
 
   // register callbacks for global shortcuts
   useEffect(() => {
-    globalShortcuts.registerAudioCallback(toggleRecording);
     globalShortcuts.registerInputRef(inputRef.current);
     captureRef.current = captureScreenshot;
     captureAndSendRef.current = captureAndSend;

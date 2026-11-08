@@ -72,7 +72,7 @@ Code and Debug use **Claude Opus** through your own Claude Code login — no API
 <td valign="top">
 
 ### 💬 Hands-free
-**Listen** hears the meeting, writes a live transcript (You / Interviewer) and answers questions as they're asked.
+**Auto** is on as soon as Beast opens: it hears you and the interviewer, spots every question and answers it in your mode — no buttons to press.
 
 </td>
 <td valign="top">
@@ -124,7 +124,7 @@ Click any card to jump to its video and step-by-step guide.
 </tr>
 <tr>
 <td align="center"><a href="#10-documents"><img src="docs/assets/thumbs/10-documents.gif" alt="Documents" /><br/><b>10 · Documents</b></a><br/><sub>Résumé, notes, PDFs, logs</sub></td>
-<td align="center"><a href="#11-listen--live-transcript"><img src="docs/assets/thumbs/11-listen.gif" alt="Listen" /><br/><b>11 · Listen &amp; transcript</b></a><br/><sub>⌘⇧M — hears the meeting, answers live</sub></td>
+<td align="center"><a href="#11-listen--live-transcript"><img src="docs/assets/thumbs/11-listen.gif" alt="Listen" /><br/><b>11 · Auto: hears &amp; answers</b></a><br/><sub>Always on — you + interviewer, answered live</sub></td>
 <td align="center"><a href="#12-shortcuts-panel"><img src="docs/assets/thumbs/12-shortcuts-stop.gif" alt="Shortcuts panel" /><br/><b>12 · Shortcuts panel</b></a><br/><sub>Test every shortcut · hide · quit</sub></td>
 </tr>
 </table>
@@ -133,10 +133,9 @@ Click any card to jump to its video and step-by-step guide.
 
 | Button | What it does | Keys |
 |:--|:--|:--:|
-| 🎧 **Listen** | Hears the meeting and answers the questions in it | ⌘⇧M |
+| ● **Auto** | On at start: hears you **and** the interviewer, detects every question and answers it in the current mode. Click to pause / resume | ⌘⇧M |
 | **Design · Code · Concept · Debug** | How Beast should answer. **Full / ⚡ Short** appears next to Concept | — |
-| 🎤 **Mic** | Ask by voice | ⌘⇧A |
-| 💻 **Screenshot** | Whole screen, sent at once with anything typed | ⌘↵ |
+| 💻 **Screenshot** | Captures the screen, then: **Send now · + Another screenshot · + Area · ✎ Add text**. (⌘↵ captures and sends at once) | ⌘↵ |
 | 📎 **Attach** | Images, PDFs, notes, logs, code | — |
 | 💬 **Live transcript** | Who said what, with times; auto-answers questions | — |
 | 🕘 **History** | Every past question and answer; **Continue** any of them | — |
@@ -164,6 +163,8 @@ Click any card to jump to its video and step-by-step guide.
 | **Code** | Approach · dry run · complete runnable code · complexity | Claude Opus (your `claude` login) | 13–25 s, streams early |
 | **Debug** | Root cause · evidence · fix · before vs after · how to verify | Claude Opus (your `claude` login) | 5–30 s |
 
+Every answer has the **same layout in its mode**: a one-line **Answer:** first, then that mode's sections in a fixed order (so you always know where to look).
+
 **How to use it**
 1. Click a mode pill — **Design**, **Code**, **Concept** or **Debug**.
 2. In Concept, click the **Full / ⚡ Short** chip to switch between a full answer and a 3-line definition.
@@ -178,7 +179,7 @@ Click any card to jump to its video and step-by-step guide.
 <a id="2-screenshot--send"></a>
 ### 2 · Screenshot & send — 💻 or ⌘↵
 
-> One click grabs the **whole screen** and sends it straight away, with anything you typed. The answer opens with a thumbnail of the screenshot next to “Asked:”.
+> **💻** grabs the whole screen and asks what next: **Send now**, **+ Another screenshot**, **+ Area** or **✎ Add text**. **⌘↵** skips the question and sends at once. The answer opens with a thumbnail of the screenshot next to “Asked:”.
 
 <!-- video:02-screenshot-send -->
 <p align="center"><a href="docs/demos/02-screenshot-send.mp4"><img src="docs/demos/02-screenshot-send.gif" width="100%" alt="Screenshot and send demo" /></a></p>
@@ -187,7 +188,8 @@ Click any card to jump to its video and step-by-step guide.
 **How to use it**
 1. Have the question on your screen — LeetCode, HackerRank, a doc, an error…
 2. *Optional:* type an instruction, e.g. **“Solve it in Java”**.
-3. Click **💻** or press **⌘↵** — from any app; Beast doesn't need to be in front.
+3. Click **💻** — a card shows *“📸 1 screenshot ready”* with **Send now · + Another screenshot · + Area · ✎ Add text · Clear**. Add as many as you need, type a note, then **Send now**.
+4. In a hurry? **⌘↵** captures and sends in one go — from any app; Beast doesn't need to be in front.
 
 <details><summary><b>Good to know</b></summary>
 
@@ -326,21 +328,21 @@ Follow-ups continue the same Claude session, so it remembers what it already saw
 3. Ask your question and press **Enter**.
 
 <a id="11-listen--live-transcript"></a>
-### 11 · Listen & live transcript — ⌘⇧M
+### 11 · Auto — hears you and the interviewer, answers every question
 
-> Listen hears the meeting (Zoom, Meet, Teams — any app) and your microphone, and answers questions as soon as they're asked.
+> One switch, **on as soon as Beast opens**. It hears the meeting (Zoom, Meet, Teams — any app) and your microphone, detects each question, and answers it in the current mode — the answers build up as a chat thread.
 
 <!-- video:11-listen -->
 <p align="center"><a href="docs/demos/11-listen.mp4"><img src="docs/demos/11-listen.gif" width="100%" alt="Listen demo" /></a></p>
 <!-- /video -->
 
 **How to use it**
-1. Click **🎧** or press **⌘⇧M**. A green status row shows it's listening; everything else stays usable.
-2. When a question is heard, the answer opens on its own — usually a second or two after the speaker stops.
+1. Nothing to press: the **● Auto** pill at the top left is green and a status line shows what was last heard.
+2. When a question is heard, the answer opens on its own and joins the conversation thread (earlier Q&As stay above) — spoken questions are answered with the fast model in every mode (~2 s to hear it, a few seconds to answer; measured 7.5 s for a full coding answer).
 3. Click **💬 Live transcript** to see who said what — **You** in blue, **Interviewer** in amber — with times.
    - **Auto: Interviewer / You** — choose whose questions are answered automatically.
    - Every line has an **Answer** button to answer it on demand.
-4. Press **🎧** (or ⌘⇧M) again to stop.
+4. Click **● Auto** (or press ⌘⇧M / ⌘⇧A) to pause; again to resume.
 
 <details><summary><b>Good to know</b></summary>
 
@@ -426,8 +428,8 @@ All of these work from **any app** in the desktop version. Change them in Dashbo
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd> | Area screenshot — drag to pick; waits in the tray until Enter |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>↵</kbd> | Add the whole screen to the open conversation **without sending** — press once per page, then Send them together |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>O</kbd> | Solve screen on / off |
-| <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>M</kbd> | Listen on / off |
-| <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> | Ask by voice on / off |
+| <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>M</kbd> | Auto on / off (pause / resume automatic answers) |
+| <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> | Same as ⌘⇧M |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>I</kbd> | Bring Beast forward with the cursor in the question bar |
 | <kbd>⌥</kbd> <kbd>/</kbd> | **Quick hide** — Beast disappears instantly; press again to bring it back |
 | <kbd>⌘</kbd> <kbd>\</kbd> | Hide / show Beast |
@@ -462,7 +464,7 @@ flowchart LR
     subgraph IN[" You ask "]
       T[⌨️ Typed]
       S[💻 Screenshot<br/>⌘↵ / ⌘⇧S]
-      V[🎤 Voice / 🎧 Listen]
+      V[● Auto: you + interviewer]
       F[📎 Files]
     end
     S --> VIS[Groq vision<br/>reads the screen ~1s]
@@ -506,7 +508,7 @@ More detail: [features guide](docs/features.md) · [model routing](docs/model-ro
 |:--|:--|
 | “Screen Recording is off for Beast” | System Settings → Privacy & Security → Screen & System Audio Recording → turn on **Beast**, then quit and reopen it |
 | Beast doesn't show over a full-screen app | Press ⌘\\ twice; check *Always on top* in Dashboard → Settings |
-| Listen hears nothing | Check the Microphone and Screen & System Audio Recording permissions, then ⌘⇧M off and on |
+| Auto hears nothing | Check the Microphone and Screen & System Audio Recording permissions, then ⌘⇧M off and on |
 | Code / Debug answers fail | Run `claude -p "hi"` — if it asks you to log in, run `claude` and log in |
 | Concept / Design answers fail | Check `VITE_GROQ_API_KEY` in `.env.local`, then rebuild |
 
@@ -547,7 +549,7 @@ History, transcripts and conversations live in a local SQLite database on your M
 ## 🗺 Roadmap
 
 - [x] Screenshot → answer in ~2–3 s, in every mode
-- [x] Listen with live transcript and answer queue
+- [x] One Auto switch: hears you + interviewer, answers every question as a chat thread
 - [x] Follow-ups with screenshots and files, History → Continue
 - [x] Shortcuts panel with live ✓ tester
 - [ ] Signed `.dmg` in GitHub Releases

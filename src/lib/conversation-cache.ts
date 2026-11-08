@@ -10,16 +10,30 @@ const THUMB_EDGE = 320;
 /** A small JPEG thumbnail of an image (keeps history light). */
 export async function makeThumb(base64: string, mime = "image/png"): Promise<string> {
   try {
-    const img = new Image();
-    img.src = `data:${mime};base64,${base64}`;
-    await img.decode();
-    const scale = Math.min(1, THUMB_EDGE / Math.max(img.naturalWidth, img.naturalHeight));
+    // createImageBitmap decodes even in a hidden page (Beast hidden, background
+    // tab), where <img>.decode() can wait forever.
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    let src: CanvasImageSource & { width: number; height: number };
+    try {
+      src = await createImageBitmap(new Blob([bytes], { type: mime }));
+    } catch {
+      const img = new Image();
+      img.src = `data:${mime};base64,${base64}`;
+      const decoded = await Promise.race([
+        img.decode().then(() => true),
+        new Promise<boolean>((r) => setTimeout(() => r(false), 1500)),
+      ]);
+      if (!decoded) return "";
+      src = img as any;
+    }
+    const w = (src as any).naturalWidth || src.width, h = (src as any).naturalHeight || src.height;
+    const scale = Math.min(1, THUMB_EDGE / Math.max(w, h));
     const c = document.createElement("canvas");
-    c.width = Math.max(1, Math.round(img.naturalWidth * scale));
-    c.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    c.width = Math.max(1, Math.round(w * scale));
+    c.height = Math.max(1, Math.round(h * scale));
     const ctx = c.getContext("2d");
     if (!ctx) return "";
-    ctx.drawImage(img, 0, 0, c.width, c.height);
+    ctx.drawImage(src, 0, 0, c.width, c.height);
     return c.toDataURL("image/jpeg", 0.7).split(",")[1] ?? "";
   } catch {
     return "";

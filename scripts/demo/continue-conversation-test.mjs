@@ -14,8 +14,15 @@ const title = () => ev(`return document.getElementById("answer-title")?.innerTex
 const turns = () => ev(`return document.querySelectorAll("#conversation-thread [data-turn]").length`);
 const thumbs = () => ev(`return document.querySelectorAll('#conversation-thread img[alt="Earlier screenshot"]').length`);
 const waitDone = async (ms = 120000) => { const t0 = Date.now(); await sleep(1500);
-  while (Date.now() - t0 < ms) { const l = await ev(`return /Generating response/.test(document.body.innerText) || !!document.querySelector('#answer-title') && !document.querySelector('[id="answer-title"]')`); if (!l) break; await sleep(500); }
-  await sleep(1500); return +((Date.now() - t0) / 1000).toFixed(1); };
+  // done = not "Generating", and the answer text unchanged for 2.5s (streaming + saving finished)
+  let last = -1, same = 0;
+  while (Date.now() - t0 < ms) {
+    const st = await ev(`return JSON.stringify({g:/Generating response/.test(document.body.innerText), n:(document.body.innerText||"").length})`);
+    const o = JSON.parse(st);
+    if (!o.g && o.n === last) { if (++same >= 10) break; } else { same = 0; last = o.n; }
+    await sleep(250);
+  }
+  return +((Date.now() - t0) / 1000).toFixed(1); };
 const click = (sel) => ev(`const b=${sel}; b?.click(); return !!b`);
 const btnText = (t) => `[...document.querySelectorAll("button")].find(b=>b.innerText.trim()===${JSON.stringify(t)})`;
 
@@ -24,14 +31,18 @@ await ev(`await import("/webtest-runner.js"); __T.mode("Concept"); return 1`); a
 
 // 1. First question: 💻 with typed text
 await ev(`__T.setText("In one short paragraph: what app is on this screen?"); return 1`);
-await click(`document.querySelector("svg.lucide-laptop-minimal").closest("button")`);
-let s1 = await waitDone(); ok("Q1 💻 screenshot + text answered", (await ev(`return __T.answer().length`)) > 80, { secs: s1, title: await title() });
+// 💻 captures, then offers Send now / + Another screenshot / + Area / ✎ Add text
+await click(`document.getElementById("screenshot-button")`); await sleep(3500);
+await click(`[...document.querySelectorAll("#tray-actions button")].find(b=>/Send now/.test(b.innerText))`);
+let s1 = await waitDone(); ok("Q1 💻 → Send now: screenshot + text answered", (await ev(`return __T.answer().length`)) > 80, { secs: s1, title: await title() });
 
 // 2. 💻 again while the answer is open → continues (thread shows Q1 with thumbnail)
 await ev(`__T.setText("Now name one icon you can see, in one line."); return 1`);
-await click(`document.querySelector("svg.lucide-laptop-minimal").closest("button")`);
+// ⌘↵ (capture + send at once) while the answer is open
+await ev(`window.__webtestEmit("custom-shortcut-triggered", { action: "screenshot_enter" }); return 1`);
+for (let i = 0; i < 40 && !(await ev(`return /Generating response/.test(document.body.innerText)`)); i++) await sleep(250);
 s1 = await waitDone();
-ok("Q2 💻 again continues the same conversation (Q1 shown above with its screenshot)", (await turns()) === 1 && (await thumbs()) === 1 && /2 questions/.test(await title()), { turns: await turns(), thumbs: await thumbs(), title: await title(), secs: s1 });
+ok("Q2 ⌘↵ while the answer is open continues the same conversation (Q1 shown above with its screenshot)", (await turns()) === 1 && (await thumbs()) === 1 && /2 questions/.test(await title()), { turns: await turns(), thumbs: await thumbs(), title: await title(), secs: s1 });
 await shot("01-thread-after-second-screenshot");
 
 // 3. Follow-up box: + Screen and 📎 file, chips shown, then send typed text
@@ -51,7 +62,8 @@ await shot("03-three-questions-thread");
 
 // 4. Close (✕) ends it; History → Continue reopens with all 3
 await click(`document.getElementById("answer-close")`); await sleep(800);
-const closed = !(await ev(`return !!document.getElementById("answer-title")`));
+// (a hidden test tab never finishes the close animation, so check the panel's state, not the DOM)
+const closed = !(await ev(`return !!document.getElementById("answer-title")?.closest('[data-state="open"]')`));
 await click(`document.querySelector("svg.lucide-history").closest("button")`); await sleep(800);
 const conts = await ev(`return document.querySelectorAll("[data-continue]").length`);
 await shot("04-history-continue-buttons");

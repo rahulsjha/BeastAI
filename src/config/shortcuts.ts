@@ -43,8 +43,8 @@ export const DEFAULT_SHORTCUT_ACTIONS: ShortcutAction[] = [
   },
   {
     id: "system_audio",
-    name: "System Audio",
-    description: "Toggle system audio capture",
+    name: "Auto on / off",
+    description: "Pause or resume Auto (hear you + interviewer, answer questions automatically)",
     defaultKey: {
       macos: "cmd+shift+m",
       windows: "ctrl+shift+m",
@@ -53,8 +53,8 @@ export const DEFAULT_SHORTCUT_ACTIONS: ShortcutAction[] = [
   },
   {
     id: "audio_recording",
-    name: "Voice Input",
-    description: "Start voice recording",
+    name: "Auto on / off (alt)",
+    description: "Same as the Auto shortcut: pause or resume automatic answers",
     defaultKey: {
       macos: "cmd+shift+a",
       windows: "ctrl+shift+a",

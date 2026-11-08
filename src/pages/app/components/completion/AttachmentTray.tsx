@@ -28,6 +28,7 @@ export function AttachmentTray({
   onAddScreen,
   onAddArea,
   onSend,
+  onAddText,
   busy,
 }: {
   files: Attached[];
@@ -39,6 +40,8 @@ export function AttachmentTray({
   onAddArea?: () => void;
   /** Send everything in the tray now (with anything typed). */
   onSend?: () => void;
+  /** Put the cursor in the question bar to type a note / question for these. */
+  onAddText?: () => void;
   busy?: boolean;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
@@ -53,11 +56,18 @@ export function AttachmentTray({
   const shown = files.find((f) => f.id === preview);
 
   return (
-    <div className="w-full rounded-xl border border-input/50 bg-muted/20 px-2 py-1.5">
+    <div id="attachment-tray" className="w-full rounded-xl border border-sky-500/30 bg-sky-500/5 px-2 py-1.5">
+      <div className="mb-1 text-[11px] font-medium select-none">
+        {(() => {
+          const shots = files.filter((f) => f.type.startsWith("image/")).length;
+          const docs = files.length - shots;
+          const what = [shots ? `${shots} screenshot${shots > 1 ? "s" : ""}` : "", docs ? `${docs} file${docs > 1 ? "s" : ""}` : ""]
+            .filter(Boolean)
+            .join(" + ");
+          return `📸 ${what} ready — send now, or add more screenshots / text first`;
+        })()}
+      </div>
       <div className="flex items-center gap-1.5 overflow-x-auto">
-        <span className="shrink-0 text-[10px] font-semibold text-muted-foreground select-none mr-0.5">
-          Sending with next question:
-        </span>
         {files.map((f) => {
           const isImage = f.type.startsWith("image/");
           return (
@@ -125,26 +135,31 @@ export function AttachmentTray({
             </div>
           );
         })}
+      </div>
+      <div id="tray-actions" className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        {onSend && (
+          <Button size="sm" className="h-7 px-3 text-[11px]" disabled={busy} onClick={onSend} title="Send everything now, with anything typed in the bar (Enter)">
+            Send now{files.length > 1 ? ` (${files.length})` : ""}
+          </Button>
+        )}
         {onAddScreen && (
-          <Button size="sm" variant="outline" className="h-6 shrink-0 px-2 text-[10px]" disabled={busy} onClick={onAddScreen} title="Add the whole screen (not sent yet)">
-            + Screen
+          <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" disabled={busy} onClick={onAddScreen} title="Add another whole-screen screenshot (not sent yet)">
+            + Another screenshot
           </Button>
         )}
         {onAddArea && (
-          <Button size="sm" variant="outline" className="h-6 shrink-0 px-2 text-[10px]" disabled={busy} onClick={onAddArea} title="Add an area (⌘⇧S)">
+          <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" disabled={busy} onClick={onAddArea} title="Drag to add part of the screen (⌘⇧S)">
             + Area
           </Button>
         )}
-        {files.length > 1 && (
-          <Button size="sm" variant="ghost" className="h-6 shrink-0 px-2 text-[10px]" onClick={onClear}>
-            Clear all
+        {onAddText && (
+          <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" onClick={onAddText} title="Type a question or note to go with these, then press Enter">
+            ✎ Add text
           </Button>
         )}
-        {onSend && (
-          <Button size="sm" className="h-6 shrink-0 px-2 text-[10px]" disabled={busy} onClick={onSend} title="Send all of these together (Enter)">
-            Send {files.length}
-          </Button>
-        )}
+        <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px] text-muted-foreground" onClick={onClear} title="Remove all of these">
+          Clear
+        </Button>
       </div>
       {editingFile && (
         <div className="mt-1.5 flex items-center gap-1.5">
