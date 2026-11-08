@@ -16,6 +16,12 @@ if ((window as any).__PLUELY_WEBTEST__) {
   //   ⌘↵ / Ctrl+Enter   → screenshot, then send it and show the answer
   //   ⌘⇧O / Ctrl+Shift+O → start/stop Solve screen monitoring
   window.addEventListener("keydown", (e) => {
+    // ⌥/ → quick hide (desktop: hides/shows the window; here it just ticks the panel)
+    if (e.altKey && !e.metaKey && !e.ctrlKey && e.code === "Slash") {
+      e.preventDefault();
+      (window as any).__webtestEmit?.("shortcut-used", { action: "quick_hide" });
+      return;
+    }
     if (!(e.metaKey || e.ctrlKey)) return;
     const emit = (window as any).__webtestEmit;
     if (!emit) return;

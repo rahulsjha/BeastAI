@@ -429,6 +429,7 @@ All of these work from **any app** in the desktop version. Change them in Dashbo
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>M</kbd> | Listen on / off |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> | Ask by voice on / off |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>I</kbd> | Bring Beast forward with the cursor in the question bar |
+| <kbd>⌥</kbd> <kbd>/</kbd> | **Quick hide** — Beast disappears instantly; press again to bring it back |
 | <kbd>⌘</kbd> <kbd>\</kbd> | Hide / show Beast |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>D</kbd> | Dashboard — settings, shortcut editor |
 | <kbd>⌘</kbd> + <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> | Move the bar (hold to keep moving) |
@@ -443,7 +444,7 @@ Beast has no Dock icon, so **⌘Q usually won't reach it**. Use one of these:
 | How | Command / action |
 |:--|:--|
 | Inside the app | **👁** button → **Hide now**, **Hide for 1 / 5 / 15 min** (comes back by itself), or **Quit Beast** → *Yes, quit* |
-| Hide without quitting | <kbd>⌘</kbd> <kbd>\</kbd>, or click the **Beast icon in the menu bar** (press / click again to bring it back) |
+| Hide without quitting | <kbd>⌥</kbd> <kbd>/</kbd> or <kbd>⌘</kbd> <kbd>\</kbd>, or click the **Beast icon in the menu bar** (press / click again to bring it back) |
 | Menu-bar icon (top right) | **Left-click** = hide / show at once · **right-click** = Hide for 1 / 5 / 15 min, Quit |
 | Terminal — normal quit | `osascript -e 'quit app "Beast"'` |
 | Terminal — not responding | `pkill -x Beast` |

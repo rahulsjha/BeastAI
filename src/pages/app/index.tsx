@@ -98,7 +98,7 @@ const App = () => {
           }}
         >
           {/* Header row — fixed height, never grows with the input */}
-          <div className="flex flex-row items-center gap-1 w-full min-w-0 [&_button.size-9]:size-8">
+          <div className="flex flex-row items-center gap-0.5 w-full min-w-0 pr-1.5 [&_button.size-9]:size-7 [&>*]:shrink-0">
             <SystemAudio {...systemAudio} />
 
             {(
