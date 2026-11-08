@@ -681,6 +681,33 @@ fn handle_move_window<R: Runtime>(app: &AppHandle<R>, direction: &str) {
     }
 }
 
+/// Tauri command: hide the overlay now and, if `seconds` > 0, bring it back on
+/// its own after that many seconds (⌘\ also brings it back any time).
+#[tauri::command]
+pub fn hide_main_window_for(app_handle: tauri::AppHandle, seconds: u64) {
+    let visible = app_handle
+        .get_webview_window("main")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    if visible {
+        handle_toggle_window(&app_handle);
+    }
+    if seconds > 0 {
+        let app = app_handle.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_secs(seconds));
+            let hidden = app
+                .get_webview_window("main")
+                .and_then(|w| w.is_visible().ok())
+                .map(|v| !v)
+                .unwrap_or(false);
+            if hidden {
+                handle_toggle_window(&app);
+            }
+        });
+    }
+}
+
 /// Tauri command: hide or show the overlay (same as the ⌘\ shortcut)
 #[tauri::command]
 pub fn toggle_main_window(app_handle: tauri::AppHandle) {

@@ -7,7 +7,13 @@ export async function downscalePng(base64: string, maxEdge = MAX_IMAGE_EDGE, mim
   try {
     const img = new Image();
     img.src = `data:${mime};base64,${base64}`;
-    await img.decode();
+    // Hidden pages (Beast hidden with ⌘\, a background tab) can defer image
+    // decoding indefinitely; never hold a screenshot hostage to it.
+    const decoded = await Promise.race([
+      img.decode().then(() => true),
+      new Promise<boolean>((r) => setTimeout(() => r(false), 2000)),
+    ]);
+    if (!decoded) return base64;
     const scale = Math.min(1, maxEdge / Math.max(img.naturalWidth, img.naturalHeight));
     // Already small enough: still re-encode non-PNG images as PNG (sent as image/png).
     if (scale >= 1 && mime === "image/png") return base64;

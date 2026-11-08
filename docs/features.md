@@ -13,6 +13,7 @@ Beast is a small always-on-top bar (600px wide) that answers interview questions
 | 📎 **Attach** | Attach images or text documents (`.md`, `.txt`, code). Their content is used in the answer. |
 | 💬 **Live transcript** | Speaker-labelled transcript of You and the Interviewer, with auto-answer and the answer queue. |
 | 🕘 **History** | Every past question and answer, searchable. |
+| 👁 **Hide / quit** | Hide now, hide for 1 / 5 / 15 min (comes back by itself), or Quit Beast (asks first). The **Beast icon in the macOS menu bar** stays visible while hidden: left-click hides / shows, right-click has the same timed hides and Quit. |
 | ⌨️ **Shortcuts & controls** | Every shortcut with Try buttons and a ✓ when a key press works; Hide / Quit Beast. |
 | ✨ **Dev Space** | Opens the settings/dashboard window. |
 | ⠿ | Drag handle to move the bar. |
@@ -42,6 +43,7 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 | **⌘↵** (Ctrl+Enter) | **Screenshot & send** — grabs the whole screen at once, sends it with anything typed, answer opens (thumbnail next to "Asked:") | everywhere (desktop: from any app) |
 | 💻 button | Same as ⌘↵ | — |
 | **⌘⇧S** | **Screenshot & attach** — drag an area (double-click = whole screen, Esc = cancel); waits in the tray for a ✎ note / more files; Enter sends | everywhere |
+| **⌘⇧↵** | **Add screenshot to conversation** — adds the whole screen to the open conversation without sending; press once per page, then Send | everywhere |
 | **⌘⇧O** | Solve screen on / off | everywhere |
 | **⌘⇧A** | Mic on / off (ask by voice) | everywhere |
 | **⌘⇧M** | Listen on / off | everywhere |

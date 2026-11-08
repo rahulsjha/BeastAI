@@ -24,7 +24,7 @@ export const STORAGE_KEYS = {
 } as const;
 
 // Max number of files that can be attached to a message
-export const MAX_FILES = 6;
+export const MAX_FILES = 10;
 
 // Default settings
 export const DEFAULT_SYSTEM_PROMPT =

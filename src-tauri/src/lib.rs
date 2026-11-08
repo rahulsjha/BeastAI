@@ -5,6 +5,7 @@ mod capture;
 mod claude_cli;
 mod db;
 mod shortcuts;
+mod tray;
 mod window;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager, WebviewWindow};
@@ -91,6 +92,7 @@ pub fn run() {
             shortcuts::set_always_on_top,
             shortcuts::exit_app,
             shortcuts::toggle_main_window,
+            shortcuts::hide_main_window_for,
             activate::activate_license_api,
             activate::deactivate_license_api,
             activate::validate_license_api,
@@ -207,6 +209,9 @@ pub fn run() {
                 .expect("Failed to initialize global shortcut plugin");
             if let Err(e) = shortcuts::setup_global_shortcuts(app.handle()) {
                 eprintln!("Failed to setup global shortcuts: {}", e);
+            }
+            if let Err(e) = tray::setup_tray(app.handle()) {
+                eprintln!("Failed to set up the menu-bar icon: {}", e);
             }
             Ok(())
         });

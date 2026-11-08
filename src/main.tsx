@@ -37,6 +37,11 @@ if ((window as any).__PLUELY_WEBTEST__) {
       emit("custom-shortcut-triggered", { action: "screenshot_enter" }); // capture + send
       return;
     }
+    if (e.key === "Enter" && e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      emit("custom-shortcut-triggered", { action: "screenshot_add" }); // add screen, don't send
+      return;
+    }
     if (!e.shiftKey) return;
     const k = e.key.toLowerCase();
     if (k === "s") {

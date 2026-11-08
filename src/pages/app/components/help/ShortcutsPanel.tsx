@@ -31,7 +31,16 @@ const ROWS: Row[] = [
     event: "custom-shortcut-triggered",
     action: "screenshot_enter",
     tryIt: () => fire("custom-shortcut-triggered", { action: "screenshot_enter" }),
+  },  {
+    id: "screenshot_add",
+    fallback: "cmd+shift+enter",
+    what: "Add screenshot to conversation",
+    how: "Adds the whole screen to the open conversation without sending. Scroll, press it again for each page, then Send them together.",
+    event: "custom-shortcut-triggered",
+    action: "screenshot_add",
+    tryIt: () => fire("custom-shortcut-triggered", { action: "screenshot_add" }),
   },
+
   {
     id: "screenshot",
     fallback: "cmd+shift+s",

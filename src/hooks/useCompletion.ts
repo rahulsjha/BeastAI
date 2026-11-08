@@ -652,7 +652,7 @@ export const useCompletion = () => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const MAX_FILES = 6;
+    const MAX_FILES = 10;
 
     files.forEach((file) => {
       // Accept images (for vision models) and parsable text documents.
@@ -1155,10 +1155,15 @@ export const useCompletion = () => {
   const [autoSendTick, setAutoSendTick] = useState(0);
   const captureRef = useRef<() => Promise<void>>(async () => {});
   const captureAndSendRef = useRef<() => Promise<void>>(async () => {});
+  const captureFullScreenRef = useRef<() => Promise<void>>(async () => {});
   useEffect(() => {
     let off: (() => void) | undefined;
     let cancelled = false;
     listen<{ action: string }>("custom-shortcut-triggered", (e) => {
+      if (e.payload?.action === "screenshot_add") {
+        void captureFullScreenRef.current();
+        return;
+      }
       if (e.payload?.action !== "screenshot_enter") return;
       void captureAndSendRef.current();
     }).then((u) => (cancelled ? u() : (off = u)));
@@ -1241,6 +1246,7 @@ export const useCompletion = () => {
     globalShortcuts.registerInputRef(inputRef.current);
     captureRef.current = captureScreenshot;
     captureAndSendRef.current = captureAndSend;
+    captureFullScreenRef.current = captureFullScreen;
     screenshotSubmitRef.current = (b64: string) => handleScreenshotSubmit(b64);
     globalShortcuts.registerScreenshotCallback(captureScreenshot);
   }, [

@@ -82,6 +82,16 @@ export const DEFAULT_SHORTCUT_ACTIONS: ShortcutAction[] = [
     },
   },
   {
+    id: "screenshot_add",
+    name: "Add screenshot to conversation",
+    description: "Add the whole screen to the open conversation without sending, so you can keep adding pages and send them together",
+    defaultKey: {
+      macos: "cmd+shift+enter",
+      windows: "ctrl+shift+enter",
+      linux: "ctrl+shift+enter",
+    },
+  },
+  {
     id: "solve_screen",
     name: "Solve screen",
     description: "Start/stop monitoring the screen and answering new questions",

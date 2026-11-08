@@ -13,6 +13,7 @@ import { useApp, useCompletion } from "@/hooks";
 import { useApp as useAppContext } from "@/contexts";
 import { CaptionsIcon, HistoryIcon, KeyboardIcon, SparklesIcon } from "lucide-react";
 import { ShortcutsPanel } from "./components/help/ShortcutsPanel";
+import { HideButton, HidePanel } from "./components/HideMenu";
 import { HistoryPanel } from "./components/history/HistoryPanel";
 import { SolveScreen } from "./components/SolveScreen";
 import { AnswerQueue } from "./components/transcript/AnswerQueue";
@@ -34,6 +35,7 @@ const App = () => {
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [hideOpen, setHideOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
   // Questions are answered one at a time, in order, each in the mode it was
@@ -139,6 +141,7 @@ const App = () => {
                   <KeyboardIcon className="h-4 w-4" />
                 </Button>
                 <div className="flex-1" />
+                <HideButton open={hideOpen} onToggle={() => setHideOpen((o) => !o)} />
                 <Button
                   size={"icon"}
                   className="cursor-pointer"
@@ -153,6 +156,8 @@ const App = () => {
             <Updater />
             <DragButton />
           </div>
+
+          {hideOpen && <HidePanel onClose={() => setHideOpen(false)} />}
 
           {/* Listen is on: its status sits under the header, so modes and every button stay usable. */}
           {capturing && (
