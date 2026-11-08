@@ -357,7 +357,7 @@ export const Input = ({
           {/* Follow-up in the same conversation: text and/or more screenshots */}
           {attachedFiles.length > 0 && (
             <div id="followup-pending" className="flex flex-wrap items-center gap-1.5 border-t border-input/50 px-2 pt-2">
-              <span className="text-[10px] text-muted-foreground">Will be added to this conversation:</span>
+              <span className="text-[10px] text-muted-foreground">Will be added to this conversation ({attachedFiles.length}):</span>
               {attachedFiles.map((f) => (
                 <span key={f.id} className="relative inline-flex items-center gap-1 rounded border border-input/60 bg-background/40 pr-1 text-[10px]">
                   {f.type.startsWith("image/") ? (
@@ -372,7 +372,10 @@ export const Input = ({
               ))}
             </div>
           )}
-          <div className="border-t border-input/50 p-2 flex items-center gap-1.5">
+          <p id="followup-hint" className="border-t border-input/50 px-2 pt-1.5 text-[10px] text-muted-foreground">
+            Keep adding screenshots to this conversation — <b>+ Screen</b>, <b>+ Area</b>, 📎, or <kbd>⌘⇧↵</kbd> from any app — then <b>Send</b> them together.
+          </p>
+          <div className="p-2 pt-1 flex items-center gap-1.5">
             <input
               ref={followUpFileRef}
               type="file"

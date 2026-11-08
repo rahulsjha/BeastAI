@@ -141,6 +141,7 @@ Click any card to jump to its video and step-by-step guide.
 | 💬 **Live transcript** | Who said what, with times; auto-answers questions | — |
 | 🕘 **History** | Every past question and answer; **Continue** any of them | — |
 | ⌨️ **Shortcuts & controls** | Test every shortcut, hide or quit Beast | — |
+| 👁 **Hide / quit** | Hide now, hide for 1 / 5 / 15 min, or quit | ⌘\\ |
 | ✨ **Dashboard** | Settings, shortcut editor, transparency | ⌘⇧D |
 | **Solve screen** | Watches the screen and answers each new question | ⌘⇧O |
 
@@ -229,6 +230,7 @@ Click any card to jump to its video and step-by-step guide.
 
 <details><summary><b>Good to know</b></summary>
 
+- Keep adding as many screenshots as you need before sending (up to 10 per message): **+ Screen** in the box, or **⌘⇧↵** from any app while you scroll.
 - Clicking 💻 or pressing ⌘↵ while an answer is open also adds to the same conversation.
 - Follow-ups remember the whole thread, even when earlier answers came from a different model.
 </details>
@@ -422,6 +424,7 @@ All of these work from **any app** in the desktop version. Change them in Dashbo
 |:--:|:--|
 | <kbd>⌘</kbd> <kbd>↵</kbd> | Screenshot the whole screen and send it now (with anything typed) |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd> | Area screenshot — drag to pick; waits in the tray until Enter |
+| <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>↵</kbd> | Add the whole screen to the open conversation **without sending** — press once per page, then Send them together |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>O</kbd> | Solve screen on / off |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>M</kbd> | Listen on / off |
 | <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> | Ask by voice on / off |
@@ -439,7 +442,7 @@ Beast has no Dock icon, so **⌘Q usually won't reach it**. Use one of these:
 
 | How | Command / action |
 |:--|:--|
-| Inside the app | ⌨️ → **Quit Beast** → *Yes, quit Beast* |
+| Inside the app | **👁** button → **Hide now**, **Hide for 1 / 5 / 15 min** (comes back by itself), or **Quit Beast** → *Yes, quit* |
 | Hide without quitting | <kbd>⌘</kbd> <kbd>\</kbd> (press again to bring it back) |
 | Terminal — normal quit | `osascript -e 'quit app "Beast"'` |
 | Terminal — not responding | `pkill -x Beast` |

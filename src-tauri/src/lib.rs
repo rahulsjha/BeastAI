@@ -91,6 +91,7 @@ pub fn run() {
             shortcuts::set_always_on_top,
             shortcuts::exit_app,
             shortcuts::toggle_main_window,
+            shortcuts::hide_main_window_for,
             activate::activate_license_api,
             activate::deactivate_license_api,
             activate::validate_license_api,
