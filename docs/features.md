@@ -13,7 +13,7 @@ Pluely is a small always-on-top bar (600px wide) that answers interview question
 | 📎 **Attach** | Attach images or text documents (`.md`, `.txt`, code). Their content is used in the answer. |
 | 💬 **Live transcript** | Speaker-labelled transcript of You and the Interviewer, with auto-answer and the answer queue. |
 | 🕘 **History** | Every past question and answer, searchable. |
-| 👁 **Hide / quit** | Hide now, hide for 1 / 5 / 15 min (comes back by itself), or Quit Beast (asks first). |
+| 👁 **Hide / quit** | Hide now, hide for 1 / 5 / 15 min (comes back by itself), or Quit Beast (asks first). The **Beast icon in the macOS menu bar** stays visible while hidden: left-click hides / shows, right-click has the same timed hides and Quit. |
 | ⌨️ **Shortcuts & controls** | Every shortcut with Try buttons and a ✓ when a key press works; Hide / Quit Beast. |
 | ✨ **Dev Space** | Opens the settings/dashboard window. |
 | ⠿ | Drag handle to move the bar. |

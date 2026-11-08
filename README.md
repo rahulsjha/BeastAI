@@ -443,7 +443,8 @@ Beast has no Dock icon, so **⌘Q usually won't reach it**. Use one of these:
 | How | Command / action |
 |:--|:--|
 | Inside the app | **👁** button → **Hide now**, **Hide for 1 / 5 / 15 min** (comes back by itself), or **Quit Beast** → *Yes, quit* |
-| Hide without quitting | <kbd>⌘</kbd> <kbd>\</kbd> (press again to bring it back) |
+| Hide without quitting | <kbd>⌘</kbd> <kbd>\</kbd>, or click the **Beast icon in the menu bar** (press / click again to bring it back) |
+| Menu-bar icon (top right) | **Left-click** = hide / show at once · **right-click** = Hide for 1 / 5 / 15 min, Quit |
 | Terminal — normal quit | `osascript -e 'quit app "Beast"'` |
 | Terminal — not responding | `pkill -x Beast` |
 | Terminal — force (last resort) | `pkill -9 -x Beast` |

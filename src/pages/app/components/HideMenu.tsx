@@ -52,7 +52,7 @@ export const HidePanel = ({ onClose }: { onClose: () => void }) => {
           >
             <EyeOffIcon className="h-3.5 w-3.5" />
             <span className="flex-1">Hide now</span>
-            <kbd className="text-[10px] text-muted-foreground">⌘\ to show</kbd>
+            <kbd className="text-[10px] text-muted-foreground">⌘\ or menu-bar icon to show</kbd>
           </button>
           <div className="flex items-center gap-1 px-2 py-1.5">
             <TimerIcon className="h-3.5 w-3.5 shrink-0" />
@@ -98,7 +98,7 @@ export const HidePanel = ({ onClose }: { onClose: () => void }) => {
             </div>
           )}
           <p className="px-2 pb-1 pt-1 text-[10px] leading-snug text-muted-foreground">
-            Start it again later with <code>open -a Beast</code> or from Applications.
+            Bring it back any time: click the Beast icon in the menu bar (top right) or press ⌘\. After Quit, start it from Applications or <code>open -a Beast</code>.
           </p>
         </div>
       )}
