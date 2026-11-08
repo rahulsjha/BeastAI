@@ -237,6 +237,8 @@ export const formatShortcutKeyForDisplay = (key: string): string => {
     .split("+")
     .map((part) => {
       const trimmed = part.trim();
+      const named: Record<string, string> = { slash: "/", backslash: "\\", alt: "Option", enter: "Enter" };
+      if (named[trimmed.toLowerCase()]) return named[trimmed.toLowerCase()];
       // Capitalize first letter
       return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
     })

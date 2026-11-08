@@ -90,6 +90,13 @@ const ROWS: Row[] = [
     event: "toggle-window-visibility",
   },
   {
+    id: "quick_hide",
+    fallback: "alt+slash",
+    what: "Quick hide",
+    how: "Option + / hides Beast instantly from any app; press it again to bring it back.",
+    event: "toggle-window-visibility",
+  },
+  {
     id: "toggle_dashboard",
     fallback: "cmd+shift+d",
     what: "Dashboard",

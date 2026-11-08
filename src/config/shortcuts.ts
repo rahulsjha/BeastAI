@@ -82,6 +82,16 @@ export const DEFAULT_SHORTCUT_ACTIONS: ShortcutAction[] = [
     },
   },
   {
+    id: "quick_hide",
+    name: "Quick hide",
+    description: "Hide Beast instantly; press again to bring it back",
+    defaultKey: {
+      macos: "alt+slash",
+      windows: "alt+slash",
+      linux: "alt+slash",
+    },
+  },
+  {
     id: "screenshot_add",
     name: "Add screenshot to conversation",
     description: "Add the whole screen to the open conversation without sending, so you can keep adding pages and send them together",

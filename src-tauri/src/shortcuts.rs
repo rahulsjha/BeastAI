@@ -102,6 +102,7 @@ pub fn handle_shortcut_action<R: Runtime>(app: &AppHandle<R>, action_id: &str) {
     match action_id {
         "toggle_dashboard" => handle_toggle_dashboard(app),
         "toggle_window" => handle_toggle_window(app),
+        "quick_hide" => handle_quick_hide(app),
         "focus_input" => handle_focus_input(app),
         "move_window_up" => handle_move_window(app, "up"),
         "move_window_down" => handle_move_window(app, "down"),
@@ -193,6 +194,21 @@ pub fn stop_all_move_windows<R: Runtime>(app: &AppHandle<R>) {
     for (_direction, flag) in tasks.drain() {
         flag.store(true, Ordering::Relaxed);
     }
+}
+
+/// ⌥/ quick hide: hide every Beast window at once (the dashboard too, so
+/// nothing is left on screen); pressing again brings the overlay back.
+fn handle_quick_hide<R: Runtime>(app: &AppHandle<R>) {
+    let main_visible = app
+        .get_webview_window("main")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false);
+    if main_visible {
+        if let Some(d) = app.get_webview_window("dashboard") {
+            let _ = d.hide();
+        }
+    }
+    handle_toggle_window(app);
 }
 
 /// Handle app toggle (hide/show) with input focus and app icon management
@@ -702,7 +718,9 @@ pub fn hide_main_window_for(app_handle: tauri::AppHandle, seconds: u64) {
                 .map(|v| !v)
                 .unwrap_or(false);
             if hidden {
-                handle_toggle_window(&app);
+                // AppKit window calls must happen on the main thread.
+                let app2 = app.clone();
+                let _ = app.run_on_main_thread(move || handle_toggle_window(&app2));
             }
         });
     }
