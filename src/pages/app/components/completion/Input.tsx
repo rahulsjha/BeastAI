@@ -220,8 +220,8 @@ export const Input = ({
             </div>
           </div>
 
-          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-16.5rem)] min-h-[180px]">
-            <div className="p-4">
+          <ScrollArea ref={scrollAreaRef} horizontal className="h-[calc(100vh-16.5rem)] min-h-[180px]">
+            <div className="answer-content p-4">
               {error && (
                 <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
                   <strong>Error:</strong> {error}

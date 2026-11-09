@@ -232,3 +232,29 @@ body {
   background-color: rgb(255 255 255 / 0.06);
   border-color: rgb(255 255 255 / 0.12);
 }
+
+/* Answers scroll both ways: long code lines, wide tables and diagrams keep
+   their full width (scroll sideways) instead of wrapping or being cut off. */
+.answer-content pre,
+.answer-content pre code {
+  white-space: pre !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+.answer-content pre {
+  overflow-x: auto;
+}
+.answer-content table {
+  width: max-content;
+  min-width: 100%;
+}
+.answer-content td,
+.answer-content th {
+  white-space: nowrap;
+}
+/* …but ordinary text keeps wrapping at the visible width, so it stays readable. */
+.answer-content :is(p, li, h1, h2, h3, h4, h5, h6, blockquote),
+.answer-content > p,
+#conversation-thread > div {
+  max-width: calc(100vw - 3.5rem);
+}

@@ -121,7 +121,7 @@ export function HistoryPanel({
       {tab === "sessions" ? (
         <TranscriptHistory onBack={() => setTab("qa")} currentId="" />
       ) : (
-        <div className="max-h-[60vh] overflow-y-auto px-3 py-2">
+        <div className="max-h-[60vh] overflow-auto scroll-smooth overscroll-contain px-3 py-2">
           {groups.length === 0 && (
             <p className="py-4 text-center text-[11px] text-muted-foreground">
               {items.length ? "No matches." : "Answered questions will appear here."}
@@ -186,7 +186,7 @@ export function HistoryPanel({
                           </p>
                           <CopyButton content={i.answer} />
                         </div>
-                        <div className="max-h-96 overflow-y-auto text-sm">
+                        <div className="answer-content max-h-96 overflow-auto scroll-smooth overscroll-contain text-sm">
                           <Markdown>{i.answer}</Markdown>
                         </div>
                       </div>

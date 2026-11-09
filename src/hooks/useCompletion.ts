@@ -995,21 +995,34 @@ export const useCompletion = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isPopoverOpen) return;
 
-      const activeScrollRef = scrollAreaRef.current || scrollAreaRef.current;
-      const scrollElement = activeScrollRef?.querySelector(
-        "[data-radix-scroll-area-viewport]"
-      ) as HTMLElement;
+      // The answer panel's scroll area (the ref can point at an older, detached copy).
+      const fromRef = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+      const scrollElement =
+        (fromRef?.isConnected ? fromRef : null) ??
+        (document
+          .getElementById("answer-title")
+          ?.closest("[data-radix-popper-content-wrapper]")
+          ?.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null);
 
       if (!scrollElement) return;
 
       const scrollAmount = 100; // pixels to scroll
+      const typing = /^(INPUT|TEXTAREA)$/.test((e.target as HTMLElement)?.tagName || "");
+      // Smooth when visible; a hidden page never animates, so jump instead.
+      const behavior: ScrollBehavior = document.visibilityState === "visible" ? "smooth" : "instant";
 
+      // ← / → scroll sideways (wide code, tables, diagrams) — not while typing.
+      if (!typing && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+        e.preventDefault();
+        scrollElement.scrollBy({ left: e.key === "ArrowRight" ? 160 : -160, behavior });
+        return;
+      }
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        scrollElement.scrollBy({ top: scrollAmount, behavior: "smooth" });
+        scrollElement.scrollBy({ top: scrollAmount, behavior });
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        scrollElement.scrollBy({ top: -scrollAmount, behavior: "smooth" });
+        scrollElement.scrollBy({ top: -scrollAmount, behavior });
       }
     };
 
