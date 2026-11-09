@@ -1,11 +1,5 @@
 import { Card, Updater, DragButton, CustomCursor, Button } from "@/components";
-import {
-  SystemAudio,
-  AudioVisualizer,
-  StatusIndicator,
-  ModeSelector,
-} from "./components";
-import { Audio } from "./components/completion/Audio";
+import { ModeSelector } from "./components";
 import { Input } from "./components/completion/Input";
 import { Screenshot } from "./components/completion/Screenshot";
 import { Files } from "./components/completion/Files";
@@ -14,11 +8,14 @@ import { useApp as useAppContext } from "@/contexts";
 import { CaptionsIcon, HistoryIcon, KeyboardIcon, SparklesIcon } from "lucide-react";
 import { ShortcutsPanel } from "./components/help/ShortcutsPanel";
 import { HideButton, HidePanel } from "./components/HideMenu";
+import { AutoButton, AutoStatus, useAutoListen } from "./components/AutoListen";
+import { useLiveTranscript } from "@/hooks/useLiveTranscript";
+import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 import { HistoryPanel } from "./components/history/HistoryPanel";
 import { SolveScreen } from "./components/SolveScreen";
 import { AnswerQueue } from "./components/transcript/AnswerQueue";
 import { AttachmentTray } from "./components/completion/AttachmentTray";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAnswerQueue } from "@/hooks/useAnswerQueue";
 import { LiveTranscript } from "./components/transcript/LiveTranscript";
 import { invoke } from "@tauri-apps/api/core";
@@ -27,11 +24,10 @@ import { ErrorLayout } from "@/layouts";
 import { getPlatform } from "@/lib";
 
 const App = () => {
-  const { isHidden, systemAudio } = useApp();
+  const { isHidden } = useApp();
   const { customizable } = useAppContext();
   const completion = useCompletion();
   const platform = getPlatform();
-  const capturing = systemAudio?.capturing;
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -52,9 +48,38 @@ const App = () => {
     currentMode,
     applyMode,
   });
+  // The single Auto switch: always-on listening (you + interviewer) that answers
+  // every detected question in the current mode, with the fast model.
+  const live = useLiveTranscript({
+    onQuestion: (q, entryId, mode) =>
+      queue.enqueue(q, { mode: (mode as typeof currentMode) || modeRef.current, source: "auto", entryId, fast: true }),
+    getMode: () => modeRef.current,
+  });
+  const auto = useAutoListen(live);
+  const shortcuts = useGlobalShortcuts();
+  const toggleAutoRef = useRef(auto.toggle);
+  toggleAutoRef.current = auto.toggle;
+  useEffect(() => {
+    // ⌘⇧M (was Listen) and ⌘⇧A (was Mic) both pause / resume Auto now.
+    shortcuts.registerSystemAudioCallback(() => void toggleAutoRef.current());
+    shortcuts.registerAudioCallback(() => void toggleAutoRef.current());
+  }, [shortcuts.registerSystemAudioCallback, shortcuts.registerAudioCallback]);
+  const waitingJobs = queue.jobs.filter((j) => j.status === "waiting").length;
+  const answeringJob = queue.jobs.some((j) => j.status === "answering");
+
   // Test hook (?simtest=1 only): expose the queue to the test runner.
   if (typeof window !== "undefined" && window.location.search.includes("simtest")) {
     (window as any).__queue = queue;
+  }
+  // Browser test version only: let test scripts read the answer state.
+  if (typeof window !== "undefined" && (window as any).__PLUELY_WEBTEST__) {
+    (window as any).__completionState = {
+      isLoading: completion.isLoading,
+      response: completion.response.length,
+      error: completion.error,
+      isPopoverOpen: completion.isPopoverOpen,
+      history: completion.conversationHistory.length,
+    };
   }
 
   const openDashboard = async () => {
@@ -99,18 +124,11 @@ const App = () => {
         >
           {/* Header row — fixed height, never grows with the input */}
           <div className="flex flex-row items-center gap-0.5 w-full min-w-0 pr-1.5 [&_button.size-9]:size-7 [&>*]:shrink-0">
-            <SystemAudio {...systemAudio} />
+            <AutoButton t={live} on={auto.on} onToggle={() => void auto.toggle()} />
 
             {(
               <>
                 <ModeSelector />
-                <Audio
-                  {...completion}
-                  // Voice questions join the answer queue, so they never cancel an answer in progress.
-                  submit={async (text?: string) => {
-                    if (text) queue.enqueue(text, { mode: currentMode, source: "manual" });
-                  }}
-                />
                 <Screenshot {...completion} />
                 <Files {...completion} />
                 <Button
@@ -159,29 +177,16 @@ const App = () => {
 
           {hideOpen && <HidePanel onClose={() => setHideOpen(false)} />}
 
-          {/* Listen is on: its status sits under the header, so modes and every button stay usable. */}
-          {capturing && (
-            <div className="flex w-full items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/5 px-2 py-1">
-              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-                <AudioVisualizer isRecording={capturing} />
-              </div>
-              <StatusIndicator
-                setupRequired={systemAudio.setupRequired}
-                error={systemAudio.error}
-                isProcessing={systemAudio.isProcessing}
-                isAIProcessing={systemAudio.isAIProcessing}
-                capturing={systemAudio.capturing}
-              />
-            </div>
-          )}
+          {/* Auto is on: one quiet status line (who is speaking / last line heard). */}
+          {auto.on && <AutoStatus t={live} waiting={waitingJobs} answering={answeringJob} />}
 
           {/* Live transcript — above the question bar so answers (which open below it) never cover it */}
           {transcriptOpen && (
             <LiveTranscript
+              t={live}
               onAnswer={(text, entryId, source, mode) =>
                 queue.enqueue(text, { mode: (mode as typeof currentMode) || currentMode, source, entryId })
               }
-              getMode={() => modeRef.current}
               jobs={queue.jobs}
               onRemoveJob={queue.remove}
               onClearFinished={queue.clearFinished}
@@ -207,6 +212,10 @@ const App = () => {
               onAddScreen={completion.captureFullScreen}
               onAddArea={completion.captureScreenshot}
               onSend={() => void completion.submit()}
+              onAddText={() => {
+                const ta = document.querySelector<HTMLTextAreaElement>("#app-card textarea");
+                ta?.focus();
+              }}
               busy={completion.isLoading || completion.isScreenshotLoading}
             />
           )}

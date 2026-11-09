@@ -6,10 +6,9 @@ Beast is a small always-on-top bar (600px wide) that answers interview questions
 
 | Button | What it does |
 |---|---|
-| 🎧 **Listen** | Hears the meeting and answers its questions. Desktop app: the computer's audio directly (no BlackHole, no tab sharing). Browser: through the default mic. |
+| ● **Auto** | **On as soon as Beast opens.** Hears you (mic) and the interviewer (computer audio — no BlackHole, no tab sharing), detects every question and answers it in the current mode; answers build up as a chat thread. Click (or ⌘⇧M / ⌘⇧A) to pause / resume. Spoken questions use the fast model in every mode. |
 | **Design · Code · Concept · Debug** | Interview mode. Picks the model, answer format and voice settings in one click (see *Modes*). |
-| 🎤 **Mic** | Ask by voice. Speak, pause, and the question is transcribed and answered. Noise ("thank you", "yes yes") is ignored. |
-| 💻 **Screenshot** (⌘↵) | Grabs the **whole screen** and **sends it right away** (with anything you typed); the answer opens. ⌘⇧S lets you drag an area and only attaches it, so you can add a note or more files first. |
+| 💻 **Screenshot** | Grabs the whole screen and shows a card: **Send now · + Another screenshot · + Area · ✎ Add text · Clear**. **⌘↵** captures and sends at once; ⌘⇧S drags an area. |
 | 📎 **Attach** | Attach images or text documents (`.md`, `.txt`, code). Their content is used in the answer. |
 | 💬 **Live transcript** | Speaker-labelled transcript of You and the Interviewer, with auto-answer and the answer queue. |
 | 🕘 **History** | Every past question and answer, searchable. |
@@ -45,8 +44,8 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 | **⌘⇧S** | **Screenshot & attach** — drag an area (double-click = whole screen, Esc = cancel); waits in the tray for a ✎ note / more files; Enter sends | everywhere |
 | **⌘⇧↵** | **Add screenshot to conversation** — adds the whole screen to the open conversation without sending; press once per page, then Send | everywhere |
 | **⌘⇧O** | Solve screen on / off | everywhere |
-| **⌘⇧A** | Mic on / off (ask by voice) | everywhere |
-| **⌘⇧M** | Listen on / off | everywhere |
+| **⌘⇧A** | Auto on / off (same as ⌘⇧M) | everywhere |
+| **⌘⇧M** | Auto on / off | everywhere |
 | **⌘⇧I** | Put the cursor in the question bar | everywhere |
 | **Enter** / **Shift+Enter** | Send / new line (in the question bar) | — |
 | **⌘K** | Conversation mode on / off (in the answer) | — |

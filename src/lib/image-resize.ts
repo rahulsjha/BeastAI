@@ -5,21 +5,28 @@ export const MAX_IMAGE_EDGE = 1568;
 
 export async function downscalePng(base64: string, maxEdge = MAX_IMAGE_EDGE, mime = "image/png"): Promise<string> {
   try {
-    const img = new Image();
-    img.src = `data:${mime};base64,${base64}`;
-    // Hidden pages (Beast hidden with ⌘\, a background tab) can defer image
-    // decoding indefinitely; never hold a screenshot hostage to it.
-    const decoded = await Promise.race([
-      img.decode().then(() => true),
-      new Promise<boolean>((r) => setTimeout(() => r(false), 2000)),
-    ]);
-    if (!decoded) return base64;
-    const scale = Math.min(1, maxEdge / Math.max(img.naturalWidth, img.naturalHeight));
+    // createImageBitmap works in a hidden page too; <img>.decode() may stall there.
+    let img: { width: number; height: number; naturalWidth?: number; naturalHeight?: number } & CanvasImageSource;
+    try {
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const bmp = await createImageBitmap(new Blob([bytes], { type: mime }));
+      img = Object.assign(bmp, { naturalWidth: bmp.width, naturalHeight: bmp.height });
+    } catch {
+      const el = new Image();
+      el.src = `data:${mime};base64,${base64}`;
+      const decoded = await Promise.race([
+        el.decode().then(() => true),
+        new Promise<boolean>((r) => setTimeout(() => r(false), 2000)),
+      ]);
+      if (!decoded) return base64;
+      img = el;
+    }
+    const scale = Math.min(1, maxEdge / Math.max(img.naturalWidth!, img.naturalHeight!));
     // Already small enough: still re-encode non-PNG images as PNG (sent as image/png).
     if (scale >= 1 && mime === "image/png") return base64;
     const c = document.createElement("canvas");
-    c.width = Math.round(img.naturalWidth * scale);
-    c.height = Math.round(img.naturalHeight * scale);
+    c.width = Math.round(img.naturalWidth! * scale);
+    c.height = Math.round(img.naturalHeight! * scale);
     const ctx = c.getContext("2d");
     if (!ctx) return base64;
     ctx.imageSmoothingQuality = "high";

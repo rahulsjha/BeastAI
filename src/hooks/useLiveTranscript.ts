@@ -46,6 +46,8 @@ const txlog = (event: string, data: Record<string, unknown> = {}) => {
  * Each source runs its own voice-activity detector; every finished phrase is
  * transcribed and appended with its speaker and time.
  */
+export type LiveTranscriptEngine = ReturnType<typeof useLiveTranscript>;
+
 export function useLiveTranscript(opts: {
   onQuestion?: (text: string, entryId: number, mode?: string) => void;
   getMode?: () => string;
@@ -138,9 +140,10 @@ export function useLiveTranscript(opts: {
         stream,
         positiveSpeechThreshold: 0.6,
         // Keep ~1s of audio from before speech was detected so first words
-        // ("Write a…") aren't clipped, and wait a little longer before ending.
+        // ("Write a…") aren't clipped; end the phrase after ~0.6s of silence
+        // (same as the desktop system-audio capture) so answers start sooner.
         preSpeechPadFrames: 10,
-        redemptionFrames: 10,
+        redemptionFrames: 6,
         onSpeechStart: () => {
           txlog("speech_start", { speaker });
           setSpeaking((s) => ({ ...s, [speaker]: true }));

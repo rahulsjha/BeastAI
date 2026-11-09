@@ -9,6 +9,7 @@ export interface AnswerJob {
   mode: ModeKey;
   source: "auto" | "manual";
   entryId?: number; // transcript line this came from
+  fast?: boolean; // spoken question: answer with the fast model
   status: JobStatus;
   queuedAt: number;
   startedAt?: number;
@@ -25,7 +26,7 @@ const norm = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").tri
  * asked in. A new question never cancels the answer that is streaming.
  */
 export function useAnswerQueue(opts: {
-  submit: (text: string, opts?: { mode?: string }) => void;
+  submit: (text: string, opts?: { mode?: string; fast?: boolean }) => void;
   isLoading: boolean;
   error: string | null;
   response: string;
@@ -44,7 +45,7 @@ export function useAnswerQueue(opts: {
     setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, ...p } : j)));
 
   const enqueue = useCallback(
-    (text: string, o: { mode: ModeKey; source: "auto" | "manual"; entryId?: number }) => {
+    (text: string, o: { mode: ModeKey; source: "auto" | "manual"; entryId?: number; fast?: boolean }) => {
       const key = norm(text);
       if (!key) return null;
       let added: AnswerJob | null = null;
@@ -109,7 +110,8 @@ export function useAnswerQueue(opts: {
     sawLoading.current = false;
     cancelAtStart.current = cancelCount?.current ?? 0;
     patch(next.id, { status: "answering", startedAt: Date.now() });
-    submit(next.text, { mode: next.mode }); // answered in its own mode; UI mode untouched
+    // answered in its own mode (UI mode untouched); spoken questions take the fast model
+    submit(next.text, { mode: next.mode, fast: !!next.fast });
     // If loading never starts (e.g. empty answer path), don't block the queue.
     const t = setTimeout(() => {
       if (startingRef.current === next.id) {

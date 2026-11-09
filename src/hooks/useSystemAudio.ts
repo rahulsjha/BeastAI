@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useWindowResize, useGlobalShortcuts } from ".";
+import { useWindowResize } from ".";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import * as listenEngine from "@/lib/listen-engine";
@@ -70,7 +70,6 @@ export type useSystemAudioType = ReturnType<typeof useSystemAudio>;
 
 export function useSystemAudio() {
   const { resizeWindow } = useWindowResize();
-  const globalShortcuts = useGlobalShortcuts();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -719,20 +718,10 @@ export function useSystemAudio() {
     resizeWindow,
   ]);
 
-  // ⌘⇧M toggles Listen. Read the live state (a captured `capturing` was stale,
-  // so a second press started again instead of stopping).
+  // ⌘⇧M now toggles the single Auto switch (useAutoListen in the app page);
+  // this older Listen engine is no longer started from a shortcut.
   const capturingRef = useRef(capturing);
   capturingRef.current = capturing;
-  useEffect(() => {
-    globalShortcuts.registerSystemAudioCallback(async () => {
-      void invoke("log_frontend", { message: `[listen] ⌘⇧M pressed (listening now: ${capturingRef.current})` }).catch(() => undefined);
-      if (capturingRef.current) {
-        await stopCapture();
-      } else {
-        await startCapture();
-      }
-    });
-  }, [startCapture, stopCapture]);
 
   useEffect(() => {
     return () => {

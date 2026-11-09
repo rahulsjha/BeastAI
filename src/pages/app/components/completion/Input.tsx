@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, PaperclipIcon, PlusIcon, XIcon } from "lucide-react";
 import {
   Popover,
@@ -50,6 +50,12 @@ export const Input = ({
 }: UseCompletionReturn & { isHidden: boolean }) => {
   const [followUp, setFollowUp] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  // New question in the thread (typed, screenshot or Auto): bring it into view.
+  useEffect(() => {
+    if (!isLoading) return;
+    const t = setTimeout(() => document.getElementById("latest-marker")?.scrollIntoView({ block: "start", behavior: "smooth" }), 50);
+    return () => clearTimeout(t);
+  }, [isLoading, lastQuestion]);
   const followUpFileRef = useRef<HTMLInputElement>(null);
   // Earlier turns of this conversation (the latest one is shown below them as the answer).
   const sorted = [...conversationHistory].sort((a, b) => a.timestamp - b.timestamp);
@@ -214,8 +220,8 @@ export const Input = ({
             </div>
           </div>
 
-          <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-16.5rem)] min-h-[180px]">
-            <div className="p-4">
+          <ScrollArea ref={scrollAreaRef} horizontal className="h-[calc(100vh-16.5rem)] min-h-[180px]">
+            <div className="answer-content p-4">
               {error && (
                 <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
                   <strong>Error:</strong> {error}
@@ -226,7 +232,8 @@ export const Input = ({
                 <div id="conversation-thread" className="mb-3 space-y-2">
                   {turns.map((t, i) => {
                     const key = t.q?.id || t.a?.id || String(i);
-                    const open = expanded[key];
+                    // Chat view: earlier answers stay fully visible (collapse any of them).
+                    const open = expanded[key] ?? true;
                     const imgs = (t.q?.attachedFiles || []).filter((f) => f.type.startsWith("image/") && f.base64);
                     const docs = (t.q?.attachedFiles || []).filter((f) => !f.type.startsWith("image/"));
                     return (
@@ -265,14 +272,14 @@ export const Input = ({
                             className="mt-1 text-[10px] text-sky-300 hover:underline"
                             onClick={() => setExpanded((e) => ({ ...e, [key]: !open }))}
                           >
-                            {open ? "Show less" : "Show full answer"}
+                            {open ? "Collapse" : "Show full answer"}
                           </button>
                         )}
                       </div>
                     );
                   })}
                   {(isLoading || response) && (
-                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    <div id="latest-marker" className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
                       <span className="h-px flex-1 bg-input/50" /> Latest <span className="h-px flex-1 bg-input/50" />
                     </div>
                   )}
