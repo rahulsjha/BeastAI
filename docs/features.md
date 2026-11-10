@@ -31,7 +31,7 @@ In Design / Code / Concept, **Solve screen** sits beside the question bar.
 
 - **Screenshots answer in ~2–3s, in every mode:** Groq **Qwen 3.8 vision** reads the screen (~1s: question, options, code, errors), then the fast Groq `gpt-oss-120b` answers in the mode's style. Screenshots are scaled to 1568px first. If reading fails, Claude answers instead (slower).
 - Answers render markdown, code with copy, tables, math and diagrams (diagrams are checked and auto-repaired up to 2 times).
-- Replies come in the language you asked in (Hindi question → Hindi answer).
+- Replies are always in English (speech is transcribed as English); ask explicitly for another language.
 
 - **General / ⚡ Short** (chip next to the modes, Concept only): Short answers with just a definition in at most 3 lines — fastest. Click the chip to switch.
 

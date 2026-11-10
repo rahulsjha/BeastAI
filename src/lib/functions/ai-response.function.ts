@@ -512,8 +512,9 @@ export async function* fetchAIResponse(params: {
         yield* fetchAIResponse({
           ...params,
           userMessage:
+            // Answers are always in English (a Hindi question on screen is understood, answered in English).
             ((screenText.match(/[\u0900-\u097F]/g) || []).length > 20
-              ? "(Write the whole answer in Hindi — the question on the screen is in Hindi; technical terms may stay in English.)\n\n"
+              ? "(The question on the screen is in Hindi: understand it, but write the whole answer in English.)\n\n"
               : "") +
             userMessage +
             (/^NONE\b/.test(screenText)
