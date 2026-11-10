@@ -119,7 +119,7 @@ Click any card to jump to its video and step-by-step guide.
 </tr>
 <tr>
 <td align="center"><a href="#7-debug"><img src="docs/assets/thumbs/07-debug.gif" alt="Debug" /><br/><b>7 · Debug</b></a><br/><sub>Root cause → fix → before vs after</sub></td>
-<td align="center"><a href="#8-design-mcq-any-language"><img src="docs/assets/thumbs/08-design-mcq-language.gif" alt="Design, MCQ, any language" /><br/><b>8 · Design, MCQ, any language</b></a><br/><sub>Full system design · right option · Hindi in, Hindi out</sub></td>
+<td align="center"><a href="#8-design-mcq-any-language"><img src="docs/assets/thumbs/08-design-mcq-language.gif" alt="Design, MCQ, any language" /><br/><b>8 · Design, MCQ, any language</b></a><br/><sub>Full system design · right option · always answered in English</sub></td>
 <td align="center"><a href="#9-solve-screen"><img src="docs/assets/thumbs/09-solve-screen.gif" alt="Solve screen" /><br/><b>9 · Solve screen</b></a><br/><sub>⌘⇧O — watches and answers new questions</sub></td>
 </tr>
 <tr>
@@ -173,7 +173,7 @@ Every answer has the **same layout in its mode**: a one-line **Answer:** first, 
 <details><summary><b>Good to know</b></summary>
 
 - Answers render markdown, tables, maths, copyable code and diagrams. Broken diagrams are repaired automatically.
-- Ask in Hindi (or any language) and the answer comes back in that language.
+- Answers are always in **English** (speech is transcribed as English; a question on screen in another language is understood and answered in English). Ask explicitly if you want another language.
 </details>
 
 <a id="2-screenshot--send"></a>
@@ -296,7 +296,7 @@ Follow-ups continue the same Claude session, so it remembers what it already saw
 |:--|:--|
 | **System design** | *“Design a URL shortener”* → requirements, scale estimates with the maths, API, data model, architecture diagram, bottlenecks, trade-offs |
 | **Multiple choice** | The correct option first, then one line on why |
-| **Any language** | A question in Hindi gets an answer in Hindi — same for other languages |
+| **Any language in, English out** | A question in Hindi (or any language) is understood and answered in English |
 
 <a id="9-solve-screen"></a>
 ### 9 · Solve screen — ⌘⇧O

@@ -20,6 +20,7 @@ export const SPEECH_TO_TEXT_PROVIDERS = [
       -H "Authorization: bearer {{API_KEY}}" \\
       -F "file={{AUDIO}}" \\
       -F model=whisper-large-v3-turbo \\
+      -F language=en \\
       -F temperature=0 \\
       -F response_format=json \\
       -F "prompt=Software engineering interview. API, REST, gRPC, idempotency, URL shortener, rate limiter, Kubernetes, Redis, Kafka, PostgreSQL, sharding, replication, cache, CDN, load balancer, mutex, deadlock, race condition, linked list, binary tree, hash map, React, TypeScript, Python, latency, throughput, QPS."`,
