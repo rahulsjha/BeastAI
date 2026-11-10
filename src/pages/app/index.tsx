@@ -64,6 +64,17 @@ const App = () => {
     shortcuts.registerSystemAudioCallback(() => void toggleAutoRef.current());
     shortcuts.registerAudioCallback(() => void toggleAutoRef.current());
   }, [shortcuts.registerSystemAudioCallback, shortcuts.registerAudioCallback]);
+  const autoWasOn = useRef(false);
+  useEffect(() => {
+    if (completion.enableVAD) {
+      autoWasOn.current = auto.on;
+      if (auto.on) void auto.stop();
+    } else if (autoWasOn.current) {
+      autoWasOn.current = false;
+      void auto.start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completion.enableVAD]);
   const waitingJobs = queue.jobs.filter((j) => j.status === "waiting").length;
   const answeringJob = queue.jobs.some((j) => j.status === "answering");
 
@@ -244,13 +255,18 @@ const App = () => {
           {historyOpen && (
             <HistoryPanel
               onClose={() => setHistoryOpen(false)}
-              onContinue={async (item) => {
+              onContinue={async (item, action) => {
                 const ok = await completion.continueConversation(item.conversationId, {
                   question: item.question,
                   answer: item.answer,
                   at: item.at,
                 });
-                if (ok) setHistoryOpen(false);
+                if (!ok) return;
+                setHistoryOpen(false);
+                // 📸: add the current screen to it (waits as a chip until Send).
+                if (action === "screen") setTimeout(() => void completion.captureFullScreen(), 250);
+                // 🎤: start a voice follow-up in it.
+                if (action === "voice") completion.setEnableVAD(true);
               }}
             />
           )}

@@ -102,8 +102,8 @@ class H(BaseHTTPRequestHandler):
                     path = f"/tmp/pluely_attach_{i}.png"
                     open(path, "wb").write(base64.b64decode(raw))
                     prompt += f"\n\n@{path}"
-                cmd = [CLAUDE, "-p", prompt, "--model", "opus" if model == "opus" else model]
-                if model == "opus":
+                cmd = [CLAUDE, "-p", prompt, "--model", model]
+                if model in ("opus", "claude-opus-5-5"):
                     cmd += ["--effort", "high"]
                 sid, resume = data.get("session_id"), data.get("resume")
                 if sid:
@@ -123,7 +123,7 @@ class H(BaseHTTPRequestHandler):
                     open(path, "wb").write(base64.b64decode(b64.split("base64,", 1)[-1]))
                     prompt += f"\n\n@{path}"
                 cmd = [CLAUDE, "-p", prompt, "--model", model]
-                if model == "opus":
+                if model in ("opus", "claude-opus-5-5"):
                     cmd += ["--effort", "high"]
                 sid, resume = data.get("session_id"), data.get("resume")
                 if sid:

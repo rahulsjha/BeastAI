@@ -87,3 +87,15 @@ export function cacheConversation(conv: ChatConversation) {
 export function getCachedConversation(id: string): ChatConversation | null {
   return load().find((c) => c.id === id) ?? null;
 }
+
+/** Forget cached conversations (after the user deletes them). */
+export function removeCachedConversations(ids: string[] | "all") {
+  try {
+    if (ids === "all") return localStorage.removeItem(KEY);
+    const drop = new Set(ids);
+    const list: ChatConversation[] = JSON.parse(localStorage.getItem(KEY) || "[]");
+    localStorage.setItem(KEY, JSON.stringify(list.filter((c) => !drop.has(c.id))));
+  } catch {
+    /* ignore */
+  }
+}

@@ -50,3 +50,28 @@ export function clearQA() {
     window.dispatchEvent(new CustomEvent("pluely:qa-history"));
   } catch {}
 }
+
+/** Delete every saved question of one conversation (or one stand-alone item). */
+export function deleteConversationQA(key: string) {
+  try {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify(loadQA().filter((q) => (q.conversationId || q.id) !== key))
+    );
+    window.dispatchEvent(new CustomEvent("pluely:qa-history"));
+  } catch {}
+}
+
+/** Delete everything older than `days` days; returns the conversation ids removed. */
+export function deleteQAOlderThan(days: number): string[] {
+  try {
+    const cutoff = Date.now() - days * 86_400_000;
+    const all = loadQA();
+    const removed = all.filter((q) => q.at < cutoff);
+    localStorage.setItem(KEY, JSON.stringify(all.filter((q) => q.at >= cutoff)));
+    window.dispatchEvent(new CustomEvent("pluely:qa-history"));
+    return Array.from(new Set(removed.map((q) => q.conversationId).filter(Boolean) as string[]));
+  } catch {
+    return [];
+  }
+}

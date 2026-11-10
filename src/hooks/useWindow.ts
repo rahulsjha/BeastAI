@@ -14,12 +14,37 @@ const isAnyPopoverOpen = (): boolean => {
 // inline panel such as Live transcript or History). The window used to be a
 // fixed 54px when no popover was open, which cut off everything below the header.
 const MIN_HEIGHT = 54;
-const MAX_HEIGHT = 820;
-const POPOVER_HEIGHT = 600;
+// The answer panel's height is yours to choose (drag its bottom edge, or ⤢);
+// it is remembered. The window can grow up to the screen's height.
+const PANEL_KEY = "beast_panel_height";
+const DEFAULT_PANEL = 600;
+export const panelMax = (): number =>
+  Math.max(DEFAULT_PANEL, ((typeof window !== "undefined" && window.screen?.availHeight) || 900) - 40);
+export const panelMin = 360;
+export const getPanelHeight = (): number => {
+  try {
+    const v = Number(localStorage.getItem(PANEL_KEY));
+    if (v) return Math.min(panelMax(), Math.max(panelMin, v));
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_PANEL;
+};
+/** Change the answer panel's height (the window resizes to match). */
+export const setPanelHeight = (h: number) => {
+  const v = Math.round(Math.min(panelMax(), Math.max(panelMin, h)));
+  try {
+    localStorage.setItem(PANEL_KEY, String(v));
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new CustomEvent("beast:panel-height"));
+};
+const MAX_HEIGHT_FN = () => panelMax();
 const contentHeight = (): number => {
   const card = document.getElementById("app-card");
   if (!card) return MIN_HEIGHT;
-  return Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.ceil(card.getBoundingClientRect().height) + 6));
+  return Math.min(MAX_HEIGHT_FN(), Math.max(MIN_HEIGHT, Math.ceil(card.getBoundingClientRect().height) + 6));
 };
 
 let lastHeight = -1;
@@ -31,7 +56,7 @@ export const useWindowResize = () => {
       const popover = expanded || isAnyPopoverOpen();
       // Popovers (answer panel etc.) need room below the card; otherwise fit the card.
       const newHeight = popover
-        ? Math.min(MAX_HEIGHT, Math.max(POPOVER_HEIGHT, contentHeight()))
+        ? Math.min(MAX_HEIGHT_FN(), Math.max(getPanelHeight(), contentHeight()))
         : contentHeight();
       if (newHeight === lastHeight) return;
       lastHeight = newHeight;
@@ -94,10 +119,13 @@ export const useWindowResize = () => {
       attributeFilter: ["data-state"],
     });
 
+    const onPanelHeight = () => resizeWindow(true);
+    window.addEventListener("beast:panel-height", onPanelHeight);
     document.addEventListener("mousedown", handleMouseDown);
     document.addEventListener("mouseup", handleMouseUp);
 
     return () => {
+      window.removeEventListener("beast:panel-height", onPanelHeight);
       document.removeEventListener("mousedown", handleMouseDown);
       document.removeEventListener("mouseup", handleMouseUp);
       observer.disconnect();

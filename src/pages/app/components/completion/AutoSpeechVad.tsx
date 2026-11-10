@@ -170,15 +170,12 @@ const AutoSpeechVADInternal = ({
     <>
       <Button
         size="icon"
+        // Shown only while voice is on: a click always stops it.
         onClick={() => {
-          if (vad.listening) {
-            vad.pause();
-            setEnableVAD(false);
-          } else {
-            vad.start();
-            setEnableVAD(true);
-          }
+          vad.pause();
+          setEnableVAD(false);
         }}
+        title="Stop voice"
         className="cursor-pointer"
       >
         {isTranscribing ? (
