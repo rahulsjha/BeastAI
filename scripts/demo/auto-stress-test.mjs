@@ -97,9 +97,14 @@ const lines = [];
 let si = 0;
 Q.forEach((q, i) => { lines.push(q); if (i % 4 === 3 && si < S.length) lines.push(S[si++]); });
 while (si < S.length) lines.push(S[si++]);
-const all = [...voices.natural, ...voices.accent, ...voices.novelty];
-const kindOf = (v) => (voices.accent.includes(v) ? "accent" : voices.novelty.includes(v) ? "novelty" : "natural");
-const plan = lines.map(([text, key, isQ], i) => ({ text, key, isQ, voice: all[i % all.length], rate: 130 + ((i * 37) % 91) }));
+// "hard": only the voices that failed before — robotic/novelty, whispering
+// Albert, and accented voices — at 185–225 wpm.
+const HARD = process.argv[3] === "hard";
+const all = HARD
+  ? [...voices.novelty, ...voices.accent, "Albert"].filter((v) => installed.has(v))
+  : [...voices.natural, ...voices.accent, ...voices.novelty];
+const kindOf = (v) => (voices.accent.includes(v) ? "accent" : voices.novelty.includes(v) || v === "Albert" ? "novelty" : "natural");
+const plan = lines.map(([text, key, isQ], i) => ({ text, key, isQ, voice: all[i % all.length], rate: HARD ? 185 + ((i * 13) % 41) : 130 + ((i * 37) % 91) }));
 console.log(`voices: ${all.length} (natural ${voices.natural.length}, accent ${voices.accent.length}, novelty ${voices.novelty.length}) · lines: ${plan.length} (${Q.length} questions) · gap ${GAP}ms`);
 
 await call("Page.reload"); await sleep(4500);

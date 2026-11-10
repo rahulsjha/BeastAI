@@ -135,27 +135,82 @@ export function useLiveTranscript(opts: {
 
   const startSource = useCallback(
     async (speaker: Speaker, stream: MediaStream) => {
+      // Speech segmentation: a frame counts as speech when the voice model is
+      // fairly sure OR the sound is clearly louder than the room's background
+      // (robotic / synthetic / whispery voices score low on a model trained on
+      // human speech, so loudness is the backup). Phrases end after ~0.6s quiet.
+      const seg = {
+        active: false,
+        frames: [] as Float32Array[],
+        pre: [] as Float32Array[],
+        speechSecs: 0,
+        quietSecs: 0,
+        noise: 0.004, // running background level (RMS), adapts to the room
+      };
+      const PRE_SECS = 0.9; // keep audio from just before speech starts
+      const END_QUIET_SECS = 0.6;
+      const MIN_SPEECH_SECS = 0.25;
+      const MAX_SECS = 30;
+      const flush = () => {
+        const total = seg.frames.reduce((n, f) => n + f.length, 0);
+        const audio = new Float32Array(total);
+        let o = 0;
+        for (const f of seg.frames) {
+          audio.set(f, o);
+          o += f.length;
+        }
+        const speech = seg.speechSecs;
+        seg.active = false;
+        seg.frames = [];
+        seg.speechSecs = 0;
+        seg.quietSecs = 0;
+        setSpeaking((s) => ({ ...s, [speaker]: false }));
+        if (speech >= MIN_SPEECH_SECS) handleClip(speaker, audio);
+        else txlog("too_short", { speaker, secs: speech });
+      };
+      const onFrame = (probs: { isSpeech: number }, frame: Float32Array) => {
+        const secs = frame.length / 16000;
+        let sum = 0;
+        for (let i = 0; i < frame.length; i++) sum += frame[i] * frame[i];
+        const rms = Math.sqrt(sum / frame.length);
+        const loud = rms > Math.max(0.015, seg.noise * 4);
+        const isSpeech = probs.isSpeech >= 0.5 || (loud && probs.isSpeech >= 0.02) || rms > Math.max(0.03, seg.noise * 8);
+        if (!isSpeech && !seg.active) seg.noise = seg.noise * 0.97 + rms * 0.03;
+        if (!seg.active) {
+          seg.pre.push(frame);
+          let preSecs = seg.pre.reduce((n, f) => n + f.length, 0) / 16000;
+          while (preSecs > PRE_SECS && seg.pre.length > 1) preSecs -= seg.pre.shift()!.length / 16000;
+          if (isSpeech) {
+            seg.active = true;
+            seg.frames = [...seg.pre];
+            seg.pre = [];
+            seg.speechSecs = secs;
+            seg.quietSecs = 0;
+            txlog("speech_start", { speaker, model: +probs.isSpeech.toFixed(2), rms: +rms.toFixed(3) });
+            setSpeaking((s) => ({ ...s, [speaker]: true }));
+          }
+          return;
+        }
+        seg.frames.push(frame);
+        if (isSpeech) {
+          seg.speechSecs += secs;
+          seg.quietSecs = 0;
+        } else {
+          seg.quietSecs += secs;
+        }
+        const dur = seg.frames.reduce((n, f) => n + f.length, 0) / 16000;
+        if (seg.quietSecs >= END_QUIET_SECS || dur >= MAX_SECS) flush();
+      };
       const vad = await MicVAD.new({
         ...VAD_ASSETS,
         stream,
-        // Slightly more sensitive so soft / breathy voices are caught; noise is
-        // still filtered after transcription.
-        positiveSpeechThreshold: 0.5,
-        negativeSpeechThreshold: 0.35,
-        // Keep ~1s of audio from before speech was detected so first words
-        // ("Write a…") aren't clipped; end the phrase after ~0.6s of silence
-        // (same as the desktop system-audio capture) so answers start sooner.
-        preSpeechPadFrames: 10,
-        redemptionFrames: 6,
-        onSpeechStart: () => {
-          txlog("speech_start", { speaker });
-          setSpeaking((s) => ({ ...s, [speaker]: true }));
-        },
-        onVADMisfire: () => setSpeaking((s) => ({ ...s, [speaker]: false })),
-        onSpeechEnd: (audio: Float32Array) => {
-          setSpeaking((s) => ({ ...s, [speaker]: false }));
-          handleClip(speaker, audio);
-        },
+        // The library's own segmentation is not used (see onFrame above).
+        positiveSpeechThreshold: 0.99,
+        negativeSpeechThreshold: 0.98,
+        onFrameProcessed: onFrame,
+        onSpeechStart: () => {},
+        onVADMisfire: () => {},
+        onSpeechEnd: () => {},
       } as any);
       vad.start();
       void (await import("@/lib/audio-context-tracker")).resumeAllAudio();
