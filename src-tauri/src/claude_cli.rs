@@ -236,6 +236,7 @@ pub async fn claude_cli_response(
     session_id: Option<String>,
     resume: Option<bool>,
     images: Option<Vec<String>>,
+    fork: Option<bool>,
 ) -> Result<ClaudeCliResult, String> {
     let bin = match resolve_claude_bin() {
         Some(b) => b,
@@ -274,6 +275,12 @@ pub async fn claude_cli_response(
     if let Some(sid) = session_id.as_ref() {
         if resume.unwrap_or(false) {
             cmd.arg("--resume").arg(sid);
+            // "btw" side question while this session is still busy answering:
+            // copy the conversation into a new session instead of reusing it
+            // (reusing it fails with "Session ID … is already in use").
+            if fork.unwrap_or(false) {
+                cmd.arg("--fork-session");
+            }
         } else {
             cmd.arg("--session-id").arg(sid);
         }
@@ -405,6 +412,7 @@ pub async fn claude_cli_stream(
     session_id: Option<String>,
     resume: Option<bool>,
     images: Option<Vec<String>>,
+    fork: Option<bool>,
 ) -> Result<ClaudeCliResult, String> {
     use std::io::{BufRead, BufReader};
     use std::process::Stdio;
@@ -433,6 +441,12 @@ pub async fn claude_cli_stream(
     if let Some(sid) = session_id.as_ref() {
         if resume.unwrap_or(false) {
             cmd.arg("--resume").arg(sid);
+            // "btw" side question while this session is still busy answering:
+            // copy the conversation into a new session instead of reusing it
+            // (reusing it fails with "Session ID … is already in use").
+            if fork.unwrap_or(false) {
+                cmd.arg("--fork-session");
+            }
         } else {
             cmd.arg("--session-id").arg(sid);
         }

@@ -108,6 +108,8 @@ class H(BaseHTTPRequestHandler):
                 sid, resume = data.get("session_id"), data.get("resume")
                 if sid:
                     cmd += (["--resume", sid] if resume else ["--session-id", sid])
+                    if resume and data.get("fork"):
+                        cmd += ["--fork-session"]  # side question while the session is busy
                 return self._send(200, self._run_claude(cmd))
 
             if self.path == "/claude-stream":  # streaming twin of /claude (NDJSON lines)
@@ -128,6 +130,8 @@ class H(BaseHTTPRequestHandler):
                 sid, resume = data.get("session_id"), data.get("resume")
                 if sid:
                     cmd += (["--resume", sid] if resume else ["--session-id", sid])
+                    if resume and data.get("fork"):
+                        cmd += ["--fork-session"]  # side question while the session is busy
                 cmd += ["--output-format", "stream-json", "--include-partial-messages", "--verbose"] + ANSWER_ONLY
                 self.send_response(200); self._cors()
                 self.send_header("Content-Type", "application/x-ndjson")
