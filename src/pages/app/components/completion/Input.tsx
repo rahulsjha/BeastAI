@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, PaperclipIcon, PlusIcon, XIcon } from "lucide-react";
+import { GripHorizontalIcon, Loader2, Maximize2Icon, MicIcon, Minimize2Icon, PaperclipIcon, PlusIcon, XIcon } from "lucide-react";
+import { AutoSpeechVAD } from "./AutoSpeechVad";
+import { useApp } from "@/contexts";
+import { getPanelHeight, panelMax, panelMin, setPanelHeight } from "@/hooks/useWindow";
 import {
   Popover,
   PopoverContent,
@@ -47,7 +50,48 @@ export const Input = ({
   isScreenshotLoading,
   addFile,
   removeFile,
+  enableVAD,
+  setEnableVAD,
+  setState,
 }: UseCompletionReturn & { isHidden: boolean }) => {
+  const { selectedAudioDevices, currentMode } = useApp();
+  // Which model is answering, and for how long (shown while it works).
+  const modelLabel = currentMode === "coding" || currentMode === "debug" ? "Claude Opus 5.5 · high" : "Groq (fast)";
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!isLoading) return;
+    const start = Date.now();
+    setElapsed(0);
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 500);
+    return () => clearInterval(t);
+  }, [isLoading, lastQuestion]);
+  // Answer panel height: drag the bottom edge, or ⤢ for full height (remembered).
+  const [panelH, setPanelH] = useState(getPanelHeight);
+  const resizeTo = (h: number) => {
+    setPanelHeight(h);
+    setPanelH(getPanelHeight());
+  };
+  const startResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.screenY;
+    const startH = getPanelHeight();
+    let frame = 0;
+    let lastY = startY;
+    const move = (ev: MouseEvent) => {
+      lastY = ev.screenY;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => resizeTo(startH + (lastY - startY)));
+    };
+    const up = (ev: MouseEvent) => {
+      cancelAnimationFrame(frame);
+      resizeTo(startH + ((ev.screenY || lastY) - startY)); // final size, even if no frame ran
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+  const isTall = panelH >= panelMax() - 8;
   const [followUp, setFollowUp] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   // New question in the thread (typed, screenshot or Auto): bring it into view.
@@ -150,29 +194,26 @@ export const Input = ({
           onFocusOutside={(e) => e.preventDefault()}
         >
           <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-            <div className="flex flex-row gap-1 items-center">
-              <h3 className="font-semibold text-xs select-none" id="answer-title">
+            {/* Drag the title to move Beast (up / down / anywhere). */}
+            <div
+              className="flex min-w-0 flex-1 cursor-grab flex-row items-center gap-1 active:cursor-grabbing"
+              data-tauri-drag-region
+              title="Drag to move Beast · ↑↓←→ scroll the answer"
+            >
+              <h3 className="pointer-events-none font-semibold text-xs select-none whitespace-nowrap" id="answer-title" data-tauri-drag-region>
                 {keepEngaged
                   ? "Conversation Mode"
                   : questionCount > 1
                   ? `Conversation · ${questionCount} questions`
                   : "AI Response"}
               </h3>
-              <div className="text-[10px] text-muted-foreground/70">
-                (Use arrow keys to scroll)
-              </div>
             </div>
             <div className="flex items-center gap-2 select-none">
-              <div className="flex flex-row items-center gap-2 mr-2">
-                <p className="text-[10px]">{`Toggle ${
-                  keepEngaged ? "AI response" : "conversation mode"
-                }`}</p>
-                <span className="text-[10px] text-muted-foreground/60 bg-muted/30 px-1 py-0 rounded border border-input/50">
-                  {navigator.platform.toLowerCase().includes("mac")
-                    ? "⌘"
-                    : "Ctrl"}{" "}
-                  + K
-                </span>
+              <div
+                className="flex flex-row items-center gap-1 mr-1"
+                title={`Conversation mode (${navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl"}+K): show the whole thread, newest first`}
+              >
+                <span className="text-[10px] text-muted-foreground">Thread</span>
                 <Switch
                   checked={keepEngaged}
                   onCheckedChange={(checked) => {
@@ -195,6 +236,16 @@ export const Input = ({
                   <PlusIcon className="h-3 w-3" /> New
                 </Button>
               )}
+              <Button
+                id="panel-size"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                title={isTall ? "Back to normal height" : "Full height (or drag the bottom edge)"}
+                onClick={() => resizeTo(isTall ? 600 : panelMax())}
+              >
+                {isTall ? <Minimize2Icon className="h-3.5 w-3.5" /> : <Maximize2Icon className="h-3.5 w-3.5" />}
+              </Button>
               <CopyButton content={response} />
               <Button
                 id="answer-close"
@@ -220,7 +271,7 @@ export const Input = ({
             </div>
           </div>
 
-          <ScrollArea ref={scrollAreaRef} horizontal className="h-[calc(100vh-16.5rem)] min-h-[180px]">
+          <ScrollArea ref={scrollAreaRef} horizontal className="h-[calc(100vh-17.5rem)] min-h-[160px]">
             <div className="answer-content p-4">
               {error && (
                 <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
@@ -313,13 +364,21 @@ export const Input = ({
                   ))}
                 </div>
               )}
-              {isLoading && (
+              {isLoading && !response && (
                 <div className="flex items-center gap-2 my-4 text-muted-foreground animate-pulse select-none">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Generating response...</span>
+                  <span className="text-sm">
+                    Generating response… <span className="text-[11px] opacity-80">{modelLabel} · {elapsed}s</span>
+                  </span>
                 </div>
               )}
               {response && <Markdown>{response}</Markdown>}
+              {/* The answer keeps arriving below; scroll freely meanwhile. */}
+              {isLoading && response && (
+                <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground select-none">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Generating response… {elapsed}s
+                </div>
+              )}
 
               {/* Conversation History - Separate scroll, no auto-scroll */}
               {keepEngaged && conversationHistory.length > 1 && (
@@ -380,7 +439,7 @@ export const Input = ({
             </div>
           )}
           <p id="followup-hint" className="border-t border-input/50 px-2 pt-1.5 text-[10px] text-muted-foreground">
-            Keep adding screenshots to this conversation — <b>+ Screen</b>, <b>+ Area</b>, 📎, or <kbd>⌘⇧↵</kbd> from any app — then <b>Send</b> them together.
+            Add to this conversation: type, 🎤 speak, <b>+ Screen</b>, <b>+ Area</b>, 📎, or <kbd>⌘⇧↵</kbd> from any app — then <b>Send</b>.
           </p>
           <div className="p-2 pt-1 flex items-center gap-1.5">
             <input
@@ -415,12 +474,49 @@ export const Input = ({
             <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" disabled={isScreenshotLoading} onClick={() => void captureScreenshot()} title="Add an area to this follow-up (⌘⇧S)">
               + Area
             </Button>
+            {enableVAD ? (
+              <div id="followup-voice" title="Listening — speak your follow-up; click to stop" className="[&_button]:h-8 [&_button]:w-8">
+                <AutoSpeechVAD
+                  key={selectedAudioDevices.input.id}
+                  submit={submit}
+                  setState={setState}
+                  setEnableVAD={setEnableVAD}
+                  microphoneDeviceId={selectedAudioDevices.input.id}
+                />
+              </div>
+            ) : (
+              <Button
+                id="followup-voice"
+                size="sm"
+                variant="outline"
+                className="h-8 px-2 text-[10px]"
+                onClick={() => setEnableVAD(true)}
+                title="Speak a follow-up: what you say is added to this conversation and answered (Auto pauses meanwhile)"
+              >
+                <MicIcon className="h-3 w-3" />
+              </Button>
+            )}
             <Button size="sm" variant="outline" className="h-8 px-2 text-[10px]" onClick={() => followUpFileRef.current?.click()} title="Attach images or files to this follow-up">
               <PaperclipIcon className="h-3 w-3" />
             </Button>
             <Button id="followup-send" size="sm" className="h-8 px-3 text-[10px]" disabled={isLoading || (!followUp.trim() && !attachedFiles.length)} onClick={sendFollowUp}>
               Send{attachedFiles.length ? ` (${attachedFiles.length})` : ""}
             </Button>
+          </div>
+          {/* Drag to make the answer panel taller or shorter (double-click: full / normal). */}
+          <div
+            id="panel-resize"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-valuemin={panelMin}
+            aria-valuemax={panelMax()}
+            aria-valuenow={panelH}
+            title="Drag to resize · double-click for full height"
+            onMouseDown={startResize}
+            onDoubleClick={() => resizeTo(isTall ? 600 : panelMax())}
+            className="flex h-3 cursor-ns-resize items-center justify-center border-t border-input/30 bg-muted/20 hover:bg-muted/50"
+          >
+            <GripHorizontalIcon className="h-3 w-3 text-muted-foreground/70" />
           </div>
         </PopoverContent>
       </Popover>

@@ -367,7 +367,7 @@ Fix: <concrete fix, e.g. the corrected line of code, or '-'>"
     shots.extend(image_from_file(&cur));
 
     let mut cmd = base_command(&bin);
-    cmd.arg("--model").arg("opus");
+    cmd.arg("--model").arg("claude-opus-5-5").arg("--effort").arg("high");
     answer_only(&mut cmd);
     let result = run_message(cmd, &prompt, &shots);
 

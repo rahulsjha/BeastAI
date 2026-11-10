@@ -50,7 +50,7 @@ export const LISTEN_FAST_PROVIDER = {
   variables: { api_key: SECRETS.GROQ_API_KEY, model: "openai/gpt-oss-120b" } as Record<string, string>,
 };
 
-/** Spoken (auto-detected) questions in Code/Debug: fast Groq instead of Opus, same layout. */
+/** Fast text model (Groq). Not used for Code/Debug: those always use Opus 5.5. */
 export const FAST_TEXT_PROVIDER = {
   provider: "groq-interview",
   variables: { api_key: SECRETS.GROQ_API_KEY, model: "openai/gpt-oss-120b" } as Record<string, string>,
@@ -68,11 +68,12 @@ const GROQ = {
   aiVariables: { api_key: SECRETS.GROQ_API_KEY, model: "openai/gpt-oss-120b" },
 };
 
-// Coding/debug route to the local Claude CLI (Opus 5.5, high effort — set in Rust).
+// Coding/debug ALWAYS route to the local Claude CLI: Opus 5.5 at high effort (set in Rust),
+// for typed, screenshot and spoken questions alike.
 const OPUS = {
   aiProvider: "claude-cli",
-  model: "opus",
-  aiVariables: { model: "opus" },
+  model: "claude-opus-5-5",
+  aiVariables: { model: "claude-opus-5-5" },
 };
 
 export const MODES: Record<ModeKey, ModeDef> = {

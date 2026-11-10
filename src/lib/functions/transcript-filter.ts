@@ -15,7 +15,7 @@ export function isNoiseTranscript(text: string): boolean {
   if (/no transcription found/i.test(clean)) return true;
   // Whisper's well-known silence/noise hallucinations, incl. other languages
   // (language auto-detect makes these appear on room noise).
-  if (/^(tchau|merci|gracias|obrigad[oa]|danke|ciao|adios|adeus|au revoir|sous-titres.*|subtítulos.*|продолжение следует.*|спасибо.*|ご視聴ありがとうございました.*|謝謝.*|谢谢.*|감사합니다.*|thank you for watching.*|please subscribe.*|like and subscribe.*)[.!…]*$/i.test(clean))
+  if (/^(e a[ií]|tchau|merci|gracias|obrigad[oa]|danke|ciao|adios|adeus|au revoir|sous-titres.*|subtítulos.*|продолжение следует.*|спасибо.*|ご視聴ありがとうございました.*|謝謝.*|谢谢.*|감사합니다.*|thank you for watching.*|please subscribe.*|like and subscribe.*)[.!…]*$/i.test(clean))
     return true;
   if (clean.replace(/[^\p{L}]/gu, "").length < 3) return true;
   // Short phrases in Nordic/Icelandic letters ("Hvað er hann?") — a common
@@ -32,6 +32,9 @@ const START_QUESTION =
 
 export function looksLikeQuestion(text: string): boolean {
   const t = text.trim();
+  // Real interview questions have a few words; 1-2 word "questions" ("E aí?",
+  // "Right?") are noise or small talk, so Auto doesn't answer them.
+  if ((t.match(/[\p{L}\p{N}']+/gu) ?? []).length < 3) return false;
   if (t.endsWith("?")) return true;
   // Any sentence that starts like a question/task ("Next one. Given a string…").
   const sentences = t.split(/(?<=[.!?।])\s+/u).map((x) => x.trim());

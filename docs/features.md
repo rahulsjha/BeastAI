@@ -6,7 +6,7 @@ Beast is a small always-on-top bar (600px wide) that answers interview questions
 
 | Button | What it does |
 |---|---|
-| ● **Auto** | **On as soon as Beast opens.** Hears you (mic) and the interviewer (computer audio — no BlackHole, no tab sharing), detects every question and answers it in the current mode; answers build up as a chat thread. Click (or ⌘⇧M / ⌘⇧A) to pause / resume. Spoken questions use the fast model in every mode. |
+| ● **Auto** | **On as soon as Beast opens.** Hears you (mic) and the interviewer (computer audio — no BlackHole, no tab sharing), detects every question and answers it in the current mode; answers build up as a chat thread. Click (or ⌘⇧M / ⌘⇧A) to pause / resume. Code / Debug always answer with Claude Opus 5.5 (high effort), Concept / Design with fast Groq. |
 | **Design · Code · Concept · Debug** | Interview mode. Picks the model, answer format and voice settings in one click (see *Modes*). |
 | 💻 **Screenshot** | Grabs the whole screen and shows a card: **Send now · + Another screenshot · + Area · ✎ Add text · Clear**. **⌘↵** captures and sends at once; ⌘⇧S drags an area. |
 | 📎 **Attach** | Attach images or text documents (`.md`, `.txt`, code). Their content is used in the answer. |

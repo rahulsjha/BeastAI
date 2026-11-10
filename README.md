@@ -235,6 +235,8 @@ Every answer has the **same layout in its mode**: a one-line **Answer:** first, 
 - Keep adding as many screenshots as you need before sending (up to 10 per message): **+ Screen** in the box, or **⌘⇧↵** from any app while you scroll.
 - Clicking 💻 or pressing ⌘↵ while an answer is open also adds to the same conversation.
 - Follow-ups remember the whole thread, even when earlier answers came from a different model.
+- **🎤 in the follow-up box**: speak instead of typing — it's added to this conversation (Auto pauses meanwhile).
+- **Resize**: drag the bar at the bottom of the answer panel (or double-click it / press ⤢ for full height). **Move**: drag the panel's title.
 </details>
 
 <a id="5-history--continue"></a>
@@ -247,10 +249,14 @@ Every answer has the **same layout in its mode**: a one-line **Answer:** first, 
 <!-- /video -->
 
 **How to use it**
-1. Click **🕘 History**.
-2. Search, or filter by mode. Click a row to read the full answer; copy or delete it.
-3. Press **Continue** on any row — the whole conversation reopens with its screenshots, and the cursor is in the follow-up box.
-4. Type or attach more and press **Send**.
+1. Click **🕘 History** — one row per **conversation** (“3 Q” = three questions), newest first.
+2. Search, or filter by mode. Click a row to read **every** question and answer in it (scrolls both ways).
+3. Add to any past conversation straight from its row:
+   - **Continue** — reopens it with the cursor in the follow-up box;
+   - **📸** — reopens it with a screenshot of the screen waiting to send;
+   - **🎤** — reopens it and starts listening: speak your follow-up.
+4. Type / attach more and press **Send**.
+5. **Delete**: 🗑 on a row (asks first), **Older than 7 days**, or **Clear all** (both ask first).
 
 The **Transcript sessions** tab keeps past Live-transcript sessions with their lines and answers.
 
@@ -338,7 +344,7 @@ Follow-ups continue the same Claude session, so it remembers what it already saw
 
 **How to use it**
 1. Nothing to press: the **● Auto** pill at the top left is green and a status line shows what was last heard.
-2. When a question is heard, the answer opens on its own and joins the conversation thread (earlier Q&As stay above) — spoken questions are answered with the fast model in every mode (~2 s to hear it, a few seconds to answer; measured 7.5 s for a full coding answer).
+2. When a question is heard, the answer opens on its own and joins the conversation thread (earlier Q&As stay above) — Concept and Design answer in a second or two; **Code and Debug always use Claude Opus 5.5 at high effort** (text starts streaming after ~6–12 s and keeps arriving — scroll up any time, it won't pull you back).
 3. Click **💬 Live transcript** to see who said what — **You** in blue, **Interviewer** in amber — with times.
    - **Auto: Interviewer / You** — choose whose questions are answered automatically.
    - Every line has an **Answer** button to answer it on demand.

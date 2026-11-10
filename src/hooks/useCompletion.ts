@@ -4,7 +4,7 @@ import { useWindowResize } from "./useWindow";
 import { useGlobalShortcuts } from "@/hooks";
 import { MAX_FILES } from "@/config";
 import { useApp } from "@/contexts";
-import { getModeDef, type ModeKey, FAST_TEXT_PROVIDER } from "@/config/modes";
+import { getModeDef, type ModeKey } from "@/config/modes";
 import { downscalePng } from "@/lib/image-resize";
 import { addQA } from "@/lib/storage/qa-history";
 import { attachmentsForHistory, cacheConversation, getCachedConversation } from "@/lib/conversation-cache";
@@ -208,14 +208,10 @@ export const useCompletion = () => {
       const submitStartedAt = Date.now();
       // A queued job can ask for its own mode without changing the UI mode.
       const overrideDef = opts?.mode ? getModeDef(opts.mode as ModeKey) : undefined;
-      let selectedAIProvider = overrideDef
+      const selectedAIProvider = overrideDef
         ? { provider: overrideDef.aiProvider, variables: overrideDef.aiVariables }
         : modeProvider;
-      // Spoken questions (Auto): answer with fast Groq even in Code/Debug, so the
-      // answer starts in ~1-3s instead of ~6-14s. Same mode prompt and layout.
-      if (opts?.fast && selectedAIProvider?.provider === "claude-cli" && FAST_TEXT_PROVIDER.variables.api_key) {
-        selectedAIProvider = { provider: FAST_TEXT_PROVIDER.provider, variables: FAST_TEXT_PROVIDER.variables };
-      }
+      // Code / Debug always answer with Opus 5.5 (high effort), spoken questions too.
       const systemPrompt = overrideDef?.systemPrompt ?? modeSystemPrompt;
 
       if (!input.trim()) {
@@ -969,25 +965,41 @@ export const useCompletion = () => {
     isFilesPopoverOpen,
   ]);
 
-  // Auto scroll to bottom when response updates
+  // While an answer streams in, follow the new text — but only while you are at
+  // the bottom. Scroll up to read and it stops following; scroll back down and it
+  // follows again. (It used to yank you back to the bottom on every chunk.)
+  const followRef = useRef(true);
+  const answerViewport = (): HTMLElement | null => {
+    // The live answer panel (found through its title), else the ref.
+    const live = document
+      .getElementById("answer-title")
+      ?.closest("[data-radix-popper-content-wrapper]")
+      ?.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+    if (live) return live;
+    const fromRef = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+    return fromRef?.isConnected ? fromRef : null;
+  };
+  useEffect(() => {
+    // Scroll events don't bubble, but they can be caught on the way down.
+    const onScroll = (e: Event) => {
+      const el = e.target as HTMLElement;
+      if (!el?.matches?.("[data-radix-scroll-area-viewport]")) return;
+      if (!el.closest("[data-radix-popper-content-wrapper]")?.querySelector("#answer-title")) return;
+      followRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    };
+    document.addEventListener("scroll", onScroll, true);
+    return () => document.removeEventListener("scroll", onScroll, true);
+  }, []);
+  // A new question starts: follow its answer.
+  useEffect(() => {
+    if (state.isLoading) followRef.current = true;
+  }, [state.isLoading]);
   useEffect(() => {
     const responseSettings = getResponseSettings();
-    if (
-      !keepEngaged &&
-      state.response &&
-      scrollAreaRef.current &&
-      responseSettings.autoScroll
-    ) {
-      const scrollElement = scrollAreaRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]"
-      );
-      if (scrollElement) {
-        scrollElement.scrollTo({
-          top: scrollElement.scrollHeight,
-          behavior: "smooth",
-        });
-      }
-    }
+    if (keepEngaged || !state.response || !responseSettings.autoScroll || !followRef.current) return;
+    const el = answerViewport();
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "instant" as ScrollBehavior });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.response, keepEngaged]);
 
   // Keyboard arrow key support for scrolling
