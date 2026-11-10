@@ -183,9 +183,18 @@ let claudeCliTurns = 0;
 // How many history messages the CLI session has already seen (turns answered by
 // Groq — screenshots, Concept — are not in the session and get replayed).
 let claudeCliSeen = 0;
+// Answers still running in the current session. A question asked meanwhile is a
+// "btw" side question: it runs in a fork of the session (same context) so it
+// never collides with the busy one ("Session ID … is already in use").
+let claudeCliInFlight = 0;
+// The session exists as soon as its first call was launched — even if that
+// answer was cancelled before finishing. Later calls must resume it, never
+// re-create it with the same id (that also fails with "already in use").
+let claudeCliOpened = false;
 
 export function resetClaudeCliSession(): void {
   claudeCliSessionId = null;
+  claudeCliOpened = false;
   claudeCliTurns = 0;
   claudeCliSeen = 0;
 }
@@ -219,10 +228,20 @@ async function* fetchClaudeCliResponse(params: {
       `pluely-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     claudeCliTurns = 0;
     claudeCliSeen = 0;
+    claudeCliOpened = false;
   }
 
-  const resume = claudeCliTurns > 0;
-  const missed = history.slice(claudeCliSeen);
+  const newId = () =>
+    globalThis.crypto?.randomUUID?.() ?? `pluely-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const busy = claudeCliInFlight > 0;
+  // Busy and the session already has turns → fork it (full context, new id).
+  // Busy on its very first answer → a separate fresh session with the history replayed.
+  const side = busy;
+  const fork = side && claudeCliOpened;
+  const sessionId = side && !fork ? newId() : claudeCliSessionId;
+  const resume = side ? fork : claudeCliOpened;
+  if (!side) claudeCliOpened = true;
+  const missed = side && !fork ? history : history.slice(claudeCliSeen);
   const catchUp = missed.length
     ? "Earlier in this conversation:\n\n" +
       missed
@@ -246,7 +265,15 @@ async function* fetchClaudeCliResponse(params: {
     queue.push(t);
     wake?.();
   };
+  // Busy from launch until the CLI process itself ends — even when the UI has
+  // stopped reading (cancelled / replaced by a newer question).
+  claudeCliInFlight += 1;
+  let released = false;
   const finish = (err?: string | null) => {
+    if (!released) {
+      released = true;
+      claudeCliInFlight = Math.max(0, claudeCliInFlight - 1);
+    }
     finished = true;
     failure = err ?? null;
     wake?.();
@@ -264,8 +291,9 @@ async function* fetchClaudeCliResponse(params: {
             body: JSON.stringify({
               prompt,
               model: model ?? "haiku",
-              session_id: claudeCliSessionId,
+              session_id: sessionId,
               resume,
+              fork,
               images: imagesBase64,
             }),
           });
@@ -306,8 +334,9 @@ async function* fetchClaudeCliResponse(params: {
           requestId,
           prompt,
           model: model ?? "haiku",
-          sessionId: claudeCliSessionId,
+          sessionId,
           resume,
+          fork,
           images: imagesBase64.length ? imagesBase64 : null,
         }
       )
@@ -328,13 +357,17 @@ async function* fetchClaudeCliResponse(params: {
       wake = null;
     }
     if (failure && !gotText) {
+      if (!side && /no conversation found|session.*not found/i.test(failure)) claudeCliOpened = false;
       yield `Claude CLI error: ${failure}`;
-    } else {
+    } else if (!side) {
+      // Side answers live in their fork; the main session catches up on them
+      // later (they're replayed from the conversation history).
       claudeCliTurns += 1;
       claudeCliSeen = history.length + 2;
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
+    finish(msg); // never leave the session marked busy
     yield `Claude CLI error: ${msg}`;
   } finally {
     unlisten?.();

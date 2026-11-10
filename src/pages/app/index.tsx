@@ -91,6 +91,11 @@ const App = () => {
       isPopoverOpen: completion.isPopoverOpen,
       history: completion.conversationHistory.length,
     };
+    (window as any).__auto = {
+      on: auto.on,
+      entries: live.entries.map((e) => ({ speaker: e.speaker, text: e.text, isQuestion: e.isQuestion, status: e.status })),
+      jobs: queue.jobs.map((j) => ({ text: j.text, status: j.status, source: j.source })),
+    };
   }
 
   const openDashboard = async () => {

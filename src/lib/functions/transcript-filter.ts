@@ -36,6 +36,13 @@ export function looksLikeQuestion(text: string): boolean {
   // "Right?") are noise or small talk, so Auto doesn't answer them.
   if ((t.match(/[\p{L}\p{N}']+/gu) ?? []).length < 3) return false;
   if (t.endsWith("?")) return true;
+  // Lead-ins before the real question ("Next one, explain…", "Okay so, how…",
+  // "Moving on — design…"): look past them.
+  const LEAD_IN = /^((next( one| question)?|okay|ok|so|alright|all right|right|now|moving on|great|good|cool|and|also|then|well)[\s,.:;!—-]+)+/i;
+  const stripped = t.replace(LEAD_IN, "");
+  if (stripped !== t && stripped.length > 0 && looksLikeQuestion(stripped)) return true;
+  // A clause after a comma that starts like a task ("Sure, explain…").
+  if (t.split(/,\s+/).slice(1).some((x) => START_QUESTION.test(x.trim()))) return true;
   // Any sentence that starts like a question/task ("Next one. Given a string…").
   const sentences = t.split(/(?<=[.!?।])\s+/u).map((x) => x.trim());
   if (sentences.length > 1 && sentences.some((x) => START_QUESTION.test(x))) return true;
