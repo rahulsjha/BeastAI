@@ -138,7 +138,10 @@ export function useLiveTranscript(opts: {
       const vad = await MicVAD.new({
         ...VAD_ASSETS,
         stream,
-        positiveSpeechThreshold: 0.6,
+        // Slightly more sensitive so soft / breathy voices are caught; noise is
+        // still filtered after transcription.
+        positiveSpeechThreshold: 0.5,
+        negativeSpeechThreshold: 0.35,
         // Keep ~1s of audio from before speech was detected so first words
         // ("Write a…") aren't clipped; end the phrase after ~0.6s of silence
         // (same as the desktop system-audio capture) so answers start sooner.

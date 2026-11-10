@@ -275,9 +275,11 @@ export const useCompletion = () => {
           }
         }
         // Prepend parsed document text to the question so the model can use it.
+        // Auto (spoken) questions are marked so the model can fix speech-to-text slips.
+        const asked = opts?.fast ? `[Spoken] ${input}` : input;
         const userMessageWithDocs = docSections.length
-          ? `${docSections.join("\n\n")}\n\n---\n\n${input}`
-          : input;
+          ? `${docSections.join("\n\n")}\n\n---\n\n${asked}`
+          : asked;
 
         let fullResponse = "";
 

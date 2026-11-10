@@ -23,7 +23,7 @@ export const SPEECH_TO_TEXT_PROVIDERS = [
       -F language=en \\
       -F temperature=0 \\
       -F response_format=json \\
-      -F "prompt=Software engineering interview. API, REST, gRPC, idempotency, URL shortener, rate limiter, Kubernetes, Redis, Kafka, PostgreSQL, sharding, replication, cache, CDN, load balancer, mutex, deadlock, race condition, linked list, binary tree, hash map, React, TypeScript, Python, latency, throughput, QPS."`,
+      -F "prompt=Software engineering interview questions. CAP theorem, B-tree, trie, Bloom filter, LRU cache, hash map, hash set, linked list, binary search, Big O, memoization, coroutines, async/await, mutex, deadlock, race condition, SQL, NoSQL, sharding, replication, consistent hashing, eventual consistency, idempotency, rate limiter, load balancer, message queue, Kafka, RabbitMQ, Redis, Kubernetes pods, microservices, monolith, REST, gRPC, HTTPS, TCP, UDP, virtual DOM, React, closure, JavaScript, TypeScript, Python, Java, garbage collection, observer pattern, SOLID, dependency injection, immutability, read-heavy, backpressure, URL shortener, latency, throughput."`,
     responseContentPath: "text",
     streaming: false,
   },
