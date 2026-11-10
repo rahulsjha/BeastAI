@@ -79,8 +79,8 @@ const App = () => {
   const answeringJob = queue.jobs.some((j) => j.status === "answering");
 
   // Test hook (?simtest=1 only): expose the queue to the test runner.
-  if (typeof window !== "undefined" && window.location.search.includes("simtest")) {
-    (window as any).__queue = queue;
+  if (typeof window !== "undefined" && ((window as any).__PLUELY_WEBTEST__ || window.location.search.includes("simtest"))) {
+    (window as any).__queue = queue; // test hook (browser test version only)
   }
   // Browser test version only: let test scripts read the answer state.
   if (typeof window !== "undefined" && (window as any).__PLUELY_WEBTEST__) {

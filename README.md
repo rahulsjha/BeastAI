@@ -353,6 +353,8 @@ Follow-ups continue the same Claude session, so it remembers what it already saw
 <details><summary><b>Good to know</b></summary>
 
 - Small talk and noise (“thank you”, “yes yes”) are ignored; only questions and tasks are answered.
+- Misheard technical words are fixed before answering — the answer starts with **“Heard as: …”** when a word was corrected (e.g. “boon filter” → Bloom filter). If a line can't be understood at all you get **“🎧 Couldn't make out the question — heard: “…”. Please repeat it.”** instead of a wrong answer.
+- Stress-tested with 55 questions from 28 voices (US/UK/AU/IE/IN accents, non-English voices reading English, robotic voices, 130–220 wpm) played through a laptop speaker: ~47–50 answered, natural voices 27/31, 0 of 15 statements answered by mistake. Misses were robotic/whispering voices and heavy accents above ~200 wpm (`scripts/demo/auto-stress-test.mjs`).
 - Several questions in one breath become separate jobs in the **answer queue** (waiting → answering → answered), answered one at a time in the mode each was asked in. A new question never cuts off the answer that is streaming.
 - The desktop app captures system audio directly — no BlackHole, no tab sharing.
 - *About this recording:* it uses the browser version, so the questions are played from the laptop speaker into its own mic. That loop is much quieter than a real voice, so a question played this way is sometimes missed in the browser. The desktop app reads the meeting's audio directly.
