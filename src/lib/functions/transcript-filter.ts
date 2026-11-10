@@ -30,11 +30,23 @@ export function isNoiseTranscript(text: string): boolean {
 const START_QUESTION =
   /^(what|why|how|when|where|which|who|whom|can|could|would|should|will|do|does|did|is|are|was|were|have|has|explain|describe|tell me|walk me|talk me|design|implement|write|build|create|code|solve|find|given|compare|define|suppose|imagine|let's say|lets say|say you|reverse|sort|merge|optimi[sz]e|count|return|check|determine|compute|calculate|print|detect|validate|convert|(a )?function (to|that)|(an )?algorithm (to|that))\b/i;
 
+const TECH_TOPIC =
+  /\b(cap theorem|b-?trees?|tries?|bloom filters?|lru|hash ?(maps?|sets?|tables?)|linked lists?|binary (search|trees?)|big o|memoi[sz]\w*|coroutines?|async|await|mutex\w*|semaphores?|deadlocks?|race conditions?|nosql|sql|shard\w*|replicat\w*|consistent hash\w*|eventual\w* consist\w*|idempoten\w*|rate limit\w*|load balanc\w*|message queues?|kafka|kof?ka|rabbit\w* ?mq|redis|kubernetes|pods?|microservices?|monolith\w*|restful|rest apis?|grpc|https?|tcp|udp|virtual dom|react|closures?|garbage collect\w*|observer pattern|solid principles?|dependency injection|immutab\w*|read[- ]heavy|backpressure|url shorten\w*|dining philosophers?|recursion|dynamic programming|graphs?|bfs|dfs|heaps?|cach(e|es|ing)|index(ing|es)?|transactions?|acid|oauth|jwt|docker|latency|throughput|scalab\w*|system design)\b/i;
+// Case-sensitive acronyms that are also everyday words in lowercase.
+const TECH_ACRONYM = /\b(REST|SOLID|CAP|LRU|DNS|API|TTL)\b/;
+// Lines that are someone's own statement, not a question to answer.
+const OWN_STATEMENT = /\b(i|me|i'm|i'd|i'll|i've|we|we're|we'll|we've|my|our|let me|let's)\b/i;
+
 export function looksLikeQuestion(text: string): boolean {
   const t = text.trim();
   // Real interview questions have a few words; 1-2 word "questions" ("E aí?",
   // "Right?") are noise or small talk, so Auto doesn't answer them.
-  if ((t.match(/[\p{L}\p{N}']+/gu) ?? []).length < 3) return false;
+  const nWords = (t.match(/[\p{L}\p{N}']+/gu) ?? []).length;
+  // A short jargon question ("Idempotency injection?", "Bloom filters?") still counts.
+  if (nWords === 2 && t.endsWith("?") && (TECH_TOPIC.test(t) || TECH_ACRONYM.test(t))) return true;
+  if (nWords < 3) return false;
+  // Someone narrating what they'll do ("Let me write that down", "I think…") is not a question.
+  if (/^(let me|let's|i'll|i will|i think|i'm|i am|i'd|i would|i have|we'll|we will)\b/i.test(t)) return false;
   if (t.endsWith("?")) return true;
   // Lead-ins before the real question ("Next one, explain…", "Okay so, how…",
   // "Moving on — design…"): look past them.
@@ -49,6 +61,11 @@ export function looksLikeQuestion(text: string): boolean {
   // Starts like a question or an interview task ("Given an array…", "Write a function…").
   if (/^(what|why|how|when|where|which|who|whom|can|could|would|should|will|do|does|did|is|are|was|were|have|has|explain|describe|tell me|walk me|talk me|design|implement|write|build|create|code|solve|find|given|compare|define|suppose|imagine|let's say|lets say|say you|reverse|sort|merge|optimi[sz]e|(a )?function (to|that)|(an )?algorithm (to|that))\b/i.test(t))
     return true;
+  // Fast speech / heavy accents garble the question words but usually keep the
+  // technical term ("O a tardes, SOLID, PRINCIPLES.", "Oh, new design, REST,
+  // limited."). A short line naming an interview topic is treated as a question
+  // — unless it is clearly someone's own statement ("I would use a Bloom filter").
+  if ((TECH_TOPIC.test(t) || TECH_ACRONYM.test(t)) && !OWN_STATEMENT.test(t) && (t.match(/\S+/g) ?? []).length <= 25) return true;
   // Question phrases anywhere (long questions often lose their "?" in transcription).
   return /\b(how would you|how do you|how can you|what would you|what is|what are|why does|why is|can you|could you|would you|walk me through|tell me about|explain how|design (a|an|the)|implement (a|an|the)|write (a|an|the)|how would|what happens)\b/i.test(t);
 }

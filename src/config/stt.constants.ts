@@ -19,7 +19,7 @@ export const SPEECH_TO_TEXT_PROVIDERS = [
     curl: `curl -X POST https://api.groq.com/openai/v1/audio/transcriptions \\
       -H "Authorization: bearer {{API_KEY}}" \\
       -F "file={{AUDIO}}" \\
-      -F model=whisper-large-v3-turbo \\
+      -F model=whisper-large-v3 \\
       -F language=en \\
       -F temperature=0 \\
       -F response_format=json \\
